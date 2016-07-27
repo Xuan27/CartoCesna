@@ -3,34 +3,92 @@
 <head>
  <link rel="stylesheet" href="https://npmcdn.com/leaflet@1.0.0-rc.2/dist/leaflet.css" />
  <script src="https://npmcdn.com/leaflet@1.0.0-rc.2/dist/leaflet.js"></script>
- <script src= "../GeoTIFFs/Scanned_Maps.geojson" type="text/javascript"></script>
  <link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-</head>
- <!--<script src="../Javascript/Spatial_Query.js"></script>-->
+  <script src="../Javascript/Spatial_Query.js"></script>
 </head>
 
 <body>
-<div id="mapid"></div>
+</div>
+
+<div id = 'title'>BANDO-QUERY</div>
+
+<div id = 'buttons'>
+<button id = "deleteRectangle" onclick = "deleteRectangle()">Delete Rectangle</button>
+<button id = "submitQuery" onclick = "submitQuery(rectangleArray[rectangleCount-1])"> Submit Query</button>
+</div>
+<div id="mapId">
 <script>
-var mymap = L.map('mapid').setView([27.73725068372226, -97.43062019348145], 12);
+var map = L.map('mapId').setView([27.73725068372226, -97.43062019348145], 12);
 
 		L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g', {
 			maxZoom: 18,
 			attribution: 'TAMUCC CartoCesna',
 			id: 'mapbox.streets'
-		}).addTo(mymap);
+		}).addTo(map);
+		
+		
+	var markerCount = 0; // number of markers currently placed on slippy map
+	var rectangleCount = 0; // number of rectangles currently placed on the slippy map
+	var rectangleCoords = new Array(); // stores coordinates of created rectangles
+	var rectangleArray = new Array(); // stores rectangle features 
+	var markerArray = new Array(); // stores the marker features 
+	
+	function onMapClick(e) 
+	{
+		// proccesses that take place after first marker is placed 
+		if(rectangleCount < 1)
+		{
 
-	$(document).ready(function(){
-		$.getJSON('../PHP/PHPGeoJSON.php', function (data){ 
-		console.log(data);
-			for(i = 0; i < data.length; i++){
-				geojson = JSON.parse(data[i]["ST_AsGeoJSON(g)"] || data[i]["ST_AsGeoJSON(Poly)"]);
-				L.geoJson(geojson).addTo(mymap);
+			//declares variables relevant to creating the active rectangle using markers 
+			var coords = e.latlng;
+			rectangleCoords.push(coords);
+			var marker = L.marker(coords)
+			map.addLayer(marker);
+			markerArray.push(marker);
+			markerCount++;
+			
+			//makes sure that the user doesnt place more than one active rectangle at a time
+			if(markerCount % 2 == 0 )
+			{
+				//creates rectangle on slippy map and adds increments counters and pushes to appropriate arrays 
+				rectangleCount++;
+				var rectangle = L.rectangle([[rectangleCoords[markerCount-2].lat, rectangleCoords[markerCount-2].lng],
+				[rectangleCoords[markerCount-1].lat, rectangleCoords[markerCount-1].lng]],{color: "#28afd5", weight: 1});
+				map.addLayer(rectangle);
+				rectangleArray.push(rectangle);
+				
+				//create JSON containing image coordinates of rectangle southwest and northeast corners
+				//entryCoordinateObject = addEntryCoordinateObject(point1.x.toFixed(2), point1.y.toFixed(2), point2.x.toFixed(2), point2.y.toFixed(2));
+	
 			}
-		});
-	});
+		}
+		else
+			alert("Can't place more than one rectangle at a time");
+	}
 
+	//Hadnel on right click functions TODO: MOVE THIS LATER
+	map.on('contextmenu', onMapClick);
+	
 </script>
+
+</div>
+
+<div id = "results">
+<h1 id = 'header'> RESULTS</h1>
+<table id = "resultsTable">
+	<tr>
+		<td>
+			File Name
+		</td>	
+		<td>
+			Download Links:
+		</td>
+	</tr>
+</table>
+
+</div>
+
+
 </body>
 </html>

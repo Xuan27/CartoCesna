@@ -1,1 +1,109 @@
-#mapid { height: 680px; }
+#mapId {	
+    box-shadow: 1px 1px 10px 3px #423a3a;
+    position: absolute;
+	border-radius: 20px;
+    top: 8%;
+    left: 1%;
+    width: 70%;
+    height: 86%;
+ }
+ 
+ #results{	
+	position: absolute;
+	top:8%;
+	left:73%;
+	height: 86%;
+	width:25%;
+	box-shadow: 1px 1px 10px 3px #423a3a;
+	border-radius: 20px;
+ }
+#header{
+	position: absolute;
+    width: 453px;
+    top: 4%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 25px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+#buttons{
+    position: absolute;
+    width: 70%;
+    height: 6%;
+    font-size: 2.5vw;
+	bottom : 0%;
+}
+#deleteRectangle{
+    width: 20%;
+    left: 0%;
+    height: 83%;
+    background-color: #28afd5;
+    color: #FFFFFF;
+    font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+}
+#deleteRectangle:hover {
+	background-color:#1e83a0;
+}
+#submitQuery{
+    width: 20%;
+    left: 30%;
+    height: 83%;
+    background-color: #28afd5;
+    color: #FFFFFF;
+    font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+}
+#submitQuery:hover {
+	background-color:#1e83a0;
+}
+#title {
+    position: absolute;
+    width: 453px;
+    top: 4%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 30px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+#resultsTable
+{
+	position: absolute;
+	top: 10%;
+	left: 5%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
