@@ -27,19 +27,31 @@ if ($conn->query($Insert) === TRUE) {
 }*/
 
 
-$sql = "SELECT ST_AsGeoJSON(g) FROM geom2";
+$Centroid = "SELECT ST_AsGeoJSON(g) FROM geom2";
+$Polygon = "SELECT ST_AsGeoJSON(Poly) FROM geom2";
 
-$result = $conn->query($sql);
+$resultCentroid = $conn->query($Centroid);
 
 $GeoJson = array();
-if ($result->num_rows > 0) {
+if ($resultCentroid->num_rows > 0) {
     // output data of each row
-    while($row = $result->fetch_assoc()) {
+    while($row = $resultCentroid->fetch_assoc()) {
 		$GeoJson[] = $row;		
     }
 } else {
     echo "0 results";
 }
+
+$resultPolygon = $conn->query($Polygon);
+if ($resultPolygon->num_rows > 0) {
+    // output data of each row
+    while($Polyrow = $resultPolygon->fetch_assoc()) {
+		$GeoJson[] = $Polyrow;		
+    }
+} else {
+    echo "0 results";
+}
+
 echo json_encode($GeoJson);
 
 $conn->close();

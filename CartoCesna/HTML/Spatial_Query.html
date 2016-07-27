@@ -25,15 +25,11 @@ var mymap = L.map('mapid').setView([27.73725068372226, -97.43062019348145], 12);
 		$.getJSON('../PHP/PHPGeoJSON.php', function (data){ 
 		console.log(data);
 			for(i = 0; i < data.length; i++){
-				geojson = JSON.parse(data[i]["ST_AsGeoJSON(g)"]);
+				geojson = JSON.parse(data[i]["ST_AsGeoJSON(g)"] || data[i]["ST_AsGeoJSON(Poly)"]);
 				L.geoJson(geojson).addTo(mymap);
 			}
 		});
 	});
-	
-
-		
-//L.geoJson(geojson).addTo(mymap);
 
 </script>
 </body>
