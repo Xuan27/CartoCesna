@@ -30,6 +30,18 @@
     left: 50%;
     transform: translate(-50%,-50%);
 }
+#subHeader{
+	position: absolute;
+    width: 453px;
+    top: 8%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 12px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
 #buttons{
     position: absolute;
     width: 70%;
