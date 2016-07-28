@@ -8,18 +8,29 @@
  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="../Javascript/Spatial_Query.js"></script>
   <script src = "../Javascript/leaflet.draw.js"></script>
+    <script src="../Javascript/Leaflet.MakiMarkers.js"></script>
 
 </head>
 
-<body>
+<body bgcolor = "#e5f1fd">
 </div>
 
 <div id = 'title'>BANDO-QUERY</div>
 
 <div id = 'buttons'>
 <button id = "deleteRectangle" onclick = "deleteRectangle()">Delete Rectangle</button>
-<button id = "submitQuery" onclick = "submitQuery(rectangleArray[rectangleCount-1])"> Submit Query</button>
+<button id = "submitQuery" onclick = "submitQuery(tempRectangleArray[rectangleCount-1])"> Submit Query</button>
 </div>
+
+ <div class="dropdown">
+  <button onclick="myFunction()" class="dropbtn">Spatial Query Options</button>
+  <div id="myDropdown" class="dropdown-content">
+    <button id = "intersects" onclick = "spatialQueryOptions(this.id)">Intersects &#10004</button>
+    <button id = "contains" onclick = "spatialQueryOptions(this.id)">Contains</button>
+    <button id = "containsCentroid" onclick = "spatialQueryOptions(this.id)">Contains Centroid</button>
+  </div>
+</div>
+
 <div id="mapId">
 <script>
 var map = L.map('mapId', {GeometryControl: true}).setView([27.73725068372226, -97.43062019348145], 12);
@@ -28,13 +39,15 @@ var map = L.map('mapId', {GeometryControl: true}).setView([27.73725068372226, -9
 			maxZoom: 18,
 			attribution: 'TAMUCC CartoCesna',
 			id: 'mapbox.streets'
-		}).addTo(map);		
+		}).addTo(map);
 		
+	Maki_Icon = tempIcon = L.MakiMarkers.icon({color: "#33c1ff", size: "m"});
+
 	var markerCount = 0; // number of markers currently placed on slippy map
 	var rectangleCount = 0; // number of rectangles currently placed on the slippy map
 	var rectangleCoords = new Array(); // stores coordinates of created rectangles
-	var rectangleArray = new Array(); // stores rectangle features 
-	var markerArray = new Array(); // stores the marker features 
+	var tempRectangleArray = new Array(); // stores rectangle features 
+	var tempMarkerArray = new Array(); // stores the marker features 
 	
 	var drawItems = new L.FeatureGroup();
 	map.addLayer(drawItems)
@@ -136,13 +149,13 @@ var options = {
 		// proccesses that take place after first marker is placed 
 		if(rectangleCount < 1)
 		{
-
 			//declares variables relevant to creating the active rectangle using markers 
 			var coords = e.latlng;
 			rectangleCoords.push(coords);
 			var marker = L.marker(coords)
+			marker.setIcon(tempIcon);
 			map.addLayer(marker);
-			markerArray.push(marker);
+			tempMarkerArray.push(marker);
 			markerCount++;
 			
 			//makes sure that the user doesnt place more than one active rectangle at a time
@@ -151,9 +164,9 @@ var options = {
 				//creates rectangle on slippy map and adds increments counters and pushes to appropriate arrays 
 				rectangleCount++;
 				var rectangle = L.rectangle([[rectangleCoords[markerCount-2].lat, rectangleCoords[markerCount-2].lng],
-				[rectangleCoords[markerCount-1].lat, rectangleCoords[markerCount-1].lng]],{color: "#28afd5", weight: 1});
+				[rectangleCoords[markerCount-1].lat, rectangleCoords[markerCount-1].lng]],{fillOpacity: .1, color: "#28afd5", weight: 2});
 				map.addLayer(rectangle);
-				rectangleArray.push(rectangle);
+				tempRectangleArray.push(rectangle);
 				
 				//create JSON containing image coordinates of rectangle southwest and northeast corners
 				//entryCoordinateObject = addEntryCoordinateObject(point1.x.toFixed(2), point1.y.toFixed(2), point2.x.toFixed(2), point2.y.toFixed(2));
@@ -172,7 +185,8 @@ var options = {
 </div>
 
 <div id = "results">
-<h1 id = 'header'> RESULTS</h1>
+<h1 id = 'header'> RESULTS </h1>
+<h1 id = 'subHeader'>  </h1>
 <table id = "resultsTable">
 	<tr>
 		<td>
@@ -185,7 +199,6 @@ var options = {
 </table>
 
 </div>
-
 
 </body>
 </html>
