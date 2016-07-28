@@ -18,6 +18,16 @@
 <button id = "deleteRectangle" onclick = "deleteRectangle()">Delete Rectangle</button>
 <button id = "submitQuery" onclick = "submitQuery(tempRectangleArray[rectangleCount-1])"> Submit Query</button>
 </div>
+
+ <div class="dropdown">
+  <button onclick="myFunction()" class="dropbtn">Spatial Query Options</button>
+  <div id="myDropdown" class="dropdown-content">
+    <button id = "intersects" onclick = "spatialQueryOptions(this.id)">Intersects &#10004</button>
+    <button id = "contains" onclick = "spatialQueryOptions(this.id)">Contains</button>
+    <button id = "containsCentroid" onclick = "spatialQueryOptions(this.id)">Contains Centroid</button>
+  </div>
+</div>
+
 <div id="mapId">
 <script>
 var map = L.map('mapId').setView([27.73725068372226, -97.43062019348145], 12);

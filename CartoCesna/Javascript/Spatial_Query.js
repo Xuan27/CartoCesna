@@ -16,8 +16,8 @@ function deleteRectangle()
 	{
 		rectangleCoords.splice(0, 1)
 		
-		map.removeLayer(markerArray[markerCount-1]);
-		markerArray.splice(-1,1 );
+		map.removeLayer(tempMarkerArray[markerCount-1]);
+		tempMarkerArray.splice(-1,1 );
 		markerCount--;
 	}
 	else
@@ -38,7 +38,8 @@ function submitQuery(boundingBox)
 	diagonalCoords = addDiagonalObject(boundingBox.getBounds()._southWest.lat,
 														boundingBox.getBounds()._southWest.lng, 
 														boundingBox.getBounds()._northEast.lat, 
-														boundingBox.getBounds()._northEast.lng)
+														boundingBox.getBounds()._northEast.lng,
+														spatialQuerySelection);
 	deleteRectangle();
 	deleteTable("resultsTable");
 	for(var i = 0; i < rectangleArray.length; i++)
@@ -73,14 +74,14 @@ function drawResults(results)
 	for(var i = 0; i < results.length; i++)
 	{	
 		var rectangle = L.rectangle([[results[i].y1, results[i].x1],
-		[results[i].y2, results[i].x2]],{fillOpacity: .05, color: "#58d68d", weight: 3});
+		[results[i].y3, results[i].x3]],{fillOpacity: .05, color: "#58d68d", weight: 3});
 		rectangleArray.push(rectangle);
 		map.addLayer(rectangleArray[i]);
 		
 		center = (results[0].x1 + results[0].x2);
 		
-		var centerY = (parseFloat(results[i].y1) + parseFloat(results[i].y2))*.5;
-		var centerX = (parseFloat(results[i].x1) + parseFloat(results[i].x2))*.5;
+		var centerY = (parseFloat(results[i].y1) + parseFloat(results[i].y3))*.5;
+		var centerX = (parseFloat(results[i].x1) + parseFloat(results[i].x3))*.5;
 		
 		var marker = L.marker([centerY, centerX]);
 		marker.bindPopup("" + i + "").openPopup();
@@ -136,18 +137,19 @@ function highlightTable(index)
 	table.rows[index].style.backgroundColor = '#FFFFE0';
 }
 
-function addDiagonalObject(x1, y1, x2, y2)
+function addDiagonalObject(x1, y1, x2, y2, spatialQuerySelection)
 {
-	diagonalObject =  new diagonalObjectConstructor(x1, y1, x2, y2)
+	diagonalObject =  new diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection)
 	return diagonalObject;
 }
 
-function diagonalObjectConstructor(x1, y1, x2, y2)
+function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection)
 {
 	this.x1 = x1;
 	this.y1 = y1;
 	this.x2 = x2;
 	this.y2 = y2;
+	this.spatialQuerySelection = spatialQuerySelection;
 }
 
 function deleteTable(id)
@@ -164,10 +166,52 @@ function deleteTable(id)
 	deleteTable(id);
 }
 
+function myFunction() {
+    document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Close the dropdown menu if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('.dropbtn')) {
+
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+
+function spatialQueryOptions(selection)
+{
+	spatialQuerySelection = selection;
+	if(spatialQuerySelection == "contains")
+	{
+		document.getElementById("contains").innerHTML = "Contains &#10004;";
+		document.getElementById("intersects").innerHTML = "Intersect";
+		document.getElementById("containsCentroid").innerHTML = "Contains Centroid";
+	}
+	if(spatialQuerySelection == "intersects")
+	{
+		document.getElementById("contains").innerHTML = "Contains ";
+		document.getElementById("intersects").innerHTML = "Intersect &#10004;";
+		document.getElementById("containsCentroid").innerHTML = "Contains Centroid";
+	}
+	if(spatialQuerySelection == "containsCentroid")
+	{
+		document.getElementById("contains").innerHTML = "Contains ";
+		document.getElementById("intersects").innerHTML = "Intersect";
+		document.getElementById("containsCentroid").innerHTML = "Contains Centroid &#10004;";
+	}
+}
+
 //global variables
 rectangleArray = new Array();
 markerArray = new Array();
-
+var spatialQuerySelection = "intersects";
 
 
 

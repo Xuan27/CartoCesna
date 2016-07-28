@@ -6,6 +6,7 @@
     left: 1%;
     width: 70%;
     height: 86%;
+	z-index:-1;
  }
  
  #results{	
@@ -40,11 +41,17 @@
     width: 20%;
     left: 0%;
     height: 83%;
-    background-color: #28afd5;
-    color: #FFFFFF;
     font-family: Georgia,serif,Times;
     font-weight: normal;
     font-size: 55%;
+	border-radius: 20px;
+	background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
 	border-radius: 20px;
 }
 #deleteRectangle:hover {
@@ -54,11 +61,17 @@
     width: 20%;
     left: 30%;
     height: 83%;
-    background-color: #28afd5;
-    color: #FFFFFF;
     font-family: Georgia,serif,Times;
     font-weight: normal;
     font-size: 55%;
+	border-radius: 20px;
+	background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
 	border-radius: 20px;
 }
 #submitQuery:hover {
@@ -84,10 +97,118 @@
 	left: 5%;
 }
 
+ /* Dropdown Button */
+.dropbtn {
+    background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #1e83a0;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+	z-index:1;
+	top: 8%;
+    left: 1%;
+	border-radius: 20px;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #FFFFFF;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Links inside the dropdown */
+.dropdown-content button {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content button:hover {background-color: #FFFFFF; z-index:1;}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.show {display:block;z-index:1;}
 
 
-
-
+#intersects{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#intersects:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#contains{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#contains:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#containsCentroid{
+	width: 179.5px;
+	font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#containsCentroid:hover {
+	background-color:#1e83a0;
+	color:white;
+}
 
 
 

@@ -4,6 +4,7 @@ $x1 = $diagonalCoords -> x1;
 $y1 = $diagonalCoords -> y1;
 $x2 = $diagonalCoords -> x2;
 $y2 = $diagonalCoords -> y2;
+$spatialQuerySelection = $diagonalCoords -> spatialQuerySelection;
 
 $servername = "localhost";
 $username = "neilgibeaut";
@@ -19,7 +20,57 @@ if ($conn->connect_error) {
 }
 //echo "Connected successfully";
 
-$sql = "SELECT fileName, x1, y1, x2, y2, kmz
+if($spatialQuerySelection == "intersects")
+{
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz
+			FROM table1
+			WHERE MBRIntersects(
+			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
+			table1.diagonal) ";
+
+$result = $conn->query($sql);
+
+$GeoJson = array();
+if ($result->num_rows > 0) {
+    // output data of each row
+    while($row = $result->fetch_assoc()) {
+		$GeoJson[] = $row;		
+    }
+} else {
+    echo "0 results";
+}
+echo json_encode($GeoJson);
+
+$conn->close();	
+}
+
+if($spatialQuerySelection == "contains")
+{
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz
+			FROM table1
+			WHERE MBRContains(
+			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
+			table1.diagonal) ";
+
+$result = $conn->query($sql);
+
+$GeoJson = array();
+if ($result->num_rows > 0) {
+    // output data of each row
+    while($row = $result->fetch_assoc()) {
+		$GeoJson[] = $row;		
+    }
+} else {
+    echo "0 results";
+}
+echo json_encode($GeoJson);
+
+$conn->close();	
+}
+
+if($spatialQuerySelection == "containsCentroid")
+{
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz
 			FROM table1
 			WHERE MBRContains(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
@@ -38,5 +89,7 @@ if ($result->num_rows > 0) {
 }
 echo json_encode($GeoJson);
 
-$conn->close();
+$conn->close();	
+}
+
 ?>
