@@ -26,6 +26,8 @@ function deleteRectangle()
 
 function submitQuery(boundingBox)
 {	
+	if(boundingBox == null)
+		return;
 	deleteTable("resultsTable");
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
@@ -128,6 +130,7 @@ function displayLinks(results)
 		cell1.innerHTML = fileName.substring(0, fileName.length-4) + "<br><br>";
 		cell2.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>"  + "<br><br>"	;		
 	}
+	document.getElementById("subHeader").innerHTML = "documents found: " + results.length;
 }
 
 function highlightTable(index)
