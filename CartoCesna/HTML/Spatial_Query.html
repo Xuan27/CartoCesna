@@ -33,7 +33,7 @@
 
 <div id="mapId">
 <script>
-var map = L.map('mapId', {GeometryControl: true}).setView([27.73725068372226, -97.43062019348145], 12);
+var map = L.map('mapId', {geometryControl: true}).setView([27.73725068372226, -97.43062019348145], 12);
 
 		L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g', {
 			maxZoom: 18,
@@ -48,101 +48,100 @@ var map = L.map('mapId', {GeometryControl: true}).setView([27.73725068372226, -9
 	var rectangleCoords = new Array(); // stores coordinates of created rectangles
 	var tempRectangleArray = new Array(); // stores rectangle features 
 	var tempMarkerArray = new Array(); // stores the marker features 
+
+//Variable that contains the rectangle layer that will be modified with the draw control 
+var drawItems = new L.FeatureGroup();
+map.addLayer(drawItems)
 	
-	var drawItems = new L.FeatureGroup();
-	map.addLayer(drawItems)
-	
-	// Initialise the draw control and pass it the FeatureGroup of editable layers
-	var GeometryControl = new L.Control.Draw({
-		position: 'topleft',
+// Initialise the draw control and pass it the FeatureGroup of editable layers
+var geometryControl = new L.Control.Draw({
+	position: 'topleft',
     draw: {
         polyline: false,
         polygon: false,
 		rectangle:{
 			repeatMode: false,
-			showArea: true,
-			color: '#74b0ff',
-			weight: 10,
+			metric: false,
+			shapeOptions:{color: '#9c96e0',
+				weight: 2,
+				fillOpacity: 0.5,
+				lineCap: "square"}
 		},
         circle: false,
         marker: false,
     },
-    edit: {
-        featureGroup: drawItems,
-        remove: true
-    }
-	});
-	map.addControl(GeometryControl);
-	//map.removeControl(drawControl)
-	
-	drawControl1 =  new L.Control.Draw({
-					draw:{rectangle: false,
-						polyline: false,
-						polygon: false,
-						circle: false,
-						marker: false,
-					},
-					edit: {
-						featureGroup: drawItems,
-						remove: true
-					}					
-				})
-	
-	map.on("draw:created", function(e){
-		var type = e.layerType, layer = e.layer;
-		
-		if (type === "rectangle"){
-			var Coords = layer.getBounds();
-			NorthEastLng = Coords._northEast.lng;
-			NorthEastLat = Coords._northEast.lat;
-			SouthWestLng = Coords._southWest.lng;
-			SouthWestLat = Coords._southWest.lat;
-			//console.log(Coords);
-			layer.bindPopup("This are the Bounds of the rectangle </br> Norht East: </br>" + NorthEastLng + ", " + NorthEastLat + "</br> South West: </br>"+ SouthWestLng +", " + SouthWestLat);
-			
-		}
-		drawItems.addLayer(layer);
-	});
-	
+    edit: false
+});
+	map.addControl(geometryControl);
+
+//Draw control which disables the creation of geometry layers and only allows for editing.
+var editControl =  new L.Control.Draw({
+	draw:{rectangle: false,
+		polyline: false,
+		polygon: false,
+		circle: false,
+		marker: false,
+	},
+	edit: {
+		featureGroup: drawItems,
+		remove: true
+		}					
+})
+
+//Array that stores the amount of layers in the feature group.
 Layer_Array = [];	
-	map.on("draw:created", function(e){
-		var type = e.layerType, layer = e.layer;	
-		Layer_Array.push(drawItems._layers)		
+
+/*Event handler that is triggered when a new layer is created. A new element is pushed to the Layer Array, 
+so to determine if a layer exists in the feature group. Therefore, if a layer exists, the draw control is 
+removed and the edit control added. Also, if the layer type is a rectangle its bounds are obtained. Also a 
+popup was included with the bound coordinates of the rectangle.*/
+map.on("draw:created", function(e){
+	var type = e.layerType, layer = e.layer;
+	Layer_Array.push(layer)		
+		if(Layer_Array.length >= 1){
+			map.removeControl(geometryControl);
+			map.addControl(editControl);
+		}	
 		
-			if(Layer_Array.length >= 1){
-				//alert("no more rectangles");
-									
-			map.removeControl(GeometryControl);
-			map.addControl(drawControl1);
-			}
+	if (type === "rectangle"){
+		var Coords = layer.getBounds();
+		NorthEastLng = Coords._northEast.lng;
+		NorthEastLat = Coords._northEast.lat;
+		SouthWestLng = Coords._southWest.lng;
+		SouthWestLat = Coords._southWest.lat;
+		console.log(Coords);
+		layer.bindPopup("These are the Bounds of the rectangle </br> Norht East: </br>" + NorthEastLng + ", " + NorthEastLat + "</br> South West: </br>"+ SouthWestLng +", " + SouthWestLat);			
+	}
+	drawItems.addLayer(layer);
+});
+
+/*Event that occurs when a layers has been deleted and saved. The edit control panel is removed and the
+geometry control is added.*/
+map.on("draw:deleted", function(e){
+	var Deleted_Layers = e.layers.getLayers();
+			if (Deleted_Layers.length >= 1){
+				map.removeControl(editControl)
+				map.addControl(geometryControl);
+			}				
+		})
 		
-			
-			console.log(Layer_Array.length);
-		//}
-		
-			/*if (type === "rectangle"){
-			var Coords = layer.getBounds();
+/*Event that obtains the coordinates of the rectangles, similar to when it is created, however this occurs after
+the rectangle has been edited.*/
+map.on('draw:edited', function (e) {
+    var layers = e.layers;
+    layers.eachLayer(function (layer) {
+		layer.getBounds();
+		var Coords = layer.getBounds();
 			NorthEastLng = Coords._northEast.lng;
 			NorthEastLat = Coords._northEast.lat;
 			SouthWestLng = Coords._southWest.lng;
 			SouthWestLat = Coords._southWest.lat;
 			console.log(Coords);
-			layer.bindPopup("This are the Bounds of the rectangle </br> Norht East: </br>" + NorthEastLng + ", " + NorthEastLat + "</br> South West: </br>"+ SouthWestLng +", " + SouthWestLat);
+			layer.bindPopup("These are the Bounds of the rectangle </br> Norht East: </br>" + NorthEastLng + ", " + NorthEastLat + "</br> South West: </br>"+ SouthWestLng +", " + SouthWestLat);
 			
-		}
-		drawItems.addLayer(layer);*/
-	});
-	
-map.on("draw:deleted", function(e){
-			if (Layer_Array.length >= 1){
-				map.removeControl(drawControl1)
-				map.addControl(GeometryControl);
-			}				
-		})	
-	
-var options = {
-    
-};
+        //save back to db
+    });
+})
 	
 	function onMapClick(e) 
 	{
