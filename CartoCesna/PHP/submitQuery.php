@@ -7,9 +7,9 @@ $y2 = $diagonalCoords -> y2;
 $spatialQuerySelection = $diagonalCoords -> spatialQuerySelection;
 
 $servername = "localhost";
-$username = "neilgibeaut";
-$password = "Sadiedog1995";
-$database = "spatialSearch_db";
+$username = "root";
+$password = "";
+$database = "spatial_query";
 
 //Create connection
 $conn = new mysqli($servername, $username, $password, $database);
