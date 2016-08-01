@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
- <link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
- <script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
- <link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
-  <link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script src="../Javascript/Spatial_Query.js"></script>
-  <script src = "../Javascript/leaflet.draw.js"></script>
-    <script src="../Javascript/Leaflet.MakiMarkers.js"></script>
+<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
+<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
+<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
+<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>
+
+<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="../Javascript/Spatial_Query.js"></script>
+<script src = "../Javascript/leaflet.draw.js"></script>
+<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
+<script src="../Javascript/l.control.geosearch.js"></script>
+<script src="../Javascript/l.geosearch.provider.esri.js"></script>
 
 </head>
 
@@ -55,6 +59,11 @@ var map = L.map('mapId', {geometryControl: true}).setView([27.73725068372226, -9
 			attribution: 'TAMUCC CartoCesna',
 			id: 'mapbox.streets'
 		}).addTo(map);
+				
+		new L.Control.GeoSearch({
+			provider: new L.GeoSearch.Provider.Esri(),
+			showMarker: false
+		}).addTo(map);		
 		
 	Maki_Icon = tempIcon = L.MakiMarkers.icon({color: "#33c1ff", size: "m"});
 
@@ -140,7 +149,7 @@ map.on("draw:deleted", function(e){
 			}				
 		})
 		
-var NOthing = "";		
+		
 /*Event that obtains the coordinates of the rectangles, similar to when it is created, however this occurs after
 the rectangle has been edited.*/
 map.on('draw:edited', function (e) {

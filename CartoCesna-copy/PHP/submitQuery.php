@@ -8,9 +8,9 @@ $spatialQuerySelection = $diagonalCoords -> spatialQuerySelection;
 $dateQuerySQL = $diagonalCoords -> dateQuerySQL;
 
 $servername = "localhost";
-$username = "neilgibeaut";
-$password = "Sadiedog1995";
-$database = "spatialSearch_db";
+$username = "root";
+$password = "";
+$database = "spatial_query";
 
 //Create connection
 $conn = new mysqli($servername, $username, $password, $database);
