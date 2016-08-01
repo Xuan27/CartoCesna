@@ -26,9 +26,21 @@ function deleteRectangle()
 
 function submitQuery(boundingBox)
 {	
-	if(boundingBox == null)
+	var authorSQL = generateAuthorInputSQLStatement();
+
+	if(tempRectangle == null)
+	{
+		deleteTable("resultsTable");
+		for(var i = rectangleArray.length; i > 0; i--)
+		{
+			map.removeLayer(rectangleArray[i-1]);
+			map.removeLayer(markerArray[i-1]);
+		}
+		rectangleArray = [];
+		markerArray = [];
 		return;
-	deleteTable("resultsTable");
+	}
+
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
 		map.removeLayer(rectangleArray[i]);
@@ -41,7 +53,7 @@ function submitQuery(boundingBox)
 														boundingBox.getBounds()._southWest.lng, 
 														boundingBox.getBounds()._northEast.lat, 
 														boundingBox.getBounds()._northEast.lng,
-														spatialQuerySelection, dateQuerySQL);
+														spatialQuerySelection, dateQuerySQL, authorSQL);
 	deleteRectangle();
 	deleteTable("resultsTable");
 	for(var i = 0; i < rectangleArray.length; i++)
@@ -80,6 +92,7 @@ function drawResults(results)
 		[results[i].y3, results[i].x3]],{fillOpacity: .05, color: "#58d68d", weight: 3});
 		rectangleArray.push(rectangle);
 		map.addLayer(rectangleArray[i]);
+		rectangle.bringToBack();
 		
 		center = (results[0].x1 + results[0].x2);
 		
@@ -96,9 +109,7 @@ function drawResults(results)
 		
 		markerArray[i].on('click', function(e)
 		{
-			this.closePopup();
-			var highlight = {color: "#FF0000", weight: 1};
-			var defaultColor = {color: "#58d68d", weight: 1};		
+			this.closePopup();	
 		
 			var popup = this.getPopup();
 
@@ -113,6 +124,7 @@ function drawResults(results)
 			this.setIcon(icon);
 			
 			highlightTable(popup.getContent());
+			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs());
 		});
 
 	}
@@ -125,13 +137,33 @@ function displayLinks(results)
 	{
 		var fileName = results[i].fileName;
 		var row = table.insertRow(-1)
-		var cell1 = row.insertCell(0);
-		var cell2 = row.insertCell(1);
-		var cell3 = row.insertCell(2);
-		cell1.innerHTML = fileName.substring(0, fileName.length-4) + "<br><br>";
-		cell2.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>"  + "<br><br>"	;		
+		var cell0 = row.insertCell(0);
+		var cell1 = row.insertCell(1);
+		var cell2 = row.insertCell(2);
+		var cell3 = row.insertCell(3);
+		cell0.innerHTML = results[i].Author;
+		cell1.innerHTML = fileName.substring(0, fileName.length-4);
+		cell2.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>";	
+		cell3.innerHTML = "<button id = 'showOnMapButton' onclick = 'highlightMapMarker(" + i + ")'>Show On Map</button>";
 	}
 	document.getElementById("subHeader").innerHTML = "documents found: " + results.length;
+}
+
+function highlightMapMarker(index)
+{
+	for(var i = 0; i < markerArray.length; i++)
+	{
+		rectangleArray[i].setStyle(defaultColor);
+		markerArray[i].setIcon(defaultIcon);
+		table.rows[i+1].style.backgroundColor = "#e5f1fd";
+	}
+	rectangleArray[index].setStyle(highlight);
+	markerArray[index].setIcon(icon);
+	
+	//map.setView(map.unproject(map.project(markerArray[index].getLatLng())),10, {animate: true});
+	map.fitBounds(rectangleArray[index].getLatLngs());
+	
+	highlightTable(index);
 }
 
 function highlightTable(index)
@@ -179,18 +211,21 @@ function spatialQueryOptions(selection)
 	spatialQuerySelection = selection;
 	if(spatialQuerySelection == "contains")
 	{
+		document.getElementById("spatialQueryDropdown").innerHTML = "Contains";
 		document.getElementById("contains").innerHTML = "Contains &#10004;";
 		document.getElementById("intersects").innerHTML = "Intersect";
 		document.getElementById("containsCentroid").innerHTML = "Contains Centroid";
 	}
 	if(spatialQuerySelection == "intersects")
 	{
+		document.getElementById("spatialQueryDropdown").innerHTML = "Intersects";
 		document.getElementById("contains").innerHTML = "Contains ";
 		document.getElementById("intersects").innerHTML = "Intersect &#10004;";
 		document.getElementById("containsCentroid").innerHTML = "Contains Centroid";
 	}
 	if(spatialQuerySelection == "containsCentroid")
 	{
+		document.getElementById("spatialQueryDropdown").innerHTML = "Contains Centroid";
 		document.getElementById("contains").innerHTML = "Contains ";
 		document.getElementById("intersects").innerHTML = "Intersect";
 		document.getElementById("containsCentroid").innerHTML = "Contains Centroid &#10004;";
@@ -247,14 +282,26 @@ function dateQueryOptions(selection)
 		document.getElementById("after").innerHTML = "After &#10004";
 	}
 }
-//Object Construction Functions
-function addDiagonalObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL)
+
+function generateAuthorInputSQLStatement()
 {
-	diagonalObject =  new diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL)
+	if(document.getElementById("authorInput").value == "")
+	{
+		return "";		
+	}
+
+	authorSQL = "AND Author LIKE '" + document.getElementById("authorInput").value + "'";
+	return authorSQL;
+}
+
+//Object Construction Functions
+function addDiagonalObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
+{
+	diagonalObject =  new diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
 	return diagonalObject;
 }
 
-function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL)
+function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
 {
 	this.x1 = x1;
 	this.y1 = y1;
@@ -262,6 +309,7 @@ function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQu
 	this.y2 = y2;
 	this.spatialQuerySelection = spatialQuerySelection;
 	this.dateQuerySQL = dateQuerySQL;
+	this.authorSQL = authorSQL;
 }
 
 //global variables
@@ -270,7 +318,8 @@ markerArray = new Array();
 var spatialQuerySelection = "intersects";
 var dateQuerySelection = "allYears";
 var dateQuerySQL = "";
-
+var highlight = {color: "#FF0000", weight: 1};
+var defaultColor = {color: "#58d68d", weight: 1};	
 
 
 

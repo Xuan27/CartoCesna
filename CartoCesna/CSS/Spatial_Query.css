@@ -54,11 +54,19 @@ max-width: 100%;
 	bottom : 0%;
 	left:1%;
 }
+#queryOptions{
+    position: absolute;
+    width: 98%;
+    height: 6%;
+    font-size: 2.5vw;
+	top : 0%;
+	left:1%;
+}
 #dropdownOptions{
     position: absolute;
     width: 90%;
     height: 6%;
-    font-size: 2.5vw;
+    font-size: 14px;
 	top:0%;
 	left:1%;
 }
@@ -121,6 +129,8 @@ max-width: 100%;
 	position: absolute;
 	top: 10%;
 	left: 5%;
+	width:90%;
+	table-layout: fixed;
 }
 
  /* Dropdown Button */
@@ -328,6 +338,26 @@ max-width: 100%;
 #year{
 left:100px;
 }
+
+#showOnMapButton{
+	width: 60px;
+	font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color:#28afd5;
+    color: white;
+    padding: 2px;
+    font-size: 10px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#showOnMapButton:hover {
+	background-color:#1e83a0;
+}
+
 
 
 
