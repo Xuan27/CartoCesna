@@ -1,3 +1,12 @@
+//Global Variables
+rectangleArray = new Array();
+markerArray = new Array();
+var spatialQuerySelection = "intersects";
+var dateQuerySelection = "allYears";
+var dateQuerySQL = "";
+var highlight = {color: "#FF0000", weight: 1};
+var defaultColor = {color: "#58d68d", weight: 1};	
+
 function deleteRectangle()
 {	
 	if(markerCount == 2)
@@ -124,7 +133,7 @@ function drawResults(results)
 			this.setIcon(icon);
 			
 			highlightTable(popup.getContent());
-			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs());
+			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs(), {padding: [50, 50]}, {animate: true});
 		});
 
 	}
@@ -161,9 +170,8 @@ function highlightMapMarker(index)
 	markerArray[index].setIcon(icon);
 	
 	//map.setView(map.unproject(map.project(markerArray[index].getLatLng())),10, {animate: true});
-	map.fitBounds(rectangleArray[index].getLatLngs());
-	
 	highlightTable(index);
+	map.fitBounds(rectangleArray[index].getLatLngs(), {padding: [50, 50]}, {animate: true});
 }
 
 function highlightTable(index)
@@ -311,18 +319,6 @@ function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQu
 	this.dateQuerySQL = dateQuerySQL;
 	this.authorSQL = authorSQL;
 }
-
-//global variables
-rectangleArray = new Array();
-markerArray = new Array();
-var spatialQuerySelection = "intersects";
-var dateQuerySelection = "allYears";
-var dateQuerySQL = "";
-var highlight = {color: "#FF0000", weight: 1};
-var defaultColor = {color: "#58d68d", weight: 1};	
-
-
-
 
 
 
