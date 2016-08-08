@@ -190,7 +190,7 @@ function highlightMapMarker(index)
 	}
 	rectangleArray[index].setStyle(highlight);
 	markerArray[index].setIcon(icon);
-	
+
 	highlightTable(index);
 	map.fitBounds(rectangleArray[index].getLatLngs(), {padding: [50, 50]}, {animate: true});
 }
