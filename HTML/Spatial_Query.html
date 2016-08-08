@@ -34,6 +34,16 @@
 </div>
 
  <div class="dropdown">
+  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Query Options</button>
+  <div id="queryDropdownContent" class="modified-dropdown-content">
+	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Document Name: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Library Index:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Company Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Customer Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br><br>
+</div>
+
+ <div class="dropdown">
   <button onclick="openDropdown('dateDropdownContent')" class="dropbtn" id = "dateQueryDropdown">Date Options</button>
   <div id="dateDropdownContent" class="dropdown-content">
 	<button id = "allYears" onclick = "dateQueryOptions(this.id)">All Years &#10004</button>
@@ -41,11 +51,12 @@
     <button id = "during" onclick = "dateQueryOptions(this.id)">During</button>
     <button id = "after" onclick = "dateQueryOptions(this.id)">After</button>
   </div>
+ 
+
   
 <select name="year" id = "year" onchange = "dateQueryOptions(dateQuerySelection)">
 	<option> - Year - </option>
 </select>
-Author: <input type = 'text' id = 'authorInput'>
 </div>
 </div>
 </div>
