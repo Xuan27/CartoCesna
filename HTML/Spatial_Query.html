@@ -27,11 +27,12 @@
 
 <div id = 'title'>BANDO-QUERY</div>
 
+<!-- BUTTONS -->
 <div id = 'buttons'>
-<!-- <button id = "deleteRectangle" onclick = "deleteRectangle()">Delete Rectangle</button> -->
 <button id = "submitQuery" onclick = "submitQuery(tempRectangle)"> Submit Query</button>
 </div>
 
+<!-- DROPDOWN MENUS (this divs in this section can definiately be improved I am bad at html formatting still) -->
 <div id = "dropdownOptions">
  <div class="dropdown">
   <button onclick="openDropdown('spatialQueryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Spatial Query Options</button>
@@ -43,6 +44,16 @@
 </div>
 
  <div class="dropdown">
+  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Query Options</button>
+  <div id="queryDropdownContent" class="modified-dropdown-content">
+	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Document Name: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Library Index:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Company Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Customer Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br><br>
+</div>
+
+ <div class="dropdown">
   <button onclick="openDropdown('dateDropdownContent')" class="dropbtn" id = "dateQueryDropdown">Date Options</button>
   <div id="dateDropdownContent" class="dropdown-content">
 	<button id = "allYears" onclick = "dateQueryOptions(this.id)">All Years &#10004</button>
@@ -50,18 +61,17 @@
     <button id = "during" onclick = "dateQueryOptions(this.id)">During</button>
     <button id = "after" onclick = "dateQueryOptions(this.id)">After</button>
   </div>
-  
+
 <select name="year" id = "year" onchange = "dateQueryOptions(dateQuerySelection)">
 	<option> - Year - </option>
 </select>
-Author: <input type = 'text' id = 'authorInput'>
+</div>
 </div>
 </div>
 </div>
 </div>
 
-
-
+<!-- MAP VIEWER -->
 <div id="mapId">
 <script>
 	var map = L.map('mapId', {geometryControl: true}).setView([27.73725068372226, -97.43062019348145], 12);
@@ -185,6 +195,7 @@ map.on('draw:edited', function (e) {
 
 </div>
 
+<!-- RESULTS TABLE -->
 <div id = "results">
 <h1 id = 'header'> RESULTS </h1>
 <h1 id = 'subHeader'>  </h1>
@@ -195,7 +206,6 @@ map.on('draw:edited', function (e) {
 .tg .tg-yw4l{vertical-align:top}
 </style>
 <table id = "resultsTable" class = "tg">
-
 		<th>
 			Author
 		</th>		
@@ -208,8 +218,7 @@ map.on('draw:edited', function (e) {
 		<th>
 		</th>
 </table>
-
 </div>
 
 </body>
-</html>
+</html> 

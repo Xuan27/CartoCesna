@@ -1,3 +1,15 @@
+//Global Variables
+rectangleArray = new Array(); 								//contains all the rectangles created from a succesful query
+markerArray = new Array();									//contains all the markers created from a succesful query
+var spatialQuerySelection = "intersects";					//string of used to decide what spatial query technique will be used 
+var dateQuerySelection = "allYears";						//string used to decide what date query technique will be used 
+var dateQuerySQL = "";										//string of SQL statement to refine search by date
+var highlight = {color: "#FF0000", weight: 1};			//higlight properties of markers/rectangles.
+var defaultColor = {color: "#58d68d", weight: 1};		//default properties of markers/rectangles.
+
+//This function is used to delete the active rectangle that the user has drawn.
+//This function is currently not in use, However I'm leaving it here in case in the future the two click method
+//of drawing the query bounding box is implemented.
 function deleteRectangle()
 {	
 	if(markerCount == 2)
@@ -23,7 +35,14 @@ function deleteRectangle()
 	else
 		return null;
 }
+//Global Variable that will hold the Marker Cluster layer
 var Clust = "";
+
+//This function is called when the user hits the "Submit Query" button. When this function is called
+//it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
+//queryObject contains all the information the php script will need to execute the desired query on our database.
+//On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter.
+
 function submitQuery(boundingBox)
 {	
 	
@@ -50,7 +69,7 @@ function submitQuery(boundingBox)
 	rectangleArray = [];
 	markerArray = [];
 	
-	diagonalCoords = addDiagonalObject(boundingBox.getBounds()._southWest.lat,
+	queryObject = addQueryObject(boundingBox.getBounds()._southWest.lat,
 														boundingBox.getBounds()._southWest.lng, 
 														boundingBox.getBounds()._northEast.lat, 
 														boundingBox.getBounds()._northEast.lng,
@@ -67,7 +86,7 @@ function submitQuery(boundingBox)
 	$.ajax({
 		type: 'post',
 		url: '../PHP/submitQuery.php',
-		data:{'diagonalCoords':JSON.stringify(diagonalCoords)},
+		data:{'queryObject':JSON.stringify(queryObject)},
 		success: function(data){
 			if(data == "0 results[]")
 			{
@@ -81,7 +100,8 @@ function submitQuery(boundingBox)
 	});
 }
 
-
+//This function is called by submitQuery() and takes the results from the AJAX call in submitQuery as a parameter.
+//Using this information from the paramter "results", the function draws all the markers, rectangles, and creates click events for them. 
 
 function drawResults(results)
 {	
@@ -93,27 +113,34 @@ function drawResults(results)
 	//var rectangleArray = new Array();
 	//var markerArray = new Array();
 	
+	//iterates through every instance of the results array
 	for(var i = 0; i < results.length; i++)
 	{	
-		var rectangle = L.rectangle([[results[i].y1, results[i].x1],
-		[results[i].y3, results[i].x3]],{fillOpacity: .05, color: "#58d68d", weight: 3});
+		//creates rectangle object 
+		var rectangle = L.rectangle([[results[i].y1, results[i].x1],[results[i].y3, results[i].x3]],
+												{fillOpacity: .05, color: "#58d68d", weight: 3});
+		
+		//adds rectangle to map 
 		rectangleArray.push(rectangle);
 		map.addLayer(rectangleArray[i]);
 		rectangle.bringToBack();
 		
+		//calculates center of rectangle for marker placement 
 		center = (results[0].x1 + results[0].x2);
-		
 		var centerY = (parseFloat(results[i].y1) + parseFloat(results[i].y3))*.5;
 		var centerX = (parseFloat(results[i].x1) + parseFloat(results[i].x3))*.5;
 		
+		//creates marker object 
 		var marker = L.marker([centerY, centerX]);
 		marker.bindPopup("" + i + "").openPopup();
 		marker.setIcon(defaultIcon);
 		
+		//adds marker to the map 
 		markerArray.push(marker);	
 		//map.addLayer(markerArray[i]);
 		table = document.getElementById("resultsTable");
 		
+		//creates onclick event for the marker
 		markerArray[i].on('click', function(e)
 		{
 			this.closePopup();	
@@ -131,7 +158,7 @@ function drawResults(results)
 			this.setIcon(icon);
 			
 			highlightTable(popup.getContent());
-			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs());
+			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs(), {padding: [50, 50]}, {animate: true});
 		});
 
 		markerCluster.addLayer(markerArray[i]);
@@ -142,9 +169,12 @@ map.addLayer(markerCluster);
 	return markerCluster;
 }
 
+//This function takes the results from submitQuery.php as a paramter, and uses the information to create our results table.
 function displayLinks(results)
 {
 	table = document.getElementById("resultsTable");
+	
+	//iterates through every instance of the results array 
 	for(var i = 0; i < results.length; i++)
 	{
 		var fileName = results[i].fileName;
@@ -161,6 +191,9 @@ function displayLinks(results)
 	document.getElementById("subHeader").innerHTML = "documents found: " + results.length;
 }
 
+//This function is used by the "Show On Map" button created by displayLinks(). 
+//The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
+//to the extent of its corresponding rectangle while also highlighting both of them in red.
 function highlightMapMarker(index)
 {
 	for(var i = 0; i < markerArray.length; i++)
@@ -172,12 +205,13 @@ function highlightMapMarker(index)
 	rectangleArray[index].setStyle(highlight);
 	markerArray[index].setIcon(icon);
 	
-	//map.setView(map.unproject(map.project(markerArray[index].getLatLng())),10, {animate: true});
-	map.fitBounds(rectangleArray[index].getLatLngs());
-	
 	highlightTable(index);
+	map.fitBounds(rectangleArray[index].getLatLngs(), {padding: [50, 50]}, {animate: true});
 }
 
+//This function is called within a results marker's click event created in drawResults().
+//The purpose of this function is to highlight the entry in the results table that corresponds to the
+//results marker that was clicked on.
 function highlightTable(index)
 { 
 	index++;
@@ -185,6 +219,8 @@ function highlightTable(index)
 	table.rows[index].style.backgroundColor = '#FFFFE0';
 }
 
+//This function recursivly deletes the results table. This function is called when a query is submitted
+//to clear the slate from the old query so that they don't interfere with each other.
 function deleteTable(id)
 {
 	var table = document.getElementById(id);
@@ -194,16 +230,18 @@ function deleteTable(id)
 		return;
 	
 	table.deleteRow(table.rows.length-1);
+	document.getElementById("subHeader").innerHTML = "";
 	
 	//recursive call 
 	deleteTable(id);
 }
 
+//This function is used by the dropdown menus when they are clicked on.
 function openDropdown(id) {
     document.getElementById(id).classList.toggle("show");
 }
 
-// Close the dropdown menu if the user clicks outside of it
+//This function us used to close the dropdown menu if the user clicks outside of it
 window.onclick = function(event) {
   if (!event.target.matches('.dropbtn')) {
 
@@ -218,6 +256,8 @@ window.onclick = function(event) {
   }
 }
 
+//This function's purpose is to create our "spatialQuerySelection" variable that will be used by submitQuery().
+//It also adjusts the dropdown menu based on the selection made.
 function spatialQueryOptions(selection)
 {
 	spatialQuerySelection = selection;
@@ -244,6 +284,7 @@ function spatialQueryOptions(selection)
 	}
 }
 
+//Creates the drop down menu for the date selector.
 function populateYearSelector()
 {
 	var yearField = document.getElementById('year');
@@ -253,6 +294,7 @@ function populateYearSelector()
 	}
 }
 
+//Same as spatialQueryOptions but for the date dropdown menu.
 function dateQueryOptions(selection)
 {
 	dateQuerySelection = selection;
@@ -295,6 +337,8 @@ function dateQueryOptions(selection)
 	}
 }
 
+//Currently is used just to implement the ability to refine search results by author but 
+//should be expanded to handle all text fields that we want the user to be able to refine there search by.
 function generateAuthorInputSQLStatement()
 {
 	if(document.getElementById("authorInput").value == "")
@@ -307,13 +351,13 @@ function generateAuthorInputSQLStatement()
 }
 
 //Object Construction Functions
-function addDiagonalObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
+function addQueryObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
 {
-	diagonalObject =  new diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
-	return diagonalObject;
+	queryObject =  new queryObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
+	return queryObject;
 }
 
-function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
+function queryObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
 {
 	this.x1 = x1;
 	this.y1 = y1;
@@ -323,18 +367,6 @@ function diagonalObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQu
 	this.dateQuerySQL = dateQuerySQL;
 	this.authorSQL = authorSQL;
 }
-
-//global variables
-rectangleArray = new Array();
-markerArray = new Array();
-var spatialQuerySelection = "intersects";
-var dateQuerySelection = "allYears";
-var dateQuerySQL = "";
-var highlight = {color: "#FF0000", weight: 1};
-var defaultColor = {color: "#58d68d", weight: 1};	
-
-
-
 
 
 

@@ -1,0 +1,375 @@
+html, body {
+overflow-x : hidden;
+max-width: 100%;
+}
+#mapId {	
+    box-shadow: 1px 1px 10px 3px #423a3a;
+    position: absolute;
+	border-radius: 20px;
+    top: 8%;
+    left: 1%;
+    width: 68%;
+    height: 86%;
+	z-index:-1;
+ }
+ 
+ #results{	
+	position: absolute;
+	top:8%;
+	left:70%;
+	height: 86%;
+	width:29%;
+	box-shadow: 1px 1px 10px 3px #423a3a;
+	border-radius: 20px;
+ }
+#header{
+	position: absolute;
+    width: 453px;
+    top: 4%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 25px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+#subHeader{
+	position: absolute;
+    width: 453px;
+    top: 8%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 12px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+#buttons{
+    position: absolute;
+    width: 98%;
+    height: 6%;
+    font-size: 2.5vw;
+	bottom : 0%;
+	left:1%;
+}
+#queryOptions{
+    position: absolute;
+    width: 98%;
+    height: 6%;
+    font-size: 2.5vw;
+	top : 0%;
+	left:1%;
+}
+#dropdownOptions{
+    position: absolute;
+    width: 90%;
+    height: 6%;
+    font-size: 14px;
+	top:0%;
+	left:1%;
+}
+
+
+#deleteRectangle{
+    width: 20%;
+    left: 0%;
+    height: 83%;
+    font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#deleteRectangle:hover {
+	background-color:#1e83a0;
+}
+#submitQuery{
+    width: 100%;
+    height: 83%;
+    font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#submitQuery:hover {
+	background-color:#1e83a0;
+}
+#title {
+    position: absolute;
+    width: 453px;
+    top: 4%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 30px;
+    left: 50%;
+    transform: translate(-50%,-50%);
+}
+
+#resultsTable
+{
+	position: absolute;
+	top: 10%;
+	left: 5%;
+	width:90%;
+	table-layout: fixed;
+}
+
+ /* Dropdown Button */
+.dropbtn {
+    background-color: #28afd5;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #1e83a0;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+	z-index:1;
+	top: 8%;
+    left: 1%;
+	border-radius: 20px;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #FFFFFF;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Links inside the dropdown */
+.dropdown-content button {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+	z-index:1;
+	border-radius: 20px;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content button:hover {background-color: #FFFFFF; z-index:1;}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.show {display:block;z-index:1;}
+
+
+#intersects{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#intersects:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#contains{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#contains:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#containsCentroid{
+	width: 179.5px;
+	font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#containsCentroid:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+
+#allYears{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#allYears:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#before{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#before:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#during{
+	width: 179.5px;
+	 font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#during:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#after{
+	width: 179.5px;
+	font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color: #FFFFFF;
+    color: black;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#after:hover {
+	background-color:#1e83a0;
+	color:white;
+}
+#dateSelectorDiv{
+    position: absolute;
+    width: 453px;
+    top: 4%;
+    color: #0099FF;
+    text-align: center;
+    font-family: "DigifaceWide";
+    font-weight: bold;
+    font-size: 30px;
+    left: 40%;
+    transform: translate(-50%,-50%);
+}
+
+#year{
+left:100px;
+}
+
+#showOnMapButton{
+	width: 60px;
+	font-family: Georgia,serif,Times;
+    font-weight: normal;
+    font-size: 55%;
+	border-radius: 20px;
+	background-color:#28afd5;
+    color: white;
+    padding: 2px;
+    font-size: 10px;
+    border: none;
+    cursor: pointer;
+	z-index:1;
+	border-radius: 20px;
+}
+#showOnMapButton:hover {
+	background-color:#1e83a0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
