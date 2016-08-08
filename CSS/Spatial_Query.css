@@ -59,7 +59,7 @@ max-width: 100%;
     width: 98%;
     height: 6%;
     font-size: 2.5vw;
-	top: 0%;
+	top : 0%;
 	left:1%;
 }
 #dropdownOptions{
@@ -135,8 +135,6 @@ max-width: 100%;
 
  /* Dropdown Button */
 .dropbtn {
-	font-family: Georgia,serif,Times;
-    font-weight: normal;
     background-color: #28afd5;
     color: white;
     padding: 10px;
@@ -185,47 +183,6 @@ max-width: 100%;
 
 /* Change color of dropdown links on hover */
 .dropdown-content button:hover {background-color: #FFFFFF; z-index:1;}
-
-/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
-.show {display:block;z-index:1;}
-
- /* Modifed Dropdown Button */
-
- 
- 
-/* The container <div> - needed to position the dropdown content */
-.modified-dropdown {
-    position: relative;
-    display: inline-block;
-	z-index:1;
-	top: 8%;
-    left: 1%;
-	border-radius: 20px;
-}
-
-/* Dropdown Content (Hidden by Default) */
-.modified-dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #FFFFFF;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-	z-index:1;
-	border-radius: 20px;
-}
-
-/* Links inside the dropdown */
-.modified-dropdown-content button {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-	z-index:1;
-	border-radius: 20px;
-}
-
-/* Change color of dropdown links on hover */
-.modified-dropdown-content button:hover {background-color: #FFFFFF; z-index:1;}
 
 /* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
 .show {display:block;z-index:1;}

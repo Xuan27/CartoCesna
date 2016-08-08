@@ -35,13 +35,17 @@ function deleteRectangle()
 	else
 		return null;
 }
+//Global Variable that will hold the Marker Cluster layer
+var Clust = "";
 
 //This function is called when the user hits the "Submit Query" button. When this function is called
 //it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
 //queryObject contains all the information the php script will need to execute the desired query on our database.
 //On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter.
+
 function submitQuery(boundingBox)
 {	
+	
 	var authorSQL = generateAuthorInputSQLStatement();
 
 	if(tempRectangle == null)
@@ -50,7 +54,7 @@ function submitQuery(boundingBox)
 		for(var i = rectangleArray.length; i > 0; i--)
 		{
 			map.removeLayer(rectangleArray[i-1]);
-			map.removeLayer(markerArray[i-1]);
+			map.removeLayer(Clust);
 		}
 		rectangleArray = [];
 		markerArray = [];
@@ -60,7 +64,7 @@ function submitQuery(boundingBox)
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
 		map.removeLayer(rectangleArray[i]);
-		map.removeLayer(markerArray[i]);
+		map.removeLayer(Clust);
 	}
 	rectangleArray = [];
 	markerArray = [];
@@ -75,7 +79,8 @@ function submitQuery(boundingBox)
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
 		map.removeLayer(rectangleArray[i]);
-		map.removeLayer(markerArray[i]);
+		map.removeLayer(Clust);
+		
 	}
 	
 	$.ajax({
@@ -89,7 +94,7 @@ function submitQuery(boundingBox)
 				document.getElementById("subHeader").innerHTML = "documents found: 0";
 				return;				
 			}
-			drawResults(JSON.parse(data));
+			Clust = drawResults(JSON.parse(data));
 			displayLinks(JSON.parse(data));
 		}
 	});
@@ -97,8 +102,12 @@ function submitQuery(boundingBox)
 
 //This function is called by submitQuery() and takes the results from the AJAX call in submitQuery as a parameter.
 //Using this information from the paramter "results", the function draws all the markers, rectangles, and creates click events for them. 
+
 function drawResults(results)
-{
+{	
+	var markerCluster = new L.markerClusterGroup({
+			spiderLegPolylineOptions: {weight: 3, color:"#", opacity: 0.25}
+		});
 	Maki_Icon = icon = L.MakiMarkers.icon({color: "#FF0000" , size: "m"});
 	Maki_Icon = defaultIcon = L.MakiMarkers.icon({color: "#58d68d" , size: "m"});
 	//var rectangleArray = new Array();
@@ -128,7 +137,7 @@ function drawResults(results)
 		
 		//adds marker to the map 
 		markerArray.push(marker);	
-		map.addLayer(markerArray[i]);
+		//map.addLayer(markerArray[i]);
 		table = document.getElementById("resultsTable");
 		
 		//creates onclick event for the marker
@@ -152,7 +161,12 @@ function drawResults(results)
 			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs(), {padding: [50, 50]}, {animate: true});
 		});
 
+		markerCluster.addLayer(markerArray[i]);
+		console.log(markerCluster);
+		
 	}
+map.addLayer(markerCluster);
+	return markerCluster;
 }
 
 //This function takes the results from submitQuery.php as a paramter, and uses the information to create our results table.
