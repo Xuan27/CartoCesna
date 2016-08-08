@@ -1,3 +1,5 @@
+# This script is used to create a sample database for the Bando-Query app from a directory of geotiffs
+
 import json
 from osgeo import gdal 
 import os
