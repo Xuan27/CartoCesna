@@ -1,12 +1,12 @@
 <?php
-$diagonalCoords = json_decode($_POST['diagonalCoords']);
-$x1 = $diagonalCoords -> x1;
-$y1 = $diagonalCoords -> y1;
-$x2 = $diagonalCoords -> x2;
-$y2 = $diagonalCoords -> y2;
-$spatialQuerySelection = $diagonalCoords -> spatialQuerySelection;
-$dateQuerySQL = $diagonalCoords -> dateQuerySQL;
-$authorSQL = $diagonalCoords -> authorSQL;
+$queryObject = json_decode($_POST['queryObject']);
+$x1 = $queryObject -> x1;
+$y1 = $queryObject -> y1;
+$x2 = $queryObject -> x2;
+$y2 = $queryObject -> y2;
+$spatialQuerySelection = $queryObject -> spatialQuerySelection;
+$dateQuerySQL = $queryObject -> dateQuerySQL;
+$authorSQL = $queryObject -> authorSQL;
 
 $servername = "localhost";
 $username = "root";
