@@ -1,13 +1,13 @@
 //Global Variables
-var queryRectangle = 0;												//stores the current user drawn rectangle, used to query that area
-var rectangleArray = new Array(); 								//contains all the rectangles created from a succesful query
-var markerArray = new Array();									//contains all the markers created from a succesful query
-var spatialQuerySelection = "intersects";					//string of used to decide what spatial query technique will be used 
-var dateQuerySelection = "allYears";						//string used to decide what date query technique will be used 
-var dateQuerySQL = "";										//string of SQL statement to refine search by date
-var highlight = {color: "#FF0000", weight: 1};			//higlight properties of markers/rectangles.
-var defaultColor = {color: "#58d68d", weight: 1};		//default properties of markers/rectangles.
-var Clust = "";														//Global Variable that will hold the Marker Cluster layer
+var queryRectangle = 0;															//stores the current user drawn rectangle, used to query that area
+var rectangleArray = new Array(); 											//contains all the rectangles created from a succesful query
+var markerArray = new Array();													//contains all the markers created from a succesful query
+var spatialQuerySelection = "intersects";										//string of used to decide what spatial query technique will be used 
+var dateQuerySelection = "allYears";											//string used to decide what date query technique will be used 
+var dateQuerySQL = "";															//string of SQL statement to refine search by date
+var highlight = {fillOpacity: .1, color: "#FF0000", weight: 1};			//higlight properties of markers/rectangles.
+var defaultColor = {fillOpacity:0, color: "#28b463", weight: 3};		//default properties of markers/rectangles.
+var Clust = "";																			//Global Variable that will hold the Marker Cluster layer
 
 //This function is called when the user hits the "Submit Query" button. When this function is called
 //it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
@@ -87,7 +87,7 @@ function drawResults(results)
 	{	
 		//creates rectangle object 
 		var rectangle = L.rectangle([[results[i].y1, results[i].x1],[results[i].y3, results[i].x3]],
-												{fillOpacity: .05, color: "#58d68d", weight: 3});
+												{fillOpacity: 0, color: "#28b463 ", weight: 3});
 		
 		//adds rectangle to map 
 		rectangleArray.push(rectangle);
@@ -128,6 +128,7 @@ function drawResults(results)
 			
 			highlightTable(popup.getContent());
 			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs(), {padding: [50, 50]}, {animate: true});
+
 		});
 
 		markerCluster.addLayer(markerArray[i]);
@@ -296,6 +297,13 @@ $( function() {
 	" - " + $( "#slider-range" ).slider( "values", 1 ) );
 });
 
+//This function fits the extent of the viewer to show all the results rectangles 
+function fitExtentToResults()
+{
+	var group = new L.featureGroup(rectangleArray);
+	map.fitBounds(group.getBounds());
+}
+
 //Object Construction Functions
 function addQueryObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
 {
@@ -313,6 +321,4 @@ function queryObjectConstructor(x1, y1, x2, y2, spatialQuerySelection, dateQuery
 	this.dateQuerySQL = dateQuerySQL;
 	this.authorSQL = authorSQL;
 }
-
-
 
