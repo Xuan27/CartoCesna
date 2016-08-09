@@ -1,58 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
-<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
-<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
-<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>
-
-<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="../Javascript/Spatial_Query.js"></script>
-<script src = "../Javascript/leaflet.draw.js"></script>
-<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
-<script src="../Javascript/l.control.geosearch.js"></script>
-<script src="../Javascript/l.geosearch.provider.esri.js"></script>
-<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
-<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
-  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
-  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-  <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script> 
-
-<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
-<link href='../CSS/MarkerCluster.css' rel='stylesheet' />
-
-
+	<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
+	<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
+	<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
+	<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>
+	<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="../Javascript/Spatial_Query.js"></script>
+	<script src = "../Javascript/leaflet.draw.js"></script>
+	<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
+	<script src="../Javascript/l.control.geosearch.js"></script>
+	<script src="../Javascript/l.geosearch.provider.esri.js"></script>
+	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script> 
+	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
+	<link href='../CSS/MarkerCluster.css' rel='stylesheet' />
 </head>
 
-  <script>
-  $( function() {
-    $( "#slider-range" ).slider({
-      range: true,
-      min: 1800,
-      max: 2016,
-      values: [ 1800, 2016 ],
-      slide: function( event, ui ) {
-        $( "#amount" ).val( " " + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
-      },
-	  change: function(event, ui){
-		submitQuery(tempRectangle);
-	  }
-    });
-    $( "#amount" ).val( " " + $( "#slider-range" ).slider( "values", 0 ) +
-      " - " + $( "#slider-range" ).slider( "values", 1 ) );
-  });
-	
-  </script>
-</head>
 <body>
 
 <body bgcolor = "#e5f1fd" onload = "populateYearSelector()">
 </div>
 
 <div id = 'title'>BANDO-QUERY</div>
-
-<!-- BUTTONS -->
 
 <!-- DROPDOWN MENUS (this divs in this section can definiately be improved I am bad at html formatting still) -->
 <div id = "dropdownOptions">
@@ -68,7 +42,7 @@
  <div class="dropdown">
   <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Advanced Search</button>
   <div id="queryDropdownContent" class="modified-dropdown-content">
-	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px' onchange = 'submitQuery(tempRectangle)'><br>
+	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px' onchange = 'submitQuery(queryRectangle)'><br>
 	<br>Document Name: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Library Index:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Company Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
@@ -83,7 +57,6 @@
 
 </div>
 </div>
-
 
 <!-- MAP VIEWER -->
 <div id="mapId">
@@ -102,12 +75,6 @@
 		}).addTo(map);
 
 	Maki_Icon = tempIcon = L.MakiMarkers.icon({color: "#33c1ff", size: "m"});
-	
-	var markerCount = 0; // number of markers currently placed on slippy map
-	var rectangleCount = 0; // number of rectangles currently placed on the slippy map
-	var rectangleCoords = new Array(); // stores coordinates of created rectangles
-	var tempRectangleArray = new Array(); // stores rectangle features 
-	var tempMarkerArray = new Array(); // stores the marker features 
 
 //Variable that contains the rectangle layer that will be modified with the draw control 
 var drawItems = new L.FeatureGroup();
@@ -170,8 +137,8 @@ map.on("draw:created", function(e){
 		SouthWestLng = Coords._southWest.lng;
 		SouthWestLat = Coords._southWest.lat;
 		console.log(Coords);
-	    tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);	
-		submitQuery(tempRectangle);
+	    queryRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);	
+		submitQuery(queryRectangle);
 	}
 	drawItems.addLayer(layer);
 });
@@ -183,9 +150,9 @@ map.on("draw:deleted", function(e){
 			if (Deleted_Layers.length >= 1){
 				map.removeControl(editControl)
 				map.addControl(geometryControl);
-				delete tempRectangle;
-				tempRectangle = null;
-				submitQuery(tempRectangle);
+				delete queryRectangle;
+				queryRectangle = null;
+				submitQuery(queryRectangle);
 			}
 		})
 
@@ -201,8 +168,8 @@ map.on('draw:edited', function (e) {
 			SouthWestLng = Coords._southWest.lng;
 			SouthWestLat = Coords._southWest.lat;
 			console.log(Coords);
-			tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
-			submitQuery(tempRectangle);
+			queryRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
+			submitQuery(queryRectangle);
 
     });
 })	

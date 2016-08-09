@@ -1,6 +1,7 @@
 //Global Variables
-rectangleArray = new Array(); 								//contains all the rectangles created from a succesful query
-markerArray = new Array();									//contains all the markers created from a succesful query
+var queryRectangle = 0;												//stores the current user drawn rectangle, used to query that area
+var rectangleArray = new Array(); 								//contains all the rectangles created from a succesful query
+var markerArray = new Array();									//contains all the markers created from a succesful query
 var spatialQuerySelection = "intersects";					//string of used to decide what spatial query technique will be used 
 var dateQuerySelection = "allYears";						//string used to decide what date query technique will be used 
 var dateQuerySQL = "";										//string of SQL statement to refine search by date
@@ -8,46 +9,16 @@ var highlight = {color: "#FF0000", weight: 1};			//higlight properties of marker
 var defaultColor = {color: "#58d68d", weight: 1};		//default properties of markers/rectangles.
 var Clust = "";														//Global Variable that will hold the Marker Cluster layer
 
-//This function is used to delete the active rectangle that the user has drawn.
-//This function is currently not in use, However I'm leaving it here in case in the future the two click method
-//of drawing the query bounding box is implemented.
-function deleteRectangle()
-{	
-	if(markerCount == 2)
-	{
-		map.removeLayer(tempRectangleArray[tempRectangleArray.length-1]);
-		tempRectangleArray = [];
-		rectangleCoords.splice(rectangleCount-1, 2);
-		rectangleCount--;
-		
-		map.removeLayer(tempMarkerArray[markerCount-1]);
-		map.removeLayer(tempMarkerArray[markerCount-2]);
-		tempMarkerArray.splice(markerCount-2, 2);
-		markerCount = markerCount-2;
-	}
-	else if(markerCount == 1)
-	{
-		rectangleCoords.splice(0, 1)
-		
-		map.removeLayer(tempMarkerArray[markerCount-1]);
-		tempMarkerArray.splice(-1,1 );
-		markerCount--;
-	}
-	else
-		return null;
-}
-
 //This function is called when the user hits the "Submit Query" button. When this function is called
 //it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
 //queryObject contains all the information the php script will need to execute the desired query on our database.
 //On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter.
-
-function submitQuery(boundingBox)
+function submitQuery(queryRectangle)
 {	
 	getDateRange();
 	var authorSQL = generateAuthorInputSQLStatement();
 
-	if(tempRectangle == null)
+	if(queryRectangle == null)
 	{
 		deleteTable("resultsTable");
 		for(var i = rectangleArray.length; i > 0; i--)
@@ -68,12 +39,12 @@ function submitQuery(boundingBox)
 	rectangleArray = [];
 	markerArray = [];
 	
-	queryObject = addQueryObject(boundingBox.getBounds()._southWest.lat,
-														boundingBox.getBounds()._southWest.lng, 
-														boundingBox.getBounds()._northEast.lat, 
-														boundingBox.getBounds()._northEast.lng,
+	queryObject = addQueryObject(queryRectangle.getBounds()._southWest.lat,
+														queryRectangle.getBounds()._southWest.lng, 
+														queryRectangle.getBounds()._northEast.lat, 
+														queryRectangle.getBounds()._northEast.lng,
 														spatialQuerySelection, dateQuerySQL, authorSQL);
-	deleteRectangle();
+
 	deleteTable("resultsTable");
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
@@ -101,7 +72,6 @@ function submitQuery(boundingBox)
 
 //This function is called by submitQuery() and takes the results from the AJAX call in submitQuery as a parameter.
 //Using this information from the paramter "results", the function draws all the markers, rectangles, and creates click events for them. 
-
 function drawResults(results)
 {	
 	var markerCluster = new L.markerClusterGroup({
@@ -281,17 +251,7 @@ function spatialQueryOptions(selection)
 		document.getElementById("intersects").innerHTML = "Intersect";
 		document.getElementById("containsCentroid").innerHTML = "Contains Centroid &#10004;";
 	}
-	submitQuery(tempRectangle);
-}
-
-//Creates the drop down menu for the date selector.
-function populateYearSelector()
-{
-	var yearField = document.getElementById('year');
-	for(var i = 0; i <= 216; i++)
-	{
-		yearField.options[i] = new Option(i + 1800);
-	}
+	submitQuery(queryRectangle);
 }
 
 //Same as spatialQueryOptions but for the date dropdown menu.
@@ -317,6 +277,24 @@ function generateAuthorInputSQLStatement()
 	authorSQL = "AND Author LIKE '" + document.getElementById("authorInput").value + "'";
 	return authorSQL;
 }
+
+//This function is for the date slider interface. It submits a query on any change event acted on it. 
+$( function() {
+	$( "#slider-range" ).slider({
+		range: true,
+		min: 1800,
+		max: 2016,
+		values: [ 1800, 2016 ],
+		slide: function( event, ui ) {
+			$( "#amount" ).val( " " + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+		},
+		change: function(event, ui){
+			submitQuery(queryRectangle);
+		}
+	});
+	$( "#amount" ).val( " " + $( "#slider-range" ).slider( "values", 0 ) +
+	" - " + $( "#slider-range" ).slider( "values", 1 ) );
+});
 
 //Object Construction Functions
 function addQueryObject(x1, y1, x2, y2, spatialQuerySelection, dateQuerySQL, authorSQL)
