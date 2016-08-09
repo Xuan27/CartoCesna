@@ -6,6 +6,7 @@ var dateQuerySelection = "allYears";						//string used to decide what date quer
 var dateQuerySQL = "";										//string of SQL statement to refine search by date
 var highlight = {color: "#FF0000", weight: 1};			//higlight properties of markers/rectangles.
 var defaultColor = {color: "#58d68d", weight: 1};		//default properties of markers/rectangles.
+var Clust = "";														//Global Variable that will hold the Marker Cluster layer
 
 //This function is used to delete the active rectangle that the user has drawn.
 //This function is currently not in use, However I'm leaving it here in case in the future the two click method
@@ -35,8 +36,6 @@ function deleteRectangle()
 	else
 		return null;
 }
-//Global Variable that will hold the Marker Cluster layer
-var Clust = "";
 
 //This function is called when the user hits the "Submit Query" button. When this function is called
 //it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
@@ -45,7 +44,7 @@ var Clust = "";
 
 function submitQuery(boundingBox)
 {	
-	
+	getDateRange();
 	var authorSQL = generateAuthorInputSQLStatement();
 
 	if(tempRectangle == null)
@@ -282,6 +281,7 @@ function spatialQueryOptions(selection)
 		document.getElementById("intersects").innerHTML = "Intersect";
 		document.getElementById("containsCentroid").innerHTML = "Contains Centroid &#10004;";
 	}
+	submitQuery(tempRectangle);
 }
 
 //Creates the drop down menu for the date selector.
@@ -295,46 +295,14 @@ function populateYearSelector()
 }
 
 //Same as spatialQueryOptions but for the date dropdown menu.
-function dateQueryOptions(selection)
+function getDateRange()
 {
-	dateQuerySelection = selection;
+	var values = $( "#slider-range" ).slider( "values" );
+	min = values[0];
+	max = values[1];
 	
-	if(selection == "allYears")
-	{
-		dateQuerySQL = "";
-		document.getElementById("dateQueryDropdown").innerHTML = "All Years";
-		document.getElementById("allYears").innerHTML = "All Years &#10004;";
-		document.getElementById("before").innerHTML = "Before";
-		document.getElementById("during").innerHTML = "During";
-		document.getElementById("after").innerHTML = "After";
-	}
-	if(selection  == "before")
-	{
-		document.getElementById("dateQueryDropdown").innerHTML = "Before";
-		dateQuerySQL = "AND LEFT(table1.Date , 4) < " + document.getElementById("year").value;
-		document.getElementById("allYears").innerHTML = "All Years" 
-		document.getElementById("before").innerHTML = "Before &#10004;";
-		document.getElementById("during").innerHTML = "During";
-		document.getElementById("after").innerHTML = "After";
-	}
-	if(selection  == "during")
-	{
-		document.getElementById("dateQueryDropdown").innerHTML = "During";
-		dateQuerySQL = "AND LEFT(table1.Date , 4) = " + document.getElementById("year").value;
-		document.getElementById("allYears").innerHTML = "All Years" 
-		document.getElementById("before").innerHTML = "Before";
-		document.getElementById("during").innerHTML = "During &#10004";
-		document.getElementById("after").innerHTML = "After";
-	}
-	if(selection  == "after")
-	{
-		document.getElementById("dateQueryDropdown").innerHTML = "After";
-		dateQuerySQL = "AND LEFT(table1.Date , 4) > " + document.getElementById("year").value;
-		document.getElementById("allYears").innerHTML = "All Years" 
-		document.getElementById("before").innerHTML = "Before ";
-		document.getElementById("during").innerHTML = "During";
-		document.getElementById("after").innerHTML = "After &#10004";
-	}
+	dateQuerySQL = "AND LEFT(table1.Date, 4) >= '" + min + "' AND LEFT(table1.Date, 4) <= '" + max + "'";
+
 }
 
 //Currently is used just to implement the ability to refine search results by author but 

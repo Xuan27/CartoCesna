@@ -9,9 +9,9 @@ $dateQuerySQL = $queryObject -> dateQuerySQL;
 $authorSQL = $queryObject -> authorSQL;
 
 $servername = "localhost";
-$username = "root";
-$password = "";
-$database = "spatial_query";
+$username = "neilgibeaut";
+$password = "Sadiedog1995";
+$database = "spatialsearch_db";
 
 //Create connection
 $conn = new mysqli($servername, $username, $password, $database);

@@ -9,7 +9,7 @@ max-width: 100%;
     top: 8%;
     left: 1%;
     width: 68%;
-    height: 86%;
+    height: 90%;
 	z-index:-1;
  }
  
@@ -17,7 +17,7 @@ max-width: 100%;
 	position: absolute;
 	top:8%;
 	left:70%;
-	height: 86%;
+	height: 90%;
 	width:29%;
 	box-shadow: 1px 1px 10px 3px #423a3a;
 	border-radius: 20px;
@@ -398,7 +398,11 @@ left:100px;
 	background-color:#1e83a0;
 }
 
-
+#slider-range{
+	left:10px;
+	position:absolute;
+	width:120px;
+}
 
 
 

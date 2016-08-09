@@ -14,7 +14,10 @@
 <script src="../Javascript/l.control.geosearch.js"></script>
 <script src="../Javascript/l.geosearch.provider.esri.js"></script>
 <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
-<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' /> 
+<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script> 
 
 <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
 <link href='../CSS/MarkerCluster.css' rel='stylesheet' />
@@ -22,15 +25,34 @@
 
 </head>
 
+  <script>
+  $( function() {
+    $( "#slider-range" ).slider({
+      range: true,
+      min: 1800,
+      max: 2016,
+      values: [ 1800, 2016 ],
+      slide: function( event, ui ) {
+        $( "#amount" ).val( " " + ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+      },
+	  change: function(event, ui){
+		submitQuery(tempRectangle);
+	  }
+    });
+    $( "#amount" ).val( " " + $( "#slider-range" ).slider( "values", 0 ) +
+      " - " + $( "#slider-range" ).slider( "values", 1 ) );
+  });
+	
+  </script>
+</head>
+<body>
+
 <body bgcolor = "#e5f1fd" onload = "populateYearSelector()">
 </div>
 
 <div id = 'title'>BANDO-QUERY</div>
 
 <!-- BUTTONS -->
-<div id = 'buttons'>
-<button id = "submitQuery" onclick = "submitQuery(tempRectangle)"> Submit Query</button>
-</div>
 
 <!-- DROPDOWN MENUS (this divs in this section can definiately be improved I am bad at html formatting still) -->
 <div id = "dropdownOptions">
@@ -44,32 +66,24 @@
 </div>
 
  <div class="dropdown">
-  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Query Options</button>
+  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Advanced Search</button>
   <div id="queryDropdownContent" class="modified-dropdown-content">
-	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px' onchange = 'submitQuery(tempRectangle)'><br>
 	<br>Document Name: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Library Index:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Company Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Customer Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br><br>
+			<p>
+				<label for="amount">Date:</label>	
+				<input type="text" id="amount" readonly style="border:0; color:#0099FF; font-weight:bold;">
+				<div id="slider-range"></div><br>
+			</p>
+	</div>
 </div>
 
- <div class="dropdown">
-  <button onclick="openDropdown('dateDropdownContent')" class="dropbtn" id = "dateQueryDropdown">Date Options</button>
-  <div id="dateDropdownContent" class="dropdown-content">
-	<button id = "allYears" onclick = "dateQueryOptions(this.id)">All Years &#10004</button>
-    <button id = "before" onclick = "dateQueryOptions(this.id)">Before</button>
-    <button id = "during" onclick = "dateQueryOptions(this.id)">During</button>
-    <button id = "after" onclick = "dateQueryOptions(this.id)">After</button>
-  </div>
+</div>
+</div>
 
-<select name="year" id = "year" onchange = "dateQueryOptions(dateQuerySelection)">
-	<option> - Year - </option>
-</select>
-</div>
-</div>
-</div>
-</div>
-</div>
 
 <!-- MAP VIEWER -->
 <div id="mapId">
@@ -157,6 +171,7 @@ map.on("draw:created", function(e){
 		SouthWestLat = Coords._southWest.lat;
 		console.log(Coords);
 	    tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);	
+		submitQuery(tempRectangle);
 	}
 	drawItems.addLayer(layer);
 });
@@ -170,6 +185,7 @@ map.on("draw:deleted", function(e){
 				map.addControl(geometryControl);
 				delete tempRectangle;
 				tempRectangle = null;
+				submitQuery(tempRectangle);
 			}
 		})
 
@@ -185,7 +201,8 @@ map.on('draw:edited', function (e) {
 			SouthWestLng = Coords._southWest.lng;
 			SouthWestLat = Coords._southWest.lat;
 			console.log(Coords);
-	    tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
+			tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
+			submitQuery(tempRectangle);
 
     });
 })	
@@ -219,6 +236,8 @@ map.on('draw:edited', function (e) {
 		</th>
 </table>
 </div>
+
+
 
 </body>
 </html> 
