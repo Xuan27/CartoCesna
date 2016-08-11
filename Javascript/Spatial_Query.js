@@ -15,8 +15,11 @@ function submitQuery(queryRectangle)
 {	
 	//gets string for sql statement for the date range
 	var dateQuerySQL = getDateRange();
-	var authorSQL = generateAuthorInputSQLStatement();
+	var authorSQL = getAuthorInput();
 	
+	//if no rectangle is drawn this executes a search that returns nothing. 
+	//This can be changed to search for all areas on the map,
+	//but I ran out of time before implementing it - Neil
 	if(queryRectangle == null)
 	{
 		deleteTable("resultsTable");
@@ -30,26 +33,24 @@ function submitQuery(queryRectangle)
 		return;
 	}
 
+	//removes rectangles and clusters from map from previous query results 
 	for(var i = 0; i < rectangleArray.length; i++)
 	{
 		map.removeLayer(rectangleArray[i]);
 		map.removeLayer(Clust);
 	}
+	
+	//depopulates rectangleArray, markerArray, and resultsTable from previous query results
 	rectangleArray = [];
 	markerArray = [];
+	deleteTable("resultsTable");
 	
+	//creates an instance of "queryObject" to be sent to submitQuery.php
 	queryObject = addQueryObject(queryRectangle.getBounds()._southWest.lat,
 														queryRectangle.getBounds()._southWest.lng, 
 														queryRectangle.getBounds()._northEast.lat, 
 														queryRectangle.getBounds()._northEast.lng,
 														spatialQuerySelection, dateQuerySQL, authorSQL);
-
-	deleteTable("resultsTable");
-	for(var i = 0; i < rectangleArray.length; i++)
-	{
-		map.removeLayer(rectangleArray[i]);
-		map.removeLayer(Clust);
-	}
 	
 	$.ajax({
 		type: 'post',
@@ -62,7 +63,7 @@ function submitQuery(queryRectangle)
 				return;				
 			}
 			Clust = drawResults(JSON.parse(data));
-			displayLinks(JSON.parse(data));
+			createTable(JSON.parse(data));
 		}
 	});
 }
@@ -109,10 +110,14 @@ function drawResults(results)
 		//creates onclick event for the marker
 		markerArray[i].on('click', function(e)
 		{
+			//immediately close popup because its for internal use 
 			this.closePopup();	
-		
+			
+			//get popup for marker that was clicked on the content of the
+			//popup is used to determine the markers index postion in markerArray
 			var popup = this.getPopup();
-
+			
+			//reset all markers and rectangles to default color
 			for(var i = 0; i < markerArray.length; i++)
 			{
 				rectangleArray[i].setStyle(defaultColor);
@@ -120,10 +125,14 @@ function drawResults(results)
 				table.rows[i+1].style.backgroundColor = "#e5f1fd";
 			}
 			
+			//highlight marker and corresponding rectangle in red
 			rectangleArray[popup.getContent()].setStyle(highlight)
 			this.setIcon(icon);
 			
+			//highlights table row that corresponds to index number of clicked marker 
 			highlightTable(popup.getContent());
+			
+			//zoom viewer to bounds of rectangle that correspond to clicked marker 
 			map.fitBounds(rectangleArray[popup.getContent()].getLatLngs(), {padding: [50, 50]}, {animate: true});
 
 		});
@@ -137,11 +146,11 @@ map.addLayer(markerCluster);
 }
 
 // This function takes the results from submitQuery.php as a paramter, and uses the information to create our results table.
-function displayLinks(results)
+function createTable(results)
 {
 	table = document.getElementById("resultsTable");
 	
-	//iterates through every instance of the results array 
+	//iterates through every instance of the results array added 
 	for(var i = 0; i < results.length; i++)
 	{
 		var fileName = results[i].fileName;
@@ -150,10 +159,12 @@ function displayLinks(results)
 		var cell1 = row.insertCell(1);
 		var cell2 = row.insertCell(2);
 		var cell3 = row.insertCell(3);
+		var cell4 = row.insertCell(4);
 		cell0.innerHTML = results[i].Author;
-		cell1.innerHTML = fileName.substring(0, fileName.length-4);
-		cell2.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>";	
-		cell3.innerHTML = "<button id = 'showOnMapButton' onclick = 'highlightMapMarker(" + i + ")'>Show On Map</button>";
+		cell1.innerHTML = fileName.substring(0, fileName.length-4);	
+		cell2.innerHTML = results[i].Date;
+		cell3.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>";	
+		cell4.innerHTML = "<button id = 'showOnMapButton' onclick = 'highlightMapMarker(" + i + ")'>Show On Map</button>";
 	}
 	// writes the number of documents found to the results page
 	document.getElementById("subHeader").innerHTML = "documents found: " + results.length;
@@ -162,7 +173,7 @@ function displayLinks(results)
 	$("#resultsTable").trigger("update");
 }
 
-/* This function is used by the "Show On Map" button created by displayLinks(). 
+/* This function is used by the "Show On Map" button created by createTable(). 
 The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
 to the extent of its corresponding rectangle while also highlighting both of them in red. */
 function highlightMapMarker(index)
@@ -185,7 +196,8 @@ The purpose of this function is to highlight the entry in the results table that
 results marker that was clicked on. */
 function highlightTable(index)
 { 
-	index++;
+	index++; //index has to be incremented to acount for table headers
+	
 	table = document.getElementById("resultsTable");
 	table.rows[index].style.backgroundColor = '#FFFFE0';
 	
@@ -197,7 +209,7 @@ function deleteTable(id)
 {
 	var table = document.getElementById(id);
 	
-	//recursive base case 
+	//base case 
 	if(table.rows.length == 1)
 		return;
 	
@@ -257,7 +269,7 @@ function spatialQueryOptions(selection)
 	submitQuery(queryRectangle);
 }
 
-// Same as spatialQueryOptions but for the date dropdown menu.
+// gets values from the date slider and createas an SQL statement string accordingly 
 function getDateRange()
 {
 	var values = $( "#slider-range" ).slider( "values" );
@@ -270,7 +282,7 @@ function getDateRange()
 
 // Currently is used just to implement the ability to refine search results by author but 
 // should be expanded to handle all text fields that we want the user to be able to refine there search by.
-function generateAuthorInputSQLStatement()
+function getAuthorInput()
 {
 	if(document.getElementById("authorInput").value == "")
 	{
