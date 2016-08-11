@@ -3,21 +3,20 @@ var queryRectangle = 0;															//stores the current user drawn rectangle,
 var rectangleArray = new Array(); 											//contains all the rectangles created from a succesful query
 var markerArray = new Array();													//contains all the markers created from a succesful query
 var spatialQuerySelection = "intersects";										//string of used to decide what spatial query technique will be used 
-var dateQuerySelection = "allYears";											//string used to decide what date query technique will be used 
-var dateQuerySQL = "";															//string of SQL statement to refine search by date
 var highlight = {fillOpacity: .1, color: "#FF0000", weight: 1};			//higlight properties of markers/rectangles.
 var defaultColor = {fillOpacity:0, color: "#28b463", weight: 3};		//default properties of markers/rectangles.
 var Clust = "";																			//Global Variable that will hold the Marker Cluster layer
 
-//This function is called when the user hits the "Submit Query" button. When this function is called
-//it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
-//queryObject contains all the information the php script will need to execute the desired query on our database.
-//On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter.
+/* This function is called when the user hits the "Submit Query" button. When this function is called
+it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
+queryObject contains all the information the php script will need to execute the desired query on our database.
+On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter. */
 function submitQuery(queryRectangle)
 {	
-	getDateRange();
+	//gets string for sql statement for the date range
+	var dateQuerySQL = getDateRange();
 	var authorSQL = generateAuthorInputSQLStatement();
-
+	
 	if(queryRectangle == null)
 	{
 		deleteTable("resultsTable");
@@ -50,7 +49,6 @@ function submitQuery(queryRectangle)
 	{
 		map.removeLayer(rectangleArray[i]);
 		map.removeLayer(Clust);
-		
 	}
 	
 	$.ajax({
@@ -60,7 +58,6 @@ function submitQuery(queryRectangle)
 		success: function(data){
 			if(data == "0 results[]")
 			{
-				alert("No Matches Found");
 				document.getElementById("subHeader").innerHTML = "documents found: 0";
 				return;				
 			}
@@ -70,8 +67,8 @@ function submitQuery(queryRectangle)
 	});
 }
 
-//This function is called by submitQuery() and takes the results from the AJAX call in submitQuery as a parameter.
-//Using this information from the paramter "results", the function draws all the markers, rectangles, and creates click events for them. 
+// This function is called by submitQuery() and takes the results from the AJAX call in submitQuery as a parameter.
+// Using this information from the paramter "results", the function draws all the markers, rectangles, and creates click events for them. 
 function drawResults(results)
 {	
 	var markerCluster = new L.markerClusterGroup({
@@ -139,7 +136,7 @@ map.addLayer(markerCluster);
 	return markerCluster;
 }
 
-//This function takes the results from submitQuery.php as a paramter, and uses the information to create our results table.
+// This function takes the results from submitQuery.php as a paramter, and uses the information to create our results table.
 function displayLinks(results)
 {
 	table = document.getElementById("resultsTable");
@@ -148,7 +145,7 @@ function displayLinks(results)
 	for(var i = 0; i < results.length; i++)
 	{
 		var fileName = results[i].fileName;
-		var row = table.insertRow(-1)
+		var row = table.getElementsByTagName('tbody')[0].insertRow(-1)
 		var cell0 = row.insertCell(0);
 		var cell1 = row.insertCell(1);
 		var cell2 = row.insertCell(2);
@@ -158,12 +155,16 @@ function displayLinks(results)
 		cell2.innerHTML = "<a href = '" + results[i].kmz + "'>" + "kmz" + "</a>" + ", <a href = '" + results[i].GeoTIFF + "'>" + "GeoTIFF" + "</a>";	
 		cell3.innerHTML = "<button id = 'showOnMapButton' onclick = 'highlightMapMarker(" + i + ")'>Show On Map</button>";
 	}
+	// writes the number of documents found to the results page
 	document.getElementById("subHeader").innerHTML = "documents found: " + results.length;
+	
+	// this is required so that every time we recreate our table it is initialized to be sortable.
+	$("#resultsTable").trigger("update");
 }
 
-//This function is used by the "Show On Map" button created by displayLinks(). 
-//The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
-//to the extent of its corresponding rectangle while also highlighting both of them in red.
+/* This function is used by the "Show On Map" button created by displayLinks(). 
+The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
+to the extent of its corresponding rectangle while also highlighting both of them in red. */
 function highlightMapMarker(index)
 {
 	for(var i = 0; i < markerArray.length; i++)
@@ -179,18 +180,19 @@ function highlightMapMarker(index)
 	map.fitBounds(rectangleArray[index].getLatLngs(), {padding: [50, 50]}, {animate: true});
 }
 
-//This function is called within a results marker's click event created in drawResults().
-//The purpose of this function is to highlight the entry in the results table that corresponds to the
-//results marker that was clicked on.
+/* This function is called within a results marker's click event created in drawResults().
+The purpose of this function is to highlight the entry in the results table that corresponds to the
+results marker that was clicked on. */
 function highlightTable(index)
 { 
 	index++;
 	table = document.getElementById("resultsTable");
 	table.rows[index].style.backgroundColor = '#FFFFE0';
+	
 }
 
-//This function recursivly deletes the results table. This function is called when a query is submitted
-//to clear the slate from the old query so that they don't interfere with each other.
+// This function recursivly deletes the results table. This function is called when a query is submitted
+// to clear the slate from the old query so that they don't interfere with each other.
 function deleteTable(id)
 {
 	var table = document.getElementById(id);
@@ -206,12 +208,12 @@ function deleteTable(id)
 	deleteTable(id);
 }
 
-//This function is used by the dropdown menus when they are clicked on.
+// This function is used by the dropdown menus when they are clicked on.
 function openDropdown(id) {
     document.getElementById(id).classList.toggle("show");
 }
 
-//This function us used to close the dropdown menu if the user clicks outside of it
+// This function us used to close the dropdown menu if the user clicks outside of it
 window.onclick = function(event) {
   if (!event.target.matches('.dropbtn')) {
 
@@ -226,8 +228,8 @@ window.onclick = function(event) {
   }
 }
 
-//This function's purpose is to create our "spatialQuerySelection" variable that will be used by submitQuery().
-//It also adjusts the dropdown menu based on the selection made.
+// This function's purpose is to create our "spatialQuerySelection" variable that will be used by submitQuery().
+// It also adjusts the dropdown menu based on the selection made.
 function spatialQueryOptions(selection)
 {
 	spatialQuerySelection = selection;
@@ -255,7 +257,7 @@ function spatialQueryOptions(selection)
 	submitQuery(queryRectangle);
 }
 
-//Same as spatialQueryOptions but for the date dropdown menu.
+// Same as spatialQueryOptions but for the date dropdown menu.
 function getDateRange()
 {
 	var values = $( "#slider-range" ).slider( "values" );
@@ -263,11 +265,11 @@ function getDateRange()
 	max = values[1];
 	
 	dateQuerySQL = "AND LEFT(table1.Date, 4) >= '" + min + "' AND LEFT(table1.Date, 4) <= '" + max + "'";
-
+	return dateQuerySQL;
 }
 
-//Currently is used just to implement the ability to refine search results by author but 
-//should be expanded to handle all text fields that we want the user to be able to refine there search by.
+// Currently is used just to implement the ability to refine search results by author but 
+// should be expanded to handle all text fields that we want the user to be able to refine there search by.
 function generateAuthorInputSQLStatement()
 {
 	if(document.getElementById("authorInput").value == "")
@@ -279,7 +281,7 @@ function generateAuthorInputSQLStatement()
 	return authorSQL;
 }
 
-//This function is for the date slider interface. It submits a query on any change event acted on it. 
+// This function is for the date slider interface. It submits a query on any change event acted on it. 
 $( function() {
 	$( "#slider-range" ).slider({
 		range: true,
@@ -297,11 +299,31 @@ $( function() {
 	" - " + $( "#slider-range" ).slider( "values", 1 ) );
 });
 
-//This function fits the extent of the viewer to show all the results rectangles 
+// This function fits the extent of the viewer to show all the results rectangles 
 function fitExtentToResults()
 {
 	var group = new L.featureGroup(rectangleArray);
 	map.fitBounds(group.getBounds());
+}
+
+// The purpose of this function is to allow the user to toggle the size of the two viewer windows.
+// The dimensions that are set right now can be easily adjusted to whatever y'all decide on.
+function resizeResultsTable()
+{
+	if(document.getElementById('expandResults').style.visibility == "visible")
+	{
+		document.getElementById('results').setAttribute("style","width:70%; left:29%");
+		document.getElementById('mapId').setAttribute("style","width:27%");
+		document.getElementById('expandResults').style.visibility = 'hidden';
+		document.getElementById('shrinkResults').style.visibility = 'visible';		
+	}
+	else
+	{
+		document.getElementById('results').setAttribute("style","width:37%; left:62%");
+		document.getElementById('mapId').setAttribute("style","width:60%");
+		document.getElementById('expandResults').style.visibility = 'visible';
+		document.getElementById('shrinkResults').style.visibility = 'hidden';		
+	}
 }
 
 //Object Construction Functions

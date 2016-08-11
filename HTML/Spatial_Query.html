@@ -4,21 +4,24 @@
 	<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
 	<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
 	<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
-	<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>
+	<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>	
+	<link href='../CSS/MarkerCluster.css' rel='stylesheet' />	
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
+	
 	<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 	<script src="../Javascript/Spatial_Query.js"></script>
 	<script src = "../Javascript/leaflet.draw.js"></script>
 	<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
 	<script src="../Javascript/l.control.geosearch.js"></script>
 	<script src="../Javascript/l.geosearch.provider.esri.js"></script>
 	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
-	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
-	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
-	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script> 
 	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
-	<link href='../CSS/MarkerCluster.css' rel='stylesheet' />
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>	
+	<script type="text/javascript" src="../Javascript/jquery.tablesorter.min.js"></script> 
+	
 </head>
 
 <body>
@@ -180,6 +183,8 @@ map.on('draw:edited', function (e) {
 
 <!-- RESULTS TABLE -->
 <div id = "results">
+<button id = "expandResults"  onclick = "resizeResultsTable()" style = "visibility: visible">Expand Results</button>
+<button id = "shrinkResults"  onclick = "resizeResultsTable()" style = "visibility: hidden">Shrink Results</button>
 <h1 id = 'header'> RESULTS </h1>
 <h1 id = 'subHeader'>  </h1>
 <style type="text/css">
@@ -188,20 +193,32 @@ map.on('draw:edited', function (e) {
 .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-top-width:1px;border-bottom-width:1px;}
 .tg .tg-yw4l{vertical-align:top}
 </style>
-<table id = "resultsTable" class = "tg">
-		<th>
-			Author
-		</th>		
-		<th>
-			File Name
-		</th>	
-		<th>
-			Download Links
-		</th>
-		<th>
-		</th>
+<table id = "resultsTable" class = "tablesorter" style = "background-color:#e5f1fd" >
+<thead>
+<tr>	
+	<th>	Author</th>	
+	<th>	File Name	</th>	
+	<th>	Download Links</th>
+	<th>Show on Map</th>
+</tr>
+</thead>
+
+<tbody>
+
+</tbody>
+
 </table>
 </div>
+
+
+<script>
+
+$(document).ready(function() 
+    { 
+        $("#resultsTable").tablesorter(); 
+    } 
+);
+</script>
 
 
 

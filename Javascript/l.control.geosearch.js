@@ -53,7 +53,7 @@ L.Control.GeoSearch = L.Control.extend({
         link.href = '#';
 		link1.href = '#';
         link.title = this._config.searchLabel;
-		link1.title = "Zoom To Full Extent"
+		link1.title = "Zoom To Full Extent of Results"
 
         // set the link's icon to magnifying glass
         this.resetLink("glass");
