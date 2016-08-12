@@ -1,3 +1,5 @@
+/* Style sheet for Spatial_Query.html  */
+
 html, body {
 overflow-x : hidden;
 max-width: 100%;
@@ -124,13 +126,21 @@ max-width: 100%;
     transform: translate(-50%,-50%);
 }
 
-#resultsTable
-{
+#resultsTable{
 	position: absolute;
 	top: 10%;
 	left: 5%;
 	width:90%;
 	table-layout: fixed;
+}
+
+#keyWord{
+	position: absolute;
+	left:71.25%;
+	width: 18.5%;
+	z-index:2;
+	border-radius: 5px;
+	top: 4%;
 }
 
  /* Dropdown Button */
