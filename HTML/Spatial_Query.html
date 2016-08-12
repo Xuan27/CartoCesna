@@ -1,36 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
-<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
-<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
-<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>
-
-<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="../Javascript/Spatial_Query.js"></script>
-<script src = "../Javascript/leaflet.draw.js"></script>
-<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
-<script src="../Javascript/l.control.geosearch.js"></script>
-<script src="../Javascript/l.geosearch.provider.esri.js"></script>
-<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
-<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' /> 
-
-<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
-<link href='../CSS/MarkerCluster.css' rel='stylesheet' />
-
-
+	<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
+	<link rel="stylesheet" href= "../CSS/Spatial_Query.css"/>
+	<link rel="stylesheet" href= "../CSS/leaflet.draw.css"/>
+	<link rel="stylesheet" href= "../CSS/l.geosearch.css"/>	
+	<link href='../CSS/MarkerCluster.css' rel='stylesheet' />	
+	<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css">
+	
+	<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+	<script src="../Javascript/Spatial_Query.js"></script>
+	<script src = "../Javascript/leaflet.draw.js"></script>
+	<script src="../Javascript/Leaflet.MakiMarkers.js"></script>
+	<script src="../Javascript/l.control.geosearch.js"></script>
+	<script src="../Javascript/l.geosearch.provider.esri.js"></script>
+	<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/leaflet.markercluster.js'></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>	
+	<script type="text/javascript" src="../Javascript/jquery.tablesorter.min.js"></script> 
+	
 </head>
 
-<body bgcolor = "#e5f1fd" onload = "populateYearSelector()">
+<body>
+
+<body bgcolor = "#e5f1fd">
 </div>
 
 <div id = 'title'>BANDO-QUERY</div>
-
-<!-- BUTTONS -->
-<div id = 'buttons'>
-<button id = "submitQuery" onclick = "submitQuery(tempRectangle)"> Submit Query</button>
-</div>
 
 <!-- DROPDOWN MENUS (this divs in this section can definiately be improved I am bad at html formatting still) -->
 <div id = "dropdownOptions">
@@ -44,29 +43,19 @@
 </div>
 
  <div class="dropdown">
-  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Query Options</button>
+  <button onclick="openDropdown('queryDropdownContent')" class="dropbtn" id = "spatialQueryDropdown">Search Criteria</button>
   <div id="queryDropdownContent" class="modified-dropdown-content">
-	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
+	<br>Document Author: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px' onchange = 'submitQuery(queryRectangle)'><br>
 	<br>Document Name: <br><input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Library Index:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Company Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br>
 	<br>Customer Name:<br> <input type = 'text' id = 'authorInput' style = 'margin-left:5px'><br><br>
-</div>
-
- <div class="dropdown">
-  <button onclick="openDropdown('dateDropdownContent')" class="dropbtn" id = "dateQueryDropdown">Date Options</button>
-  <div id="dateDropdownContent" class="dropdown-content">
-	<button id = "allYears" onclick = "dateQueryOptions(this.id)">All Years &#10004</button>
-    <button id = "before" onclick = "dateQueryOptions(this.id)">Before</button>
-    <button id = "during" onclick = "dateQueryOptions(this.id)">During</button>
-    <button id = "after" onclick = "dateQueryOptions(this.id)">After</button>
-  </div>
-
-<select name="year" id = "year" onchange = "dateQueryOptions(dateQuerySelection)">
-	<option> - Year - </option>
-</select>
-</div>
-</div>
+			<p>
+				<label for="amount">Date:</label>	
+				<input type="text" id="amount" readonly style="border:0; color:#0099FF; font-weight:bold;">
+				<div id="slider-range"></div><br>
+			</p>
+	</div>
 </div>
 </div>
 </div>
@@ -78,7 +67,7 @@
 
 		L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g', {
 			maxZoom: 18,
-			attribution: 'TAMUCC CartoCesna',
+			attribution: 'TAMUCC Bando-Query',
 			id: 'mapbox.streets'
 		}).addTo(map);
 		
@@ -88,12 +77,6 @@
 		}).addTo(map);
 
 	Maki_Icon = tempIcon = L.MakiMarkers.icon({color: "#33c1ff", size: "m"});
-	
-	var markerCount = 0; // number of markers currently placed on slippy map
-	var rectangleCount = 0; // number of rectangles currently placed on the slippy map
-	var rectangleCoords = new Array(); // stores coordinates of created rectangles
-	var tempRectangleArray = new Array(); // stores rectangle features 
-	var tempMarkerArray = new Array(); // stores the marker features 
 
 //Variable that contains the rectangle layer that will be modified with the draw control 
 var drawItems = new L.FeatureGroup();
@@ -156,7 +139,8 @@ map.on("draw:created", function(e){
 		SouthWestLng = Coords._southWest.lng;
 		SouthWestLat = Coords._southWest.lat;
 		console.log(Coords);
-	    tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);	
+	    queryRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);	
+		submitQuery(queryRectangle);
 	}
 	drawItems.addLayer(layer);
 });
@@ -168,8 +152,9 @@ map.on("draw:deleted", function(e){
 			if (Deleted_Layers.length >= 1){
 				map.removeControl(editControl)
 				map.addControl(geometryControl);
-				delete tempRectangle;
-				tempRectangle = null;
+				delete queryRectangle;
+				queryRectangle = null;
+				submitQuery(queryRectangle);
 			}
 		})
 
@@ -185,7 +170,8 @@ map.on('draw:edited', function (e) {
 			SouthWestLng = Coords._southWest.lng;
 			SouthWestLat = Coords._southWest.lat;
 			console.log(Coords);
-	    tempRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
+			queryRectangle = L.rectangle([[Coords._northEast.lat, Coords._northEast.lng], [Coords._southWest.lat, Coords._southWest.lng]]);
+			submitQuery(queryRectangle);
 
     });
 })	
@@ -197,6 +183,8 @@ map.on('draw:edited', function (e) {
 
 <!-- RESULTS TABLE -->
 <div id = "results">
+<button id = "expandResults"  onclick = "resizeResultsTable()" style = "visibility: visible">Expand Results</button>
+<button id = "shrinkResults"  onclick = "resizeResultsTable()" style = "visibility: hidden">Shrink Results</button>
 <h1 id = 'header'> RESULTS </h1>
 <h1 id = 'subHeader'>  </h1>
 <style type="text/css">
@@ -205,20 +193,34 @@ map.on('draw:edited', function (e) {
 .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-top-width:1px;border-bottom-width:1px;}
 .tg .tg-yw4l{vertical-align:top}
 </style>
-<table id = "resultsTable" class = "tg">
-		<th>
-			Author
-		</th>		
-		<th>
-			File Name
-		</th>	
-		<th>
-			Download Links
-		</th>
-		<th>
-		</th>
+<table id = "resultsTable" class = "tablesorter" style = "background-color:#e5f1fd" >
+<thead>
+<tr>	
+	<th>	Author</th>	
+	<th>	File Name	</th>
+	<th>Date</th>	
+	<th>	Download Links</th>
+	<th>Show on Map</th>
+</tr>
+</thead>
+
+<tbody>
+
+</tbody>
+
 </table>
 </div>
+
+<script>
+	//initializes table as a sortable table
+	$(document).ready(function() 
+		{ 
+			$("#resultsTable").tablesorter(); 
+		} 
+	);
+</script>
+
+
 
 </body>
 </html> 
