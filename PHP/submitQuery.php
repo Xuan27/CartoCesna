@@ -12,6 +12,7 @@ $y2 = $queryObject -> y2;
 $spatialQuerySelection = $queryObject -> spatialQuerySelection;
 $dateQuerySQL = $queryObject -> dateQuerySQL;
 $authorSQL = $queryObject -> authorSQL;
+$keyWordSQL = $queryObject -> keyWordSQL;
 
 $servername = "localhost";
 $username = "neilgibeaut";
@@ -33,7 +34,7 @@ $sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
 			FROM table1
 			WHERE MBRIntersects(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
-			table1.diagonal) $dateQuerySQL $authorSQL";
+			table1.diagonal) $dateQuerySQL $authorSQL $keyWordSQL";
 
 $result = $conn->query($sql);
 
@@ -57,7 +58,7 @@ $sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
 			FROM table1
 			WHERE MBRContains(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
-			table1.diagonal) $dateQuerySQL $authorSQL";
+			table1.diagonal) $dateQuerySQL $authorSQL $keyWordSQL";
 
 $result = $conn->query($sql);
 
@@ -81,7 +82,7 @@ $sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
 			FROM table1
 			WHERE MBRContains(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
-			table1.centroid) $dateQuerySQL $authorSQL";
+			table1.centroid) $dateQuerySQL $authorSQL $keyWordSQL";
 
 $result = $conn->query($sql);
 
