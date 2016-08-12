@@ -49,15 +49,12 @@ L.Control.GeoSearch = L.Control.extend({
 
         // create the link - this will contain one of the icons
         var link = L.DomUtil.create('a', '', this._container);
-		var link1 = L.DomUtil.create('a', 'command', this._container);
         link.href = '#';
-		link1.href = '#';
         link.title = this._config.searchLabel;
-		link1.title = "Zoom To Full Extent of Results"
 
         // set the link's icon to magnifying glass
-        this.resetLink("glass");
-	
+        this.resetLink('glass');
+
         // create the form that will contain the input
         var form = L.DomUtil.create('form', 'displayNone', this._container);
 
@@ -91,12 +88,7 @@ L.Control.GeoSearch = L.Control.extend({
             .addListener(this._searchbox, 'input', this._onInput, this);
 
         L.DomEvent.disableClickPropagation(this._container);
-		
-																									//Adds button on leaflet map that allows user to zoom to full extent of results.
-																									L.DomEvent.on(link1, 'click', function(){
-																										var group = new L.featureGroup(rectangleArray);
-																										map.fitBounds(group.getBounds());
-																									})
+
         return this._container;
     },
 

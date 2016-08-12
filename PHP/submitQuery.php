@@ -1,9 +1,4 @@
 <?php
-
-/* The purpose of this script is to recieve the JSON query object from the Bando-Query app 
-and perform a query bases on the varaiables in that JSON on the database. This script returns the 
-results of that query to the Bando-Query app in the form of a JSON. */
-
 $queryObject = json_decode($_POST['queryObject']);
 $x1 = $queryObject -> x1;
 $y1 = $queryObject -> y1;
@@ -14,9 +9,9 @@ $dateQuerySQL = $queryObject -> dateQuerySQL;
 $authorSQL = $queryObject -> authorSQL;
 
 $servername = "localhost";
-$username = "neilgibeaut";
-$password = "Sadiedog1995";
-$database = "spatialsearch_db";
+$username = "root";
+$password = "";
+$database = "spatial_query";
 
 //Create connection
 $conn = new mysqli($servername, $username, $password, $database);
@@ -29,7 +24,7 @@ if ($conn->connect_error) {
 
 if($spatialQuerySelection == "intersects")
 {
-$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author
 			FROM table1
 			WHERE MBRIntersects(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
@@ -53,7 +48,7 @@ $conn->close();
 
 if($spatialQuerySelection == "contains")
 {
-$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author
 			FROM table1
 			WHERE MBRContains(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
@@ -77,7 +72,7 @@ $conn->close();
 
 if($spatialQuerySelection == "containsCentroid")
 {
-$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author, Date
+$sql = "SELECT fileName, x1, y1, x3, y3, kmz, Author
 			FROM table1
 			WHERE MBRContains(
 			GeomFromText( 'LINESTRING($y1 $x1, $y2 $x2)' ),
