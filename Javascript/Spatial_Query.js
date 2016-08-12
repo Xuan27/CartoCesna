@@ -1,5 +1,5 @@
 //Global Variables
-var queryRectangle = 0;															//stores the current user drawn rectangle, used to query that area
+var queryRectangle = null;															//stores the current user drawn rectangle, used to query that area
 var rectangleArray = new Array(); 											//contains all the rectangles created from a succesful query
 var markerArray = new Array();													//contains all the markers created from a succesful query
 var spatialQuerySelection = "intersects";										//string of used to decide what spatial query technique will be used 
@@ -17,20 +17,20 @@ function submitQuery(queryRectangle)
 	var dateQuerySQL = getDateRange();
 	var authorSQL = getAuthorInput();
 	
-	//if no rectangle is drawn this executes a search that returns nothing. 
-	//This can be changed to search for all areas on the map,
-	//but I ran out of time before implementing it - Neil
+	//if no rectangle is drawn queryRectangle is set to the maximum bounds of the world map.
 	if(queryRectangle == null)
 	{
-		deleteTable("resultsTable");
-		for(var i = rectangleArray.length; i > 0; i--)
-		{
-			map.removeLayer(rectangleArray[i-1]);
-			map.removeLayer(Clust);
-		}
-		rectangleArray = [];
-		markerArray = [];
-		return;
+		// deleteTable("resultsTable");
+		// for(var i = rectangleArray.length; i > 0; i--)
+		// {
+			// map.removeLayer(rectangleArray[i-1]);
+			// map.removeLayer(Clust);
+		// }
+		// rectangleArray = [];
+		// markerArray = [];
+		// return;
+		var bounds = [[-85, -185], [85, 185]];
+		queryRectangle = L.rectangle(bounds);
 	}
 
 	//removes rectangles and clusters from map from previous query results 
