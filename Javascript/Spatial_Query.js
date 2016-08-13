@@ -352,7 +352,7 @@ function getKeyWordInput()
 		return "";		
 	}
 	
-	keyWordSQL = "AND Author LIKE '" + document.getElementById("keyWord").value + "'" + " OR fileName LIKE '" + document.getElementById("keyWord").value + "'";
+	keyWordSQL = "AND Author LIKE '%" + document.getElementById("keyWord").value + "%'" + " OR fileName LIKE '%" + document.getElementById("keyWord").value + "%'";
 	return keyWordSQL;	
 }
 
