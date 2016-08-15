@@ -7,10 +7,10 @@ var highlight = {fillOpacity: .1, color: "#FF0000", weight: 1};			//higlight pro
 var defaultColor = {fillOpacity:0, color: "#28b463", weight: 3};		//default properties of markers/rectangles.
 var Clust = "";																			//Global Variable that will hold the Marker Cluster layer
 
-/* This function is called when the user hits the "Submit Query" button. When this function is called
-it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
-queryObject contains all the information the php script will need to execute the desired query on our database.
-On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter. */
+// This function is called when the user hits the "Submit Query" button. When this function is called
+// it gathers all the information it needs to send to submitQuery.php and creates a JSON called "queryObject".
+// queryObject contains all the information the php script will need to execute the desired query on our database.
+// On a succesful AJAX call, drawResults() is called with the information returned from submitQuery.php as a parameter.
 function submitQuery(queryRectangle)
 {	
 	//gets string for sql statement for the date range
@@ -167,9 +167,9 @@ function createTable(results)
 	$("#resultsTable").trigger("update");
 }
 
-/* This function is used by the "Show On Map" button created by createTable(). 
-The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
-to the extent of its corresponding rectangle while also highlighting both of them in red. */
+// This function is used by the "Show On Map" button created by createTable(). 
+// The purpose of this function is to highlight the marker that was clicked on and zooms the viewer
+// to the extent of its corresponding rectangle while also highlighting both of them in red.
 function highlightMapMarker(index)
 {
 	for(var i = 0; i < markerArray.length; i++)
