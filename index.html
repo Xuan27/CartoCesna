@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Cartocesna</title>
+</head>
+<body>
+<p><a href="Projects/Projects_List.html">Projects</a></p>
+<p>Ideas</p>
+<p id="text" onclick="textChange(this)">Information about the project</p>
+<h5>Developed by Juan Martinez</h5>
+</body>
+<script>
+    var count = 0;
+    function textChange(element) {
+        if(count%2 == 0)
+            element.innerHTML = "I've just clicked this element";
+        else
+            element.innerHTML = "Information about the project";
+        count++;
+    }
+</script>
+</html>
