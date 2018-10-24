@@ -4,23 +4,192 @@
     <meta charset="UTF-8">
     <title>Trash Collection Network Analysis</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.1/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.42.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+          integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ=="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"
+            integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log=="
+            crossorigin=""></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="MarkerCluster/MarkeCluster.js"></script>
+    <link rel="stylesheet" type="text/css" href="MarkerCluster/MarkerCluster.css">
+
+    <script src="Data/Trash_Dates.js"></script>
+    <script src="Data/Neighborhood_Route.js"></script>
+    <script src="Data/Neighborhood_Stops.js"></script>
+    <script src="Data/Tuesday_Route-1.js"></script>
+    <script src="Data/Tuesday_Stops-1.js"></script>
     <style>
-        body { margin:0; padding:0; }
-        #map { position:absolute; top:0; bottom:0; width:80%; }
+        body{height: 900px; width: 900px}
+        #map{height: 80%; width: 80%}
+        .garbageIcon{
+            background: none;
+            border: none;
+        }
+        table.greyGridTable {
+            border: 2px solid #FFFFFF;
+            width: 100%;
+            text-align: center;
+            border-collapse: collapse;
+        }
+        table.greyGridTable td, table.greyGridTable th {
+            border: 1px solid #FFFFFF;
+            padding: 3px 4px;
+        }
+        table.greyGridTable tbody td {
+            font-size: 20px;
+        }
+        table.greyGridTable td:nth-child(even) {
+            background: #EBEBEB;
+        }
+        table.greyGridTable thead {
+            background: #FFFFFF;
+            border-bottom: 4px solid #333333;
+        }
+        table.greyGridTable thead th {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333333;
+            text-align: center;
+            border-left: 2px solid #333333;
+        }
+        table.greyGridTable thead th:first-child {
+            border-left: none;
+        }
+
+        table.greyGridTable tfoot td {
+            font-size: 14px;
+        }
     </style>
 </head>
+
 <body>
 <div id='map'></div>
+<table id="routeTable" class="greyGridTable" style="display:none; margin: -60% 0% 0% 90%; width: 50%; height: 50%;">
+    <tr><th>Title</th><th>Information</th></tr>
+        <tr>
+            <td id="timeTitle"><strong>Total Time</strong></td><td id="timeData"></td>
+        </tr>
+        <tr>
+            <td id="distanceTitle"><strong>Total Distance</strong></td><td id="distanceData"></td>
+        </tr>
+        <tr>
+            <td id="stopsTitle"><strong>Order Count</strong></td><td id="stopsData"></td>
+        </tr>
+
+</table>
 </body>
 <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g';
-    var map = new mapboxgl.Map({
-        container: 'map',
-        style: 'mapbox://styles/xuan27/ciylr8exe004r2smg2t48oxpz',
-        center: [-97.3790408, 27.7286568],
-        zoom: 10
+    var map = L.map('map').setView([27.7286568,-97.3790408], 10);
+    L.tileLayer('https://api.mapbox.com/styles/v1/xuan27/ciylr8exe004r2smg2t48oxpz/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g', {
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        maxZoom: 18,
+        id: 'mapbox.streets',
+        accessToken: 'pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g'
+    }).addTo(map);
+
+    var colDays = L.geoJSON(trash_collections_days, {
+        style: function (feature) {
+            return {color: feature.properties.color};
+        }
+    }).bindPopup(function (layer) {
+        return layer.feature.properties.Day_;
+    }).addTo(map);
+
+    neighStopCluster = L.markerClusterGroup({iconCreateFunction: function(cluster) {
+        return L.divIcon({ html: '<img src="https://s3-us-west-1.amazonaws.com/dswp-main/wp-content/uploads/2017/04/20105006/flat-1298035_640.png" height="100%"><div style="background-color: greenyellow; text-align: center"><p class="clusterCount" style="color: red;">' + cluster.getChildCount() + '</p></div>',
+            className: "garbageIcon",
+            iconSize: L.point(30,30)});
+    }}, { disableClusteringAtZoom: 17 });
+    tuesStopCluster = L.markerClusterGroup({iconCreateFunction: function(cluster) {
+        return L.divIcon({ html: '<img src="https://s3-us-west-1.amazonaws.com/dswp-main/wp-content/uploads/2017/04/20105006/flat-1298035_640.png" height="100%"><div style="background-color: greenyellow; text-align: center"><p class="clusterCount" style="color: red;">' + cluster.getChildCount() + '</p></div>',
+            className: "garbageIcon",
+            iconSize: L.point(30,30)});
+    }}, { disableClusteringAtZoom: 17 });
+
+    var garbageIcon = L.icon({
+        iconUrl: 'https://s3-us-west-1.amazonaws.com/dswp-main/wp-content/uploads/2017/04/20105006/flat-1298035_640.png',
+        iconSize:     [20, 20], // size of the icon
+        iconAnchor:   [0, 0], // point of the icon which will correspond to marker's location
+        popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
     });
+
+    var neighRoute = L.geoJSON(NeighborhoodRoute, {style: function (layer) {
+        return {color: "red"}
+    }});
+    var neighStop = L.geoJSON(NeighborhoodStops, {pointToLayer: function (feature, latlng) {
+        return L.marker(latlng, {icon: garbageIcon}).bindPopup(function (layer) {
+            serviceTime = layer.feature.properties.ServiceTim;
+            serviceTime = serviceTime*60;
+            serviceTime = serviceTime.toFixed(2);
+            return "Service Time: " + serviceTime + "s.</b> ID: " + layer.feature.properties.FID
+        })
+    }});
+    var tuesRoute = L.geoJSON(TuesdayRoute1);
+    var tuesStop = L.geoJSON(TuesdayStop1, {pointToLayer: function (feature, latlng) {
+        return L.marker(latlng, {icon: garbageIcon}).bindPopup(function (layer) {
+            serviceTime = layer.feature.properties.ServiceTim;
+            serviceTime = serviceTime*60;
+            serviceTime = serviceTime.toFixed(2);
+            return "Service Time: " + serviceTime + "s.</b> ID: " + layer.feature.properties.FID
+        })
+    }});
+    neighStopCluster.addLayer(neighStop);
+    tuesStopCluster.addLayer(tuesStop);
+
+    map.addLayer(neighStopCluster);
+    map.addLayer(tuesStopCluster);
+
+    var overlays = {
+        "Collection Days": colDays,
+        "Neighborhood Route": neighRoute,
+        "Neighborhood Stops": neighStopCluster,
+        "Tuesday Route 1": tuesRoute,
+        "Tuesday Stops Route 1": tuesStopCluster
+    };
+    L.control.layers(null, overlays, {collapsed: false}).addTo(map);
+
+
+    $(".leaflet-div-icon").css("borner", "none").css('background', "none");
+    var controlLayer = $(".leaflet-control-layers-selector");
+    controlLayer.change(function () {
+
+        var controlLayerChecked = $(".leaflet-control-layers-selector:checked");
+        var controlLayerName = controlLayerChecked[0].labels[0].textContent;
+        if(controlLayerName == " Neighborhood Route"){
+            $("#routeTable").css('display', 'block');
+            var neighTime = NeighborhoodRoute.features[0].properties.TotalTime;
+            var neighDist = NeighborhoodRoute.features[0].properties.TotalDista;
+            var neighStops = NeighborhoodRoute.features[0].properties.OrderCount;
+            neighTime = neighTime/60;
+            neighTime = neighTime.toFixed(2);
+            neighDist = neighDist.toFixed(2);
+            $("#timeData").text(String(neighTime) + " Hrs.");
+            $("#distanceData").text(String(neighDist) + " Miles");
+            $("#stopsData").text(String(neighStops) + " Stops")
+        }
+
+        else if(controlLayerName == " Tuesday Route 1"){
+            $("#routeTable").css('display', 'block');
+            var neighTime = TuesdayRoute1.features[0].properties.TotalTime;
+            var neighDist = TuesdayRoute1.features[0].properties.TotalDista;
+            var neighStops = TuesdayRoute1.features[0].properties.OrderCount;
+            neighTime = neighTime/60;
+            neighTime = neighTime.toFixed(2);
+            neighDist = neighDist.toFixed(2);
+            $("#timeData").text(String(neighTime) + " Hrs.");
+            $("#distanceData").text(String(neighDist) + " Miles");
+            $("#stopsData").text(String(neighStops) + " Stops")
+        }
+
+        else
+            $("#routeTable").css('display', 'none');
+
+
+    });
+
+
 </script>
 </html>
