@@ -38,14 +38,12 @@
                 <option>Imperial</option>
             </select>
             <select name="time" id="time">
-                <option value="1">1 hours</option>
+                <option value="1">1 hour</option>
                 <option value="3">3 hours</option>
                 <option value="6">6 hours</option>
                 <option value="9">9 hours</option>
                 <option value="12">12 hours</option>
-                <option value="15">15 hours</option>
                 <option value="18">18 hours</option>
-                <option value="21">21 hours</option>
                 <option value="24">24 hours</option>
             </select>
             <input type="text" id="lat" name="lat" hidden required>
@@ -70,8 +68,6 @@
             $("#date").val(date);
         });
 
-
-
         var map = L.map('map').setView([27.7286568,-97.3790408], 4);
         "https://api.mapbox.com/styles/v1/xuan27/cjnckbdnz6y1q2soehdb2rxut.html?fresh=true&title=true&access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g#12.0/48.866500/2.317600/0"
         L.tileLayer('https://api.mapbox.com/styles/v1/xuan27/cjnckbdnz6y1q2soehdb2rxut/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoieHVhbjI3IiwiYSI6IktzT0hVNjAifQ.v97O2GRYRJ8ZxhLHtTn30g', {
@@ -89,22 +85,17 @@
             var locationLng = e.geocode.properties.lon;
             $("#lat").val(locationLat);
             $("#lng").val(locationLng);
-            /*$.ajax({
-                type: "POST",
-                url: "Sources_Request.php",
-                data: {"lat": locationLat,"lng": locationLng, "timeStart": timeStart, "timeEnd": timeEnd, "date": date},
-                success:function(data) {
-                    console.log(data);
-                },
-                error:function(requestObject) {
-                    alert(requestObject.status);
-                }
-            })*/
         }).addTo(map);
 
         function submit(event){
             var data = $("form").serializeArray();
-        $.ajax({
+            var lat = $("#lat").val();
+            var lng = $("#lng").val();
+            if(lat == '' || lng == ''){
+                alert("Click and type a city name in the map control search");
+                return null;
+            }
+            $.ajax({
                 type: "POST",
                 url: "Sources_Request.php",
                 data: data,
@@ -130,9 +121,4 @@
         })
 
     </script>
-
-
-
-
-
 </html>
