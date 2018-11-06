@@ -32,20 +32,30 @@
         <!--MAP CONTAINER-->
         <div id="map" style="width:50%; height: 80%;"></div>
         <form id="form" action="">
-            <p>Summary <input type="checkbox" name="summary" checked></p>
-            <select name="unit">
-                <option>Metric</option>
-                <option>Imperial</option>
-            </select>
-            <select name="time" id="time">
-                <option value="1">1 hour</option>
-                <option value="3">3 hours</option>
-                <option value="6">6 hours</option>
-                <option value="9">9 hours</option>
-                <option value="12">12 hours</option>
-                <option value="18">18 hours</option>
-                <option value="24">24 hours</option>
-            </select>
+            <div>
+                <p>Summary <input id="summary" type="checkbox" name="summary" checked></p>
+            </div>
+            <div style="position: absolute;left:20%;bottom: 12%;">
+                <p>Unit <select name="unit">
+                        <option>Metric</option>
+                        <option>Imperial</option>
+                    </select>
+                </p>
+            </div>
+            <div style="position: absolute;left:40%;bottom: 12%;">
+                <p>Time <select name="time" id="time">
+                        <option value="1">1 hour ago</option>
+                        <option value="3">3 hours ago</option>
+                        <option value="6">6 hours ago</option>
+                        <option value="9">9 hours ago</option>
+                        <option value="12">12 hours ago</option>
+                        <option value="18">18 hours ago</option>
+                        <option value="24">24 hours ago</option>
+                    </select>
+                </p>
+            </div>
+
+
             <input type="text" id="lat" name="lat" hidden required>
             <input type="text" id="lng" name="lng" hidden required>
             <input type="text" id="timeStart" name="timeStart" hidden>
@@ -53,7 +63,13 @@
             <input type="text" id="date" name="date" hidden>
 
         </form>
-        <button id="search"  onclick="submit()">Search</button>
+        <button id="search"  onclick="submit()" style="position: absolute;left:60%;bottom: 15%;">Search</button>
+    <div id="weatherInfo" style="position: relative; margin-left: 65%; bottom: 70%">
+        <p id="summaryInfo"></p>
+        <p id="tempInfo"></p>
+        <p id="windInfo"></p>
+        <p id="precInfo"></p>
+    </div>
 
     </body>
     <script type="text/javascript">
@@ -100,7 +116,14 @@
                 url: "Sources_Request.php",
                 data: data,
                 success:function(data) {
-                    console.log(data);
+                    data = JSON.parse(data);
+                    if(document.getElementById('summary').checked)
+                        $("#summaryInfo").html("Weather Summary: "+data.Summary);
+                    else
+                        $("#summaryInfo").html("");
+                    $("#tempInfo").html("Temperature: "+data.Temperature);
+                    $("#windInfo").html("Wind: "+data.Wind);
+                    $("#precInfo").html("Precipitation: "+data.Precipitation);
                 },
                 error:function(requestObject) {
                     alert(requestObject.status);
@@ -114,8 +137,6 @@
             var milliStart =  parseInt(hour)* 3600000;
             var epochStart = dt.getTime() - milliStart;
             var epochEnd = epochStart + 3600000;
-            console.log(epochStart);
-            console.log(epochEnd);
             $("#timeStart").val(epochStart);
             $("#timeEnd").val(epochEnd);
         })
