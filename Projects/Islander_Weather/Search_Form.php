@@ -31,18 +31,18 @@
     <body>
         <!--MAP CONTAINER-->
         <div id="map" style="width:50%; height: 80%;"></div>
-        <form id="form" action="">
+        <form id="form" action="" style="font-size: 20px;">
             <div>
                 <p>Summary <input id="summary" type="checkbox" name="summary" checked></p>
             </div>
-            <div style="position: absolute;left:20%;bottom: 12%;">
+            <div style="position: absolute;left:20%;bottom: 11%;">
                 <p>Unit <select name="unit">
                         <option>Metric</option>
                         <option>Imperial</option>
                     </select>
                 </p>
             </div>
-            <div style="position: absolute;left:40%;bottom: 12%;">
+            <div style="position: absolute;left:40%;bottom: 11%;">
                 <p>Time <select name="time" id="time">
                         <option value="1">1 hour ago</option>
                         <option value="3">3 hours ago</option>
@@ -63,8 +63,8 @@
             <input type="text" id="date" name="date" hidden>
 
         </form>
-        <button id="search"  onclick="submit()" style="position: absolute;left:60%;bottom: 15%;">Search</button>
-    <div id="weatherInfo" style="position: relative; margin-left: 65%; bottom: 70%">
+        <button id="search"  onclick="submit()" style="position: absolute;left:60%;bottom: 14.2%;">Search</button>
+    <div id="weatherInfo" style="position: relative; margin-left: 65%; bottom: 70%;font-size: 20px;">
         <p id="summaryInfo"></p>
         <p id="tempInfo"></p>
         <p id="windInfo"></p>
@@ -117,13 +117,14 @@
                 data: data,
                 success:function(data) {
                     data = JSON.parse(data);
+                    console.log(data);
                     if(document.getElementById('summary').checked)
-                        $("#summaryInfo").html("Weather Summary: "+data.Summary);
+                        $("#summaryInfo").html("Weather Summary: "+data.Summary.value);
                     else
                         $("#summaryInfo").html("");
-                    $("#tempInfo").html("Temperature: "+data.Temperature);
-                    $("#windInfo").html("Wind: "+data.Wind);
-                    $("#precInfo").html("Precipitation: "+data.Precipitation);
+                    $("#tempInfo").html("Temperature: "+data.Temperature.value.toFixed(2)+ " " + data.Temperature.unit);
+                    $("#windInfo").html("Wind: "+data.Wind.value.toFixed(2)+ " " + data.Wind.unit);
+                    $("#precInfo").html("Precipitation: "+data.Precipitation.value.toFixed(2)+ " " + data.Precipitation.unit);
                 },
                 error:function(requestObject) {
                     alert(requestObject.status);
