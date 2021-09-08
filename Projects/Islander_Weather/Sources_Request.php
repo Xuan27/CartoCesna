@@ -9,34 +9,21 @@ if(isset($_POST["summary"]))
     $summary = $_POST["summary"];
 else
     $summary = 'off';
+
 $epochStart = floor($epochStart/1000);
 $epochEnd = floor($epochEnd/1000);
 $utcStart = date('c', $epochStart);
 $utcEnd = date('c', $epochEnd);
 
+require_once __DIR__.'/ForecastWebsite.php';
+
 //AccuWeather
 $accuWeatherKey = "vC5DI9vjAVMHp3CPP7V8TGWFUxDeKQVr";
 $accuURL = "http://dataservice.accuweather.com";
-$accuLocationURL = $accuURL."/locations/v1/cities/geoposition/search?apikey=".$accuWeatherKey."&q=".$lat."%2C".$lng."&details=true&toplevel=true";
+$AccuWeather = new Forecast("AccuWeather", $accuURL, $accuWeatherKey);
 
-//Dark Sky
-$darkURL = "https://api.darksky.net";
-$darkKey = "0636d15bdd497c62a7b1bad8bb6d790b";
-switch ($unit) {
-    case "Imperial":
-        $darkWeatherURL = $darkURL . "/forecast/" . $darkKey . "/" . $lat . "," . $lng . "," . $epochStart . "?exclude=currently,flag&units=us";
-        break;
-    case "Metric":
-        $darkWeatherURL = $darkURL . "/forecast/" . $darkKey . "/" . $lat . "," . $lng . "," . $epochStart . "?exclude=currently,flag&units=si";
-        break;
-}
-
-//Aeris
-$aerisURL = "https://api.aerisapi.com/observations/archive/";
-$aerisKey = "n7rdglaABbQqkidwKoLsgQsuhUbVoaxXi3LTAcki";
-$aerisID = "QxcLERgBaMeTjYOghPIzr";
-$earisWeatherURL = $aerisURL.$lat.",".$lng."?&from=".$date."&format=json&filter=allstations&limit=1&client_id=".$aerisID."&client_secret=".$aerisKey;
 $weatherInfo = array();
+
 function WeatherRequest($url,$apiKey, $source, $recurse){
     $curl = curl_init();
     $options = array(CURLOPT_HTTPHEADER=>array("Authorization: ".$apiKey), CURLOPT_SSL_VERIFYHOST => 0, CURLOPT_SSL_VERIFYPEER=> 0, CURLOPT_RETURNTRANSFER=>1, CURLOPT_URL => $url);
@@ -160,12 +147,8 @@ function time_elapsed_string($datetime, $full = false) {
     return $string['h'];
 }
 
-$darkWeather = WeatherRequest($darkWeatherURL, null, "darkSky", 0);
-$aerisWeather = WeatherRequest($earisWeatherURL, null, "aeris", 0);
-$accuWeather = WeatherRequest($accuLocationURL, null, "accuWeather", 1);
+$accuWeather = WeatherRequest($AccuWeather->getURL(), null, "accuWeather", 1);
 
-$weatherInfo[0] = $darkWeather;
-$weatherInfo[1] = $aerisWeather;
 $weatherInfo[2] = $accuWeather;
 
 //print_r($weatherInfo);
@@ -189,9 +172,9 @@ foreach ($weatherInfo as $key=>$v) {
         $precPost += $v['Precipitation'];
         $precCount++;
     }
-    if ($v['Content'] == 'true' && $summary == 'on') {
+    if ($v['Content'] == 'true' && $_POST['summary'] == 'on') {
         if($v['Summary'] != $summPost){
-            $summPost .= $v['Summary']." ";
+            $summPost = $v['Summary']." ";
             $summaryPost = $summPost;
         }
 
@@ -214,6 +197,6 @@ if($precCount!=0)
 else
     $info['Precipitation'] = 0;
 if($summary!='off')
-    $info['Summary'] = $summaryPost;
+    $info['Summary'] = $summPost;
 echo json_encode($info);
 ?>

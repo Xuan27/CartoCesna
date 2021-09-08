@@ -8,7 +8,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Title</title>
+        <title>Islander Weather</title>
         <link rel="stylesheet" href="../../Master/css/indexBody.css">
         <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 
@@ -112,8 +112,9 @@
                 return null;
             }
             $.ajax({
-                type: "POST",
                 url: "Sources_Request.php",
+                type: "POST",
+                async: false,
                 data: data,
                 success:function(data) {
                     data = JSON.parse(data);
@@ -122,9 +123,9 @@
                         $("#summaryInfo").html("Weather Summary: "+data.Summary.value);
                     else
                         $("#summaryInfo").html("");
-                    $("#tempInfo").html("Temperature: "+data.Temperature.value.toFixed(2)+ " " + data.Temperature.unit);
-                    $("#windInfo").html("Wind: "+data.Wind.value.toFixed(2)+ " " + data.Wind.unit);
-                    $("#precInfo").html("Precipitation: "+data.Precipitation.value.toFixed(2)+ " " + data.Precipitation.unit);
+                    $("#tempInfo").html("Temperature: "+data.Temperature.toFixed(2)+ " " + data.Temperature.unit);
+                    $("#windInfo").html("Wind: "+data.Wind.toFixed(2)+ " " + data.Wind.unit);
+                    $("#precInfo").html("Precipitation: "+data.Precipitation.toFixed(2)+ " " + data.Precipitation.unit);
                 },
                 error:function(requestObject) {
                     alert(requestObject.status);
