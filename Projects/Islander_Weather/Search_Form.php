@@ -64,12 +64,16 @@
 
         </form>
         <button id="search"  onclick="submit()" style="position: absolute;left:60%;bottom: 14.2%;">Search</button>
-    <div id="weatherInfo" style="position: relative; margin-left: 65%; bottom: 70%;font-size: 20px;">
+    <div id="weatherInfo" style="position: absolute; margin-left: 65%; bottom: 35%;font-size: 20px;">
         <p id="summaryInfo"></p>
         <p id="tempInfo"></p>
         <p id="windInfo"></p>
         <p id="precInfo"></p>
     </div>
+
+
+
+    <div class="container">
 
     </body>
     <script type="text/javascript">
@@ -118,14 +122,9 @@
                 data: data,
                 success:function(data) {
                     data = JSON.parse(data);
-                    console.log(data);
-                    if(document.getElementById('summary').checked)
-                        $("#summaryInfo").html("Weather Summary: "+data.Summary.value);
-                    else
-                        $("#summaryInfo").html("");
-                    $("#tempInfo").html("Temperature: "+data.Temperature.toFixed(2)+ " " + data.Temperature.unit);
-                    $("#windInfo").html("Wind: "+data.Wind.toFixed(2)+ " " + data.Wind.unit);
-                    $("#precInfo").html("Precipitation: "+data.Precipitation.toFixed(2)+ " " + data.Precipitation.unit);
+                    $("#tempInfo").html("Temperature: "+data.Temperature.toFixed(2));
+                    $("#windInfo").html("Wind: "+data.Wind.toFixed(2));
+                    $("#precInfo").html("Precipitation: "+data.Precipitation.toFixed(2));
                 },
                 error:function(requestObject) {
                     alert(requestObject.status);
