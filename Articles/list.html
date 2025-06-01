@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Important Articles Collection</title>
+    <link rel="stylesheet" href="articles-style.css">
+</head>
+<body>
+    <header>
+        <h1>My Important Articles Collection</h1>
+    </header>
+    
+    <div class="container">
+        <div class="intro">
+            <p>Welcome to my curated collection of important articles. This is where I keep track of articles that have influenced me or contain information I believe is valuable.</p>
+        </div>
+        
+        <div class="new-article-form">
+            <h2>Add New Article</h2>
+            <form id="articleForm">
+                <div class="form-group">
+                    <label for="articleTitle">Article Title*</label>
+                    <input type="text" id="articleTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleUrl">URL*</label>
+                    <input type="url" id="articleUrl" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleAuthor">Author</label>
+                    <input type="text" id="articleAuthor">
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleDate">Publication Date</label>
+                    <input type="date" id="articleDate">
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleCategory">Category*</label>
+                    <select id="articleCategory" required>
+                        <option value="">-- Select Category --</option>
+                        <option value="cartography">Cartography</option>
+                        <option value="surveying">Surveying</option>
+                        <option value="gis">GIS</option>
+                        <option value="technology">Technology</option>
+                        <option value="science">Science</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleDescription">Why is this article important?</label>
+                    <textarea id="articleDescription" placeholder="Describe why you find this article valuable..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="articleRating">Rating (1-5)</label>
+                    <select id="articleRating">
+                        <option value="5">★★★★★ (Essential Reading)</option>
+                        <option value="4">★★★★☆ (Very Important)</option>
+                        <option value="3">★★★☆☆ (Important)</option>
+                        <option value="2">★★☆☆☆ (Somewhat Important)</option>
+                        <option value="1">★☆☆☆☆ (Worth Noting)</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Add Article</button>
+            </form>
+        </div>
+        
+        <div class="category-section">
+            <h2>Cartography</h2>
+            <ul class="article-list" id="cartography-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+
+        <div class="category-section">
+            <h2>GIS</h2>
+            <ul class="article-list" id="gis-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+
+        <div class="category-section">
+            <h2>Surveying</h2>
+            <ul class="article-list" id="surveying-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+
+        <div class="category-section">
+            <h2>Technology</h2>
+            <ul class="article-list" id="technology-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+        
+        <div class="category-section">
+            <h2>Science</h2>
+            <ul class="article-list" id="science-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+        
+        <div class="category-section">
+            <h2>Other</h2>
+            <ul class="article-list" id="other-list">
+                <li class="empty-message">No articles added yet.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; <span id="current-year"></span> My Important Articles Collection</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current year in footer
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            
+            // Load articles from local storage if available
+            loadArticles();
+            
+            // Handle form submission
+            document.getElementById('articleForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const article = {
+                    id: Date.now().toString(),
+                    title: document.getElementById('articleTitle').value,
+                    url: document.getElementById('articleUrl').value,
+                    author: document.getElementById('articleAuthor').value,
+                    date: document.getElementById('articleDate').value,
+                    category: document.getElementById('articleCategory').value,
+                    description: document.getElementById('articleDescription').value,
+                    rating: document.getElementById('articleRating').value,
+                    dateAdded: getMySQLDateTimeString()
+                };
+                
+                // Add article
+                addArticle(article);
+                
+                // Reset form
+                this.reset();
+                
+                // Show success message or animation (optional)
+                alert('Article added successfully!');
+            });
+        });
+        
+        function loadArticles() {
+             // Clear all lists
+            document.querySelectorAll('.article-list').forEach(list => {
+                // Keep only the empty message
+                const emptyMessage = list.querySelector('.empty-message');
+                list.innerHTML = '';
+                if (emptyMessage) {
+                    list.appendChild(emptyMessage);
+                }
+            });   
+
+            fetch('../Models/php/load_articles.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not OK');
+                    }
+                    return response.json();
+                })
+                .then(articles => {
+                    // Clear all lists
+                    document.querySelectorAll('.article-list').forEach(list => {
+                        const emptyMessage = list.querySelector('.empty-message');
+                        list.innerHTML = '';
+                        if (emptyMessage) {
+                            list.appendChild(emptyMessage);
+                        }
+                    });
+
+                    // Add articles to appropriate categories
+                    articles.forEach(article => {
+                        const listId = `${article.category}-list`;
+                        const list = document.getElementById(listId);
+
+                        if (list) {
+                            const emptyMessage = list.querySelector('.empty-message');
+                            if (emptyMessage) {
+                                list.removeChild(emptyMessage);
+                            }
+
+                            const listItem = createArticleListItem(article);
+                            list.appendChild(listItem);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading articles:', error);
+                });
+        }
+        
+        function addArticle(article) {
+            fetch('../Models/php/save_article.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(article)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Article saved successfully!');
+                    // Optional: re-fetch from server or add to UI
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            });
+        }
+        
+        function createArticleListItem(article) {
+            const listItem = document.createElement('li');
+            listItem.className = 'article-item';
+            listItem.dataset.id = article.id;
+            
+            const ratingStars = '★'.repeat(parseInt(article.rating)) + '☆'.repeat(5 - parseInt(article.rating));
+            
+            listItem.innerHTML = `
+                <a href="${article.url}" class="article-title" target="_blank">${article.title}</a>
+                ${article.author ? `<div class="article-author">By: ${article.author}</div>` : ''}
+                ${article.description ? `<div class="article-description">${article.description}</div>` : ''}
+                ${article.date ? `<div class="article-date">Published: ${new Date(article.date).toLocaleDateString()}</div>` : ''}
+                <div class="article-rating">
+                    <span class="stars">${ratingStars}</span>
+                    <button onclick="removeArticle('${article.id}')" style="background-color: #e74c3c; margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        Remove
+                    </button>
+                </div>
+            `;
+            
+            return listItem;
+        }
+        
+        function removeArticle(id) {
+            if (confirm('Are you sure you want to remove this article?')) {
+                // Get existing articles
+                let articles = JSON.parse(localStorage.getItem('myImportantArticles')) || [];
+                
+                // Filter out the article to remove
+                articles = articles.filter(article => article.id !== id);
+                
+                // Save back to localStorage
+                localStorage.setItem('myImportantArticles', JSON.stringify(articles));
+                
+                // Refresh the display
+                loadArticles();
+            }
+        }
+
+        function getMySQLDateTimeString() {
+            const now = new Date();
+            return now.toISOString().slice(0, 19).replace('T', ' ');
+        }
+    </script>
+</body>
+</html>
