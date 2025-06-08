@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
-require_once '/var/www/private/db_config.php';
+//Config file from the private folder
+require_once '../../Private/db_config.php';
 
 try {
     $stmt = $pdo->query("SELECT * FROM articles ORDER BY date_added DESC");
