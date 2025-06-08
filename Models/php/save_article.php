@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-require_once '/var/www/private/db_config.php';
+require_once '../../Private/db_config.php';//Replace to server db config file
 
 // Get JSON POST data
 $data = json_decode(file_get_contents("php://input"), true);
