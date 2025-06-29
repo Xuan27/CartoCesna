@@ -2,9 +2,9 @@
 // db_config.php
 
 $host = 'localhost';          // or your remote host
-$db   = '';
-$user = '';
-$pass = '';
+$db   = 'cartocesna';
+$user = 'root';
+$pass = 'BossaDorado132';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
