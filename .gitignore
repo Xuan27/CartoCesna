@@ -1,3 +1,4 @@
 *.kmz
 *.sql
-Private/db_config.php
+Private/
+

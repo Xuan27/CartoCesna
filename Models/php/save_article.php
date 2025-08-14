@@ -1,6 +1,9 @@
 <?php
 header('Content-Type: application/json');
-require_once '../../Private/db_config.php';//Replace to server db config file
+require_once '../../Private/db_config.php';
+
+$database = new Database;
+$pdo = $database->getConnection();
 
 // Get JSON POST data
 $data = json_decode(file_get_contents("php://input"), true);

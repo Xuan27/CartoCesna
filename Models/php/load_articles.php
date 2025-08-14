@@ -3,6 +3,9 @@ header('Content-Type: application/json');
 //Config file from the private folder
 require_once '../../Private/db_config.php';
 
+$database = new Database;
+$pdo = $database->getConnection();
+
 try {
     $stmt = $pdo->query("SELECT * FROM articles ORDER BY date_added DESC");
     $articles = $stmt->fetchAll();
