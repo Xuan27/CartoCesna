@@ -1,10 +1,10 @@
 <?php
 // config/database.php
 class Database {
-    private $host = 'localhost';  // Your database host
-    private $db_name = 'cartocesna';
-    private $username = 'root';  // Replace with your DB username
-    private $password = 'BossaDorado132';  // Replace with your DB password
+    private $host = '';  // Your database host
+    private $db_name = '';
+    private $username = '';  // Replace with your DB username
+    private $password = '';  // Replace with your DB password
     private $conn;
 
     public function getConnection() {
