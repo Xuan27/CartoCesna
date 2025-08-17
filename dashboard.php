@@ -136,6 +136,10 @@ if (isset($_POST['logout'])) {
 </head>
 <body>
     <nav class="navbar">
+    <!--Header tabs-->
+        <div id="header-container">
+            <div class="loading">Loading header...</div>
+        </div>
         <div class="nav-container">
             <div class="nav-brand">Secure Dashboard</div>
             <div class="nav-user">
@@ -175,6 +179,9 @@ if (isset($_POST['logout'])) {
             </div>
         </div>
     </div>
+
+    <script src="Models/js/header_loader.js"></script>
+    <script src="Models/js/header_tabs.js"></script>
 
     <script>
         // Auto-logout warning (optional)

@@ -1,12 +1,30 @@
+<?php
+// login_improved.php - PHP processing BEFORE any HTML output
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// If already logged in, redirect immediately
+if (!isset($_SESSION['logged_in']) && !$_SESSION['logged_in']) {
+    header('Location: login.php');
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Important Articles Collection</title>
-    <link rel="stylesheet" href="articles-style.css">
+    <link rel="stylesheet" href="/Models/css/articles-style.css">
 </head>
 <body>
+    <!-- Header container -->
+    <div id="header-container">
+        <div class="loading">Loading header...</div>
+    </div>
+    
     <header>
         <h1>My Important Articles Collection</h1>
     </header>
@@ -118,7 +136,12 @@
         <p>&copy; <span id="current-year"></span> My Important Articles Collection</p>
     </footer>
 
+    <!-- Include the loader script that loads header tabs-->
+    <script src="../Models/js/header_loader.js"></script>
+    <script src="Models/js/header_tabs.js"></script>
+
     <script>
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Set current year in footer
             document.getElementById('current-year').textContent = new Date().getFullYear();
@@ -264,4 +287,5 @@
         }
     </script>
 </body>
+
 </html>
