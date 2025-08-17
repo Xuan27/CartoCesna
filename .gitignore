@@ -1,4 +1,5 @@
 *.kmz
 *.sql
 launch.json
+template.php
 
