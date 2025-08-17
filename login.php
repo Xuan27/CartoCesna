@@ -68,15 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username_or_email']))
     <link rel="stylesheet" href="Models/css/login.css">
 </head>
 <body>
+    <!-- Header container -->
+    <header class="navigation-header">
+        <div id="header-container">
+            <div class="loading">Loading header...</div>
+        </div>
+    </header>
 
     <div class="main-container">
-        <!-- Header container -->
-        <header class="navigation-header">
-            <div id="header-container">
-                <div class="loading">Loading header...</div>
-            </div>
-        </header>
-
         <div class="login-container">
             <div class="login-header">
                 <h1>Welcome Back</h1>

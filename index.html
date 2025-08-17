@@ -7,20 +7,26 @@
     <link rel="stylesheet" href="Models/css/style.css">
 </head>
 <body>
+    <!-- Header tabs container -->
     <header>
+        <div id="header-container">
+            <div class="loading">Loading header...</div>
+        </div>
+    </header>
+    <!--<header>
         <div class="container">
             <div class="header-content">
                 <div class="logo">Cartocesna</div>
                 <nav>
-                    <div class="nav-container">
+                    <div class="nav-container">-->
                         <!--Header Tabs-->
                         <!--If a dropdwon-toggle nees to be included use the class nav-link dropdwon-toggle link in the projects tab-->
-                        <ul class="nav-list">
+                        <!--<ul class="nav-list">-->
                             <!--About tab-->
-                            <li class="nav-item dropdown"><a href="Models/php/reset_admin_password.php" class="nav-link">About</a></li>
+                            <!--<li class="nav-item dropdown"><a href="Models/php/reset_admin_password.php" class="nav-link">About</a></li>-->
                             
                             <!--Projects list tab-->
-                            <li class="nav-item dropdown"><a href="/Projects/Projects_List.html" class="nav-link dropdown-toggle">Projects</a>
+                            <!--<li class="nav-item dropdown"><a href="/Projects/Projects_List.html" class="nav-link dropdown-toggle">Projects</a>
                                 <div class="dropdown-menu">
                                     <div class="dropdown-header">Professional</div>
                                     <a href="/Projects/Professional/" class="dropdown-item">Web Applications</a>
@@ -32,20 +38,20 @@
                                     <a href="#experiments" class="dropdown-item">Code Experiments</a>
                                     <a href="#hobby" class="dropdown-item">Hobby Projects</a>
                                 </div>
-                            </li>
+                            </li>-->
                                 
-                            <!--Contact tab-->
+                            <!--
                             <li class="nav-item dropdown"><a href="#contact" class="nav-link">Contact</a></li>
-                            <!--Article tab-->
+                            
                             <li class="nav-item dropdown"><a href="Articles/list.html" class="nav-link">Articles</a></li>
-                            <!--Log-in tab-->
+                            
                             <li class="nav-item dropdown"><a href="login.php" class="nav-link">Log-in</a></li>
                         </ul>
                     </div>
                 </nav>
             </div>
         </div>
-    </header>
+    </header>-->
 
     <section class="hero">
         <div class="logo-container">
@@ -114,7 +120,11 @@
             </div>
         </div>
     </footer>
-<script src="Models/javascript/language.js"></script>
+
+    <!-- Include the loader script that loads header tabs-->
+    <script src="Models/js/header_loader.js"></script>
+    <script src="Models/js/header_tabs.js"></script>
+
 </body>
 </html>
 <!--

@@ -8,7 +8,7 @@
     
     // Configuration
     const CONFIG = {
-        headerUrl: '../Models/php/header_tabs.php',
+        headerUrl: 'Models/php/header_tabs.php',
         containerId: 'header-container',
         retryAttempts: 3,
         retryDelay: 1000,

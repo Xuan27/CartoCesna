@@ -135,11 +135,11 @@ if (isset($_POST['logout'])) {
     </style>
 </head>
 <body>
-    <nav class="navbar">
     <!--Header tabs-->
-        <div id="header-container">
-            <div class="loading">Loading header...</div>
-        </div>
+    <div id="header-container">
+        <div class="loading">Loading header...</div>
+    </div>
+    <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">Secure Dashboard</div>
             <div class="nav-user">

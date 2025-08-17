@@ -17,7 +17,7 @@ if (!isset($_SESSION['logged_in']) && !$_SESSION['logged_in']) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Important Articles Collection</title>
-    <link rel="stylesheet" href="/Models/css/articles-style.css">
+    <link rel="stylesheet" href="Models/css/articles-style.css">
 </head>
 <body>
     <!-- Header container -->
@@ -137,7 +137,7 @@ if (!isset($_SESSION['logged_in']) && !$_SESSION['logged_in']) {
     </footer>
 
     <!-- Include the loader script that loads header tabs-->
-    <script src="../Models/js/header_loader.js"></script>
+    <script src="Models/js/header_loader.js"></script>
     <script src="Models/js/header_tabs.js"></script>
 
     <script>

@@ -58,6 +58,7 @@
         
         if (isLoggedIn && userName) {
             loginLink.style.display = 'inline-flex';
+            loginLink.innerText = 'Dashboard';
             userAvatar.style.display = 'inline-flex';
             userAvatar.textContent = userName.substring(0, 2).toUpperCase();
             userAvatar.title = userName;
