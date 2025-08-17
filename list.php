@@ -187,7 +187,7 @@ if (!isset($_SESSION['logged_in']) && !$_SESSION['logged_in']) {
                 }
             });   
 
-            fetch('../Models/php/load_articles.php')
+            fetch('Models/php/load_articles.php')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not OK');
