@@ -226,7 +226,7 @@ if (!isset($_SESSION['logged_in']) && !$_SESSION['logged_in']) {
         }
         
         function addArticle(article) {
-            fetch('../Models/php/save_article.php', {
+            fetch('Models/php/save_article.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(article)
