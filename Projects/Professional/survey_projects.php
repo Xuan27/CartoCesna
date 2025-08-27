@@ -1201,7 +1201,10 @@ function openCreateModal() {
 // Edit project
 function editProject(projectId) {
     const project = allProjects.find(p => p.projectId === projectId);
-    if (!project) return;
+    if (!project) {
+        alert('Project not found');
+        return;
+    }
     
     currentEditingProject = project;
     document.getElementById('modalTitle').textContent = 'Edit Project';
@@ -1210,11 +1213,90 @@ function editProject(projectId) {
     Object.keys(project).forEach(key => {
         const element = document.getElementById(key);
         if (element) {
-            element.value = project[key];
+            element.value = project[key] || '';
         }
     });
     
+    // Show the modal
     document.getElementById('projectModal').style.display = 'block';
+    
+    // Change save button text to indicate editing
+    const saveButton = document.querySelector('#projectModal .btn-primary');
+    if (saveButton) {
+        saveButton.textContent = 'Update Project';
+        saveButton.onclick = saveProjectChanges;
+    }
+}
+
+// Save project changes
+function saveProjectChanges() {
+    if (!currentEditingProject) {
+        alert('No project selected for editing');
+        return;
+    }
+
+    // Get form data
+    const formData = new FormData();
+    formData.append('action', 'update_project');
+    formData.append('projectId', currentEditingProject.projectId);
+
+    // Get all form fields
+    const fieldIds = [
+        'projectName', 'projectStatus', 'projectFolderLink', 'surveyFolderLink',
+        'drawingFolderLink', 'contractLink', 'qaQcFolderLink', 'researchFolderLink',
+        'fieldFolderLink', 'notes', 'modifiedBy'
+    ];
+
+    // Add form data
+    fieldIds.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element && element.value !== undefined) {
+            formData.append(fieldId, element.value);
+        }
+    });
+
+    // Show loading state
+    const saveButton = document.querySelector('#projectModal .btn-primary');
+    const originalText = saveButton.textContent;
+    saveButton.textContent = 'Updating...';
+    saveButton.disabled = true;
+
+    // Send update request
+    fetch('../../Models/php/load_survey_project_notes.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the project in allProjects array
+            const projectIndex = allProjects.findIndex(p => p.projectId === currentEditingProject.projectId);
+            if (projectIndex !== -1) {
+                allProjects[projectIndex] = data.project;
+            }
+            
+            // Refresh the project display
+            loadProjects();
+            
+            // Close the modal
+            closeModal();
+            
+            // Show success message
+            showToast('Project updated successfully!', 'success');
+            
+        } else {
+            alert('Error updating project: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating project. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        saveButton.textContent = originalText;
+        saveButton.disabled = false;
+    });
 }
 
 // Close modal

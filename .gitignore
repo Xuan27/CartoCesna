@@ -2,5 +2,5 @@
 *.sql
 launch.json
 template.php
-db_config.php
+Private/db_config.php
 
