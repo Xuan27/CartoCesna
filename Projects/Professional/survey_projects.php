@@ -1111,8 +1111,9 @@ function createProjectRow(project) {
 }
 
 // Create project links
-// Create project links
 function createProjectLinks(project) {
+    uncPath = "westwoodps.local\\Global Projects";
+    //projectHref = project[type.key].replace(/N:\\/g, 'westwoodps.local\\Global Projects\\')
     const linkTypes = [
         { key: 'projectFolderLink', icon: 'fas fa-folder', label: 'Project' },
         { key: 'surveyFolderLink', icon: 'fas fa-map', label: 'Survey' },
@@ -1125,7 +1126,7 @@ function createProjectLinks(project) {
     return linkTypes
         .filter(type => project[type.key])
         .map(type => `
-            <a href="file:///${project[type.key]}" class="link-button">
+            <a href="file:///${project[type.key].replace(/N:\\/g, uncPath)}" class="link-button">
                 <i class="${type.icon}"></i>
                 ${type.label}
                 <button class="btn btn-sm btn-secondary" onclick="copyFolderPath('${project[type.key]}', '${type.label}')" title="Copy ${type.label} path">
