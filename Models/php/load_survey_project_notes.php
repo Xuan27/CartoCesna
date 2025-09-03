@@ -42,11 +42,12 @@ try {
                     'contractLink' => $project['contract_link'],
                     'qaQcFolderLink' => $project['qaQc_folder_link'],
                     'researchFolderLink' => $project['research_folder_link'],
-                    'notes' => $project['notes'],
                     // Additional fields from your database
                     'fieldFolderLink' => $project['field_folder_link'],
                     'modifiedDate' => $project['modified_date'],
-                    'modifiedBy' => $project['modified_by']
+                    'modifiedBy' => $project['modified_by'],
+                    'location' => $project['location'],
+                    'scale_factor' => $project['scale_factor']
                 ];
             }, $projects);
 
@@ -89,9 +90,9 @@ try {
                 'contractLink' => 'contract_link',
                 'qaQcFolderLink' => 'qaQc_folder_link',
                 'researchFolderLink' => 'research_folder_link',
-                'fieldFolderLink' => 'field_folder_link',
-                'notes' => 'notes',
-                'modifiedBy' => 'modified_by'
+                'modifiedBy' => 'modified_by',
+                'location' => 'location',
+                'scale_factor' => 'scale_factor'
             ];
 
             // Check which fields are being updated
@@ -138,10 +139,11 @@ try {
                         'contractLink' => $updatedProject['contract_link'],
                         'qaQcFolderLink' => $updatedProject['qaQc_folder_link'],
                         'researchFolderLink' => $updatedProject['research_folder_link'],
-                        'notes' => $updatedProject['notes'],
                         'fieldFolderLink' => $updatedProject['field_folder_link'],
                         'modifiedDate' => $updatedProject['modified_date'],
-                        'modifiedBy' => $updatedProject['modified_by']
+                        'modifiedBy' => $updatedProject['modified_by'],
+                        'location' => $updatedProject['location'],
+                        'scale_factor' => $updatedProject['scale_factor']
                     ];
 
                     sendJsonResponse([

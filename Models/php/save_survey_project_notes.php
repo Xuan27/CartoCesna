@@ -9,14 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
     if ($_POST['action'] === 'add_project') {
         try {
-            $sql = "INSERT INTO survey_projects (project_id, project_name, project_folder_link, survey_folder_link,drawing_folder_link, field_folder_link, contract_link, qaQc_folder_link, research_folder_link, created_by, project_status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO survey_projects (project_id, project_name, project_folder_link, survey_folder_link, drawing_folder_link, field_folder_link, contract_link, qaQc_folder_link, research_folder_link, created_by, project_status, location, scale_factor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             $stmt = $pdo->prepare($sql);
             $result = $stmt->execute([
                 $_POST['projectId'],
                 $_POST['projectName'],
                 $_POST['projectFolderLink'],
-                $_POST['surveyFolderPath'],
+                $_POST['surveyFolderLink'],
                 $_POST['drawingFolderLink'],
                 $_POST['fieldFolderLink'],
                 $_POST['contractLink'],
@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $_POST['researchFolderLink'],
                 $_POST['createdBy'],
                 $_POST['projectStatus'],
-                $_POST['notes']
+                $_POST['location'],
+                $_POST['scale_factor']
             ]);
             
             if ($result) {
