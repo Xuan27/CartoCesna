@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .password-requirements {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .requirement.met {
+            color: #28a745;
+        }
+
+        .requirement::before {
+            content: "✗";
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .requirement.met::before {
+            content: "✓";
+            color: #28a745;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .user-preview {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .user-preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .user-preview h3::before {
+            content: "👤";
+            margin-right: 8px;
+        }
+
+        .user-info {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px 15px;
+            font-family: monospace;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .code-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .code-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .code-section pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create New User</h1>
+        
+        <div id="messageContainer"></div>
+        
+        <form id="userForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required minlength="3" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label for="role">User Role</label>
+                <select id="role" name="role" required>
+                    <option value="">Select a role</option>
+                    <option value="user">Standard User</option>
+                    <option value="surveyor_ww">Surveyor at Westwood</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="8">
+                
+                <div class="password-requirements">
+                    <div class="requirement" id="req-length">At least 8 characters</div>
+                    <div class="requirement" id="req-uppercase">At least one uppercase letter</div>
+                    <div class="requirement" id="req-lowercase">At least one lowercase letter</div>
+                    <div class="requirement" id="req-number">At least one number</div>
+                    <div class="requirement" id="req-special">At least one special character</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Create User Account
+            </button>
+        </form>
+
+        <div id="userPreview" class="user-preview" style="display: none;">
+            <h3>User Created Successfully</h3>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        // Password validation
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+        function validatePassword() {
+            const password = passwordInput.value;
+            const requirements = [
+                { id: 'req-length', test: password.length >= 8 },
+                { id: 'req-uppercase', test: /[A-Z]/.test(password) },
+                { id: 'req-lowercase', test: /[a-z]/.test(password) },
+                { id: 'req-number', test: /\d/.test(password) },
+                { id: 'req-special', test: /[!@#$%^&*(),.?":{}|<>]/.test(password) }
+            ];
+
+            requirements.forEach(req => {
+                const element = document.getElementById(req.id);
+                if (req.test) {
+                    element.classList.add('met');
+                } else {
+                    element.classList.remove('met');
+                }
+            });
+
+            return requirements.every(req => req.test);
+        }
+
+        passwordInput.addEventListener('input', validatePassword);
+
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+        }
+
+        function clearMessage() {
+            document.getElementById('messageContainer').innerHTML = '';
+        }
+
+        function displayUserInfo(user) {
+            const userInfo = document.getElementById('userInfo');
+            const userPreview = document.getElementById('userPreview');
+            
+            userInfo.innerHTML = `
+                <strong>ID:</strong> <span>${user.id}</span>
+                <strong>Username:</strong> <span>${user.username}</span>
+                <strong>Email:</strong> <span>${user.email}</span>
+                <strong>Name:</strong> <span>${user.first_name} ${user.last_name}</span>
+                <strong>Role:</strong> <span>${user.role}</span>
+                <strong>Created:</strong> <span>${user.created_at}</span>
+                <strong>Status:</strong> <span style="color: #28a745;">Active</span>
+            `;
+            
+            userPreview.style.display = 'block';
+        }
+
+        // Form submission
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearMessage();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+
+            // Client-side validation
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!validatePassword()) {
+                showMessage('❌ Password does not meet requirements', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('❌ Passwords do not match', 'error');
+                return;
+            }
+
+            // Show loading state
+            submitBtn.innerHTML = '<span class="loading"></span>Creating User...';
+            submitBtn.disabled = true;
+
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                role: document.getElementById('role').value,
+                password: password
+            };
+
+            try {
+                // Send request to PHP backend
+                const response = await fetch('../php/create_user.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(`✅ ${result.message}! User ID: ${result.user.id}`, 'success');
+                    displayUserInfo(result.user);
+                    this.reset();
+                    validatePassword(); // Reset password requirements display
+                } else {
+                    showMessage('❌ ' + result.message, 'error');
+                }
+
+            } catch (error) {
+                showMessage('❌ Network error: Unable to connect to server. Make sure create_user.php is available.', 'error');
+                console.error('Error:', error);
+            }
+
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+
+        // Real-time validation feedback
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = passwordInput.value;
+            const confirmPassword = this.value;
+            
+            if (confirmPassword && password !== confirmPassword) {
+                this.style.borderColor = '#dc3545';
+            } else {
+                this.style.borderColor = '#e0e0e0';
+            }
+        });
+    </script>
+</body>
+</html>
