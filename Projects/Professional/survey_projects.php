@@ -8,30 +8,40 @@
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h1><i class="fas fa-map-marked-alt"></i> Survey Pro</h1>
-            <p>Professional Project Management</p>
+
+    <div class="container">
+        <!-- Mobile Toggle Button -->
+        <button class="mobile-toggle" id="mobileToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="sidebar" id="sidebar">
+            <button class="toggle-btn" id="toggleBtn">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="sidebar-header">
+                <h1><i class="fas fa-map-marked-alt"></i> Survey Pro</h1>
+                <p>Professional Project Management</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-th-large"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-folder-open"></i>
+                    All Projects
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </nav>
         </div>
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active">
-                <i class="fas fa-th-large"></i>
-                Dashboard
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-folder-open"></i>
-                All Projects
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-chart-bar"></i>
-                Analytics
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-cog"></i>
-                Settings
-            </a>
-        </nav>
     </div>
 
     <!-- Main Content -->
@@ -229,6 +239,128 @@
         </div>
     </div>
 
+    <!-- Add/Edit Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="taskModalTitle">Add New Task</h2>
+                <button class="close-button" onclick="closeTaskModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm" onsubmit="saveTask(event)">
+                    <input type="hidden" id="taskId" name="taskId">
+                    <input type="hidden" id="taskProjectId" name="projectId">
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="taskName">Task Name *</label>
+                            <input type="text" class="form-input" id="taskName" name="taskName" required 
+                                placeholder="e.g., Field survey and staking">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="taskType">Task Type *</label>
+                            <select class="form-select" id="taskType" name="taskType" required>
+                                <option value="">Select task type</option>
+                                <option value="Easement">Easement</option>
+                                <option value="ALTA">ALTA</option>
+                                <option value="Plat">Plat</option>
+                                <option value="Construction Staking">Construction Staking</option>
+                                <option value="Boundary Survey">Boundary Survey</option>
+                                <option value="Topographic Survey">Topographic Survey</option>
+                                <option value="As-Built Survey">As-Built Survey</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="taskStatus">Task Status</label>
+                            <select class="form-select" id="taskStatus" name="taskStatus">
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="On Hold">On Hold</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="taskPriority">Priority</label>
+                            <select class="form-select" id="taskPriority" name="taskPriority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="phaseNumber">Phase Number</label>
+                            <input type="text" class="form-input" id="phaseNumber" name="phaseNumber" 
+                                placeholder="e.g., 1, 2A, 3">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="assignedTo">Assigned To</label>
+                            <input type="text" class="form-input" id="assignedTo" name="assignedTo" 
+                                placeholder="Person or team name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="startDate">Start Date</label>
+                            <input type="date" class="form-input" id="startDate" name="startDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="dueDate">Due Date</label>
+                            <input type="date" class="form-input" id="dueDate" name="dueDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="completionDate">Completion Date</label>
+                            <input type="date" class="form-input" id="completionDate" name="completionDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="estimatedHours">Estimated Hours</label>
+                            <input type="number" class="form-input" id="estimatedHours" name="estimatedHours" 
+                                step="0.5" min="0" placeholder="e.g., 8.0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="actualHours">Actual Hours</label>
+                            <input type="number" class="form-input" id="actualHours" name="actualHours" 
+                                step="0.5" min="0" placeholder="e.g., 8.5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="taskLink">Task Link</label>
+                            <input type="url" class="form-input" id="taskLink" name="taskLink" 
+                                placeholder="https://...">
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="taskNotes">Notes</label>
+                            <textarea class="form-textarea" id="taskNotes" name="notes" rows="3"
+                                    placeholder="Additional notes or details about this task..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div class="toast-content">
@@ -319,6 +451,76 @@ function loadProjects() {
         searchProjects();
         showToast('Using sample data - check console for connection issues', 'warning');
     });
+}
+
+// Loads the different tasks per project
+function loadTasksForProject(projectId) {
+    return fetch('../../Models/php/load_tasks.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=load_tasks&project_id=${encodeURIComponent(projectId)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            return data.tasks || [];
+        }
+        return [];
+    })
+    .catch(error => {
+        console.error('Error loading tasks:', error);
+        return [];
+    });
+}
+
+// Helper function to format task type for CSS class
+function formatTaskTypeClass(taskType) {
+    return taskType.toLowerCase().replace(/\s+/g, '-');
+}
+
+// Helper function to format task status for CSS class
+function formatTaskStatusClass(status) {
+    return status.toLowerCase().replace(/\s+/g, '-');
+}
+
+// Create tasks HTML
+function createTasksHTML(tasks) {
+    if (!tasks || tasks.length === 0) {
+        return `
+            <div class="no-tasks-message">
+                <i class="fas fa-tasks" style="margin-right: 0.5rem;"></i>
+                No tasks assigned to this project yet
+            </div>
+        `;
+    }
+    
+    return tasks.map(task => {
+        const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
+        const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
+        const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        
+        return `
+            <div class="task-item">
+                <div class="task-info">
+                    <div class="task-header">
+                        <span class="task-type-badge ${taskTypeClass}">${task.task_type}</span>
+                        <span class="task-name">${task.task_name}</span>
+                    </div>
+                    <div class="task-meta">
+                        ${task.phase_number ? `<span><i class="fas fa-layer-group"></i> Phase ${task.phase_number}</span>` : ''}
+                        <span><i class="fas fa-calendar"></i> ${dueDate}</span>
+                        ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
+                    </div>
+                </div>
+                <span class="task-status-badge ${taskStatusClass}">
+                    <i class="fas fa-circle"></i>
+                    ${task.task_status}
+                </span>
+            </div>
+        `;
+    }).join('');
 }
 
 // Sample data for fallback
@@ -426,22 +628,25 @@ function updateProjectsDisplay() {
         pagination.style.display = 'flex';
     }
     
-    // Update table body
+   // Update table body
     const tbody = document.getElementById('projectsTableBody');
     tbody.innerHTML = '';
-    
+
     currentProjects.forEach(project => {
-        const row = createProjectRow(project);
+        const { row, detailsRow } = createProjectRow(project);
         tbody.appendChild(row);
+        tbody.appendChild(detailsRow);
     });
-    
+        
     // Update pagination
     updatePagination(totalProjects);
 }
-
-// Create a project row
+// Create a project row with collapsible details
 function createProjectRow(project) {
+    // Create main row
     const row = document.createElement('tr');
+    row.className = 'project-row';
+    row.dataset.projectId = project.projectId;
     
     // Format date
     const createdDate = new Date(project.createdDate).toLocaleDateString('en-US', {
@@ -453,16 +658,20 @@ function createProjectRow(project) {
     // Status badge class
     const statusClass = `status-${project.projectStatus.toLowerCase().replace(' ', '-')}`;
     
-    // Create links
-    const links = createProjectLinks(project);
+    // Task summary (will be populated after loading)
+    const taskSummary = `<span class="task-summary" id="task-summary-${project.projectId}">
+        <i class="fas fa-spinner fa-spin"></i> Loading tasks...
+    </span>`;
     
     row.innerHTML = `
         <td>
-            <div class="project-id">${project.projectId}</div>
-            <div class="project-name">${project.projectName}</div>
-            <div class="project-description">Created by ${project.createdBy}</div>
-            <div class="project-location"> Location: ${project.location}</div>
-            <div class="project-scale-factor"> Scale factor: ${project.scale_factor}</div>
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-chevron-right expand-icon"></i>
+                <div>
+                    <div class="project-id">${project.projectId}</div>
+                    <div class="project-name">${project.projectName}</div>
+                </div>
+            </div>
         </td>
         <td>
             <span class="status-badge ${statusClass}">
@@ -471,27 +680,105 @@ function createProjectRow(project) {
             </span>
         </td>
         <td>${createdDate}</td>
+        <td>${taskSummary}</td>
         <td>
-            <div class="links-grid">
-                ${links}
-            </div>
+            <span style="color: var(--gray-500); font-size: 0.875rem;">Click to expand</span>
         </td>
-        <td>
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-sm btn-secondary" onclick="editProject('${project.projectId}')">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-secondary" onclick="copyProjectId('${project.projectId}')">
-                    <i class="fas fa-copy"></i>
-                </button>
-                <button class="btn btn-sm" style="background: var(--danger-color); color: white;" onclick="deleteProject('${project.projectId}')">
-                    <i class="fas fa-trash"></i>
-                </button>
+    `;
+    
+    // Create details row
+    const detailsRow = document.createElement('tr');
+    detailsRow.className = 'details-row';
+    detailsRow.dataset.projectId = project.projectId;
+    
+    // Create links
+    const links = createProjectLinks(project);
+    
+    detailsRow.innerHTML = `
+        <td colspan="5">
+            <div class="details-content">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Created By</span>
+                        <span class="detail-value">${project.createdBy || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value">${project.location || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Scale Factor</span>
+                        <span class="detail-value">${project.scale_factor || 'N/A'}</span>
+                    </div>
+                </div>
+                
+                <div class="tasks-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4><i class="fas fa-tasks"></i> Project Tasks</h4>
+                        <button class="btn btn-sm btn-primary" onclick="openAddTaskModal('${project.projectId}')">
+                            <i class="fas fa-plus"></i> Add Task
+                        </button>
+                    </div>
+                    <div class="tasks-list" id="tasks-list-${project.projectId}">
+                        <div style="text-align: center; padding: 1rem; color: var(--gray-500);">
+                            <i class="fas fa-spinner fa-spin"></i> Loading tasks...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="links-section">
+                    <h4>Project Links</h4>
+                    <div class="links-grid">
+                        ${links}
+                    </div>
+                </div>
+                
+                <div class="actions-section">
+                    <button class="btn btn-sm btn-secondary" onclick="editProject('${project.projectId}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="copyProjectId('${project.projectId}')">
+                        <i class="fas fa-copy"></i> Copy ID
+                    </button>
+                    <button class="btn btn-sm" style="background: var(--danger-color); color: white;" onclick="deleteProject('${project.projectId}')">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
             </div>
         </td>
     `;
     
-    return row;
+    // Load tasks for this project and update display
+    loadTasksForProject(project.projectId).then(tasks => {
+        // Update task summary in main row
+        const taskSummaryElement = document.getElementById(`task-summary-${project.projectId}`);
+        if (taskSummaryElement) {
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.task_status === 'Completed').length;
+            taskSummaryElement.innerHTML = `
+                <i class="fas fa-tasks"></i> ${completedTasks}/${totalTasks} tasks
+            `;
+        }
+        
+        // Update tasks list in details row
+        const tasksListElement = document.getElementById(`tasks-list-${project.projectId}`);
+        if (tasksListElement) {
+            tasksListElement.innerHTML = createTasksHTML(tasks);
+        }
+    });
+    
+    // Add click event to toggle details
+    row.addEventListener('click', function(e) {
+        // Don't toggle if clicking on a button or link
+        if (e.target.closest('button') || e.target.closest('a')) {
+            return;
+        }
+        
+        this.classList.toggle('expanded');
+        detailsRow.classList.toggle('show');
+    });
+    
+    return { row, detailsRow };
 }
 
 // Create project links
@@ -768,9 +1055,22 @@ function exportData() {
     showToast('Project data exported successfully!');
 }
 
+const sidebar = document.getElementById('sidebar'); // Make sure your sidebar has id="sidebar"
+const toggleButton = document.querySelector('.toggle-btn'); // or use getElementById('toggleBtn')
+const main_content = document.querySelector('.main-content');
+
+toggleButton.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    main_content.classList.toggle('collapsed');
+});
+
+mobileToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+});
+
+
 // Toggle sidebar (mobile)
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('open');
 }
 
@@ -851,13 +1151,19 @@ function setupAutoFill() {
 
 // Close modal when clicking outside
 document.addEventListener('click', function(event) {
-    const modal = document.getElementById('projectModal');
+    const projectModal = document.getElementById('projectModal');
+    const taskModal = document.getElementById('taskModal');
     const sidebar = document.getElementById('sidebar');
     const mobileMenuButton = document.querySelector('.mobile-menu-button');
     
-    // Close modal if clicking outside
-    if (event.target === modal) {
+    // Close project modal if clicking outside
+    if (event.target === projectModal) {
         closeModal();
+    }
+    
+    // Close task modal if clicking outside
+    if (event.target === taskModal) {
+        closeTaskModal();
     }
     
     // Close sidebar if clicking outside (mobile)
@@ -866,6 +1172,223 @@ document.addEventListener('click', function(event) {
         sidebar.classList.remove('open');
     }
 });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+// Current editing task
+let currentEditingTask = null;
+
+// Open add task modal
+function openAddTaskModal(projectId) {
+    currentEditingTask = null;
+    document.getElementById('taskModalTitle').textContent = 'Add New Task';
+    document.getElementById('taskForm').reset();
+    document.getElementById('taskId').value = '';
+    document.getElementById('taskProjectId').value = projectId;
+    document.getElementById('taskModal').style.display = 'block';
+}
+
+// Open edit task modal
+function editTask(taskId, projectId) {
+    // Find the task in the loaded tasks
+    loadTasksForProject(projectId).then(tasks => {
+        const task = tasks.find(t => t.task_id == taskId);
+        if (!task) {
+            showToast('Task not found', 'error');
+            return;
+        }
+        
+        currentEditingTask = task;
+        document.getElementById('taskModalTitle').textContent = 'Edit Task';
+        
+        // Populate form
+        document.getElementById('taskId').value = task.task_id;
+        document.getElementById('taskProjectId').value = task.project_id;
+        document.getElementById('taskName').value = task.task_name || '';
+        document.getElementById('taskType').value = task.task_type || '';
+        document.getElementById('taskStatus').value = task.task_status || 'Not Started';
+        document.getElementById('taskPriority').value = task.task_priority || 'Medium';
+        document.getElementById('phaseNumber').value = task.phase_number || '';
+        document.getElementById('assignedTo').value = task.assigned_to || '';
+        document.getElementById('startDate').value = task.start_date || '';
+        document.getElementById('dueDate').value = task.due_date || '';
+        document.getElementById('completionDate').value = task.completion_date || '';
+        document.getElementById('estimatedHours').value = task.estimated_hours || '';
+        document.getElementById('actualHours').value = task.actual_hours || '';
+        document.getElementById('taskLink').value = task.task_link || '';
+        document.getElementById('taskNotes').value = task.notes || '';
+        
+        document.getElementById('taskModal').style.display = 'block';
+    });
+}
+
+// Close task modal
+function closeTaskModal() {
+    document.getElementById('taskModal').style.display = 'none';
+    currentEditingTask = null;
+}
+
+// Save task
+function saveTask(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const taskId = document.getElementById('taskId').value;
+    
+    // Determine action based on whether we're editing or adding
+    formData.append('action', taskId ? 'update_task' : 'add_task');
+    
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Saving...';
+    submitButton.disabled = true;
+    
+    fetch('../../Models/php/save_task.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+        
+        if (data.success) {
+            showToast(taskId ? 'Task updated successfully!' : 'Task added successfully!', 'success');
+            form.reset();
+            closeTaskModal();
+            
+            // Reload tasks for the project
+            const projectId = document.getElementById('taskProjectId').value;
+            loadTasksForProject(projectId).then(tasks => {
+                const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
+                if (tasksListElement) {
+                    tasksListElement.innerHTML = createTasksHTML(tasks);
+                }
+                
+                // Update task summary
+                const taskSummaryElement = document.getElementById(`task-summary-${projectId}`);
+                if (taskSummaryElement) {
+                    const totalTasks = tasks.length;
+                    const completedTasks = tasks.filter(t => t.task_status === 'Completed').length;
+                    taskSummaryElement.innerHTML = `
+                        <i class="fas fa-tasks"></i> ${completedTasks}/${totalTasks} tasks
+                    `;
+                }
+            });
+        } else {
+            showToast(data.message || 'Error saving task', 'error');
+        }
+    })
+    .catch(error => {
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+        console.error('Error saving task:', error);
+        showToast('Network error: Unable to save task. Please try again.', 'error');
+    });
+}
+
+// Delete task
+function deleteTask(taskId, projectId) {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'delete_task');
+    formData.append('taskId', taskId);
+    
+    fetch('../../Models/php/save_task.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Task deleted successfully!', 'success');
+            
+            // Reload tasks for the project
+            loadTasksForProject(projectId).then(tasks => {
+                const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
+                if (tasksListElement) {
+                    tasksListElement.innerHTML = createTasksHTML(tasks);
+                }
+                
+                // Update task summary
+                const taskSummaryElement = document.getElementById(`task-summary-${projectId}`);
+                if (taskSummaryElement) {
+                    const totalTasks = tasks.length;
+                    const completedTasks = tasks.filter(t => t.task_status === 'Completed').length;
+                    taskSummaryElement.innerHTML = `
+                        <i class="fas fa-tasks"></i> ${completedTasks}/${totalTasks} tasks
+                    `;
+                }
+            });
+        } else {
+            showToast(data.message || 'Error deleting task', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting task:', error);
+        showToast('Network error: Unable to delete task. Please try again.', 'error');
+    });
+}
+
+// Create tasks HTML with edit/delete buttons
+function createTasksHTML(tasks) {
+    if (!tasks || tasks.length === 0) {
+        return `
+            <div class="no-tasks-message">
+                <i class="fas fa-tasks" style="margin-right: 0.5rem;"></i>
+                No tasks assigned to this project yet
+            </div>
+        `;
+    }
+    
+    return tasks.map(task => {
+        const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
+        const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
+        const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        
+        return `
+            <div class="task-item">
+                <div class="task-info">
+                    <div class="task-header">
+                        <span class="task-type-badge ${taskTypeClass}">${task.task_type}</span>
+                        <span class="task-name">${task.task_name}</span>
+                    </div>
+                    <div class="task-meta">
+                        ${task.phase_number ? `<span><i class="fas fa-layer-group"></i> Phase ${task.phase_number}</span>` : ''}
+                        <span><i class="fas fa-calendar"></i> ${dueDate}</span>
+                        ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="task-status-badge ${taskStatusClass}">
+                        <i class="fas fa-circle"></i>
+                        ${task.task_status}
+                    </span>
+                    <button class="btn btn-xs btn-secondary" onclick="editTask(${task.task_id}, '${task.project_id}')" title="Edit task">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-xs" style="background: var(--danger-color); color: white;" onclick="deleteTask(${task.task_id}, '${task.project_id}')" title="Delete task">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
     </script>
 </body>
 </html>

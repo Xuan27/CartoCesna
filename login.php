@@ -130,18 +130,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username_or_email']))
             <div class="forgot-password">
                 <a href="forgot-password.php">Forgot your password?</a>
             </div>
-
-            <!-- Debug information (remove in production) -->
-            <?php if (isset($_GET['debug'])): ?>
-            <div class="debug-info">
-                <strong>Debug Info:</strong><br>
-                Session Status: <?php echo session_status(); ?><br>
-                Session ID: <?php echo session_id(); ?><br>
-                POST Method: <?php echo $_SERVER['REQUEST_METHOD']; ?><br>
-                Headers Sent: <?php echo headers_sent() ? 'Yes' : 'No'; ?><br>
-                Current URL: <?php echo $_SERVER['REQUEST_URI']; ?><br>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
 
