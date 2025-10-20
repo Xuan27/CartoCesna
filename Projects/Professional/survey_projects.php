@@ -28,9 +28,9 @@
                     <i class="fas fa-th-large"></i>
                     Dashboard
                 </a>
-                <a href="#" class="nav-item">
+                <a href="./all_tasks.php" class="nav-item">
                     <i class="fas fa-folder-open"></i>
-                    All Projects
+                    All Tasks
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-chart-bar"></i>
@@ -336,9 +336,9 @@
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label" for="taskLink">Task Link</label>
-                            <input type="url" class="form-input" id="taskLink" name="taskLink" 
-                                placeholder="https://...">
+                            <label class="form-label" for="taskLink">Task Folder Link</label>
+                            <input type="text" class="form-input" id="taskLink" name="taskLink" 
+                            placeholder="N:\0012345.00\Survey\Task Folder">
                         </div>
                         
                         <div class="form-group" style="grid-column: 1 / -1;">
@@ -500,6 +500,7 @@ function createTasksHTML(tasks) {
         const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
         const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
         const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        const uncPath = "westwoodps.local\\\\Global Projects";
         
         return `
             <div class="task-item">
@@ -512,12 +513,30 @@ function createTasksHTML(tasks) {
                         ${task.phase_number ? `<span><i class="fas fa-layer-group"></i> Phase ${task.phase_number}</span>` : ''}
                         <span><i class="fas fa-calendar"></i> ${dueDate}</span>
                         ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
+                        ${task.task_link ? `
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <a href="file:///${task.task_link.replace(/N:\\\\/g, uncPath)}" target="_blank" style="color: var(--primary-color);">
+                                    <i class="fas fa-folder"></i> Task Folder
+                                </a>
+                                <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}'); return false;" title="Copy task folder path" style="padding: 0.15rem 0.35rem;">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </span>
+                        ` : ''}
                     </div>
                 </div>
-                <span class="task-status-badge ${taskStatusClass}">
-                    <i class="fas fa-circle"></i>
-                    ${task.task_status}
-                </span>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="task-status-badge ${taskStatusClass}">
+                        <i class="fas fa-circle"></i>
+                        ${task.task_status}
+                    </span>
+                    <button class="btn btn-xs btn-secondary" onclick="editTask(${task.task_id}, '${task.project_id}')" title="Edit task">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-xs" style="background: var(--danger-color); color: white;" onclick="deleteTask(${task.task_id}, '${task.project_id}')" title="Delete task">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -1042,6 +1061,15 @@ function copyFolderPath(folderPath, linkType) {
     });
 }
 
+// Copy task folder path
+function copyTaskPath(taskPath, taskName) {
+    navigator.clipboard.writeText(taskPath).then(() => {
+        showToast(`Task folder path for "${taskName}" copied to clipboard!`);
+    }).catch(() => {
+        showToast(`Failed to copy task folder path`, 'error');
+    });
+}
+
 // Export data
 function exportData() {
     const dataStr = JSON.stringify(filteredProjects, null, 2);
@@ -1359,6 +1387,7 @@ function createTasksHTML(tasks) {
         const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
         const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
         const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        const uncPath = "westwoodps.local\\\\Global Projects";
         
         return `
             <div class="task-item">
@@ -1371,6 +1400,16 @@ function createTasksHTML(tasks) {
                         ${task.phase_number ? `<span><i class="fas fa-layer-group"></i> Phase ${task.phase_number}</span>` : ''}
                         <span><i class="fas fa-calendar"></i> ${dueDate}</span>
                         ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
+                        ${task.task_link ? `
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <a href="file:///${task.task_link.replace(/N:\\\\/g, uncPath)}" target="_blank" style="color: var(--primary-color);">
+                                    <i class="fas fa-folder"></i> Task Folder
+                                </a>
+                                <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}'); return false;" title="Copy task folder path" style="padding: 0.15rem 0.35rem;">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </span>
+                        ` : ''}
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
