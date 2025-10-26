@@ -706,6 +706,88 @@ body {
             z-index: 1000;
         }
 
+        .task-status-review {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fbbf24;
+        }
+
+        .task-status-review i {
+            color: #f59e0b;
+        }
+
+        /* Status badge dropdown styles */
+        .task-status-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .task-status-badge {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .task-status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.25rem;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 150px;
+            display: none;
+        }
+
+        .status-dropdown.show {
+            display: block;
+        }
+
+        .status-dropdown-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .status-dropdown-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .status-dropdown-item:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .status-dropdown-item:hover {
+            background: var(--gray-50);
+        }
+
+        .status-dropdown-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .status-dropdown-item.active i {
+            color: white !important;
+        }
+
+        .status-dropdown-item i {
+            font-size: 0.75rem;
+        }
+
         /* Main Content */
         .main-content.collapsed {
             flex: 1;
@@ -865,6 +947,30 @@ body {
             font-weight: 600;
             background: var(--gray-100);
             color: var(--gray-700);
+        }
+
+        .task-notes {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--gray-50);
+            border-left: 3px solid var(--primary-color);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .task-notes i {
+            color: var(--primary-color);
+            margin-top: 0.125rem;
+            flex-shrink: 0;
+        }
+
+        .task-notes span {
+            line-height: 1.5;
+            word-break: break-word;
         }
 
         .task-type-easement { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }

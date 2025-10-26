@@ -280,6 +280,7 @@
                             <select class="form-select" id="taskStatus" name="taskStatus">
                                 <option value="Not Started">Not Started</option>
                                 <option value="In Progress">In Progress</option>
+                                <option value="Review">Review</option>
                                 <option value="On Hold">On Hold</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
@@ -1372,7 +1373,7 @@ function deleteTask(taskId, projectId) {
     });
 }
 
-// Create tasks HTML with edit/delete buttons
+// Create tasks HTML with edit/delete buttons and clickable status
 function createTasksHTML(tasks) {
     if (!tasks || tasks.length === 0) {
         return `
@@ -1411,12 +1412,23 @@ function createTasksHTML(tasks) {
                             </span>
                         ` : ''}
                     </div>
+                    ${task.notes ? `
+                        <div class="task-notes">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>${task.notes}</span>
+                        </div>
+                    ` : ''}
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="task-status-badge ${taskStatusClass}">
-                        <i class="fas fa-circle"></i>
-                        ${task.task_status}
-                    </span>
+                    <div class="task-status-wrapper">
+                        <span class="task-status-badge ${taskStatusClass}" onclick="toggleStatusDropdown(event, ${task.task_id})" title="Click to change status">
+                            <i class="fas fa-circle"></i>
+                            ${task.task_status}
+                        </span>
+                        <div class="status-dropdown" id="status-dropdown-${task.task_id}">
+                            ${createStatusDropdownItems(task.task_id, task.project_id, task.task_status)}
+                        </div>
+                    </div>
                     <button class="btn btn-xs btn-secondary" onclick="editTask(${task.task_id}, '${task.project_id}')" title="Edit task">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -1428,6 +1440,106 @@ function createTasksHTML(tasks) {
         `;
     }).join('');
 }
+
+// Create status dropdown items
+function createStatusDropdownItems(taskId, projectId, currentStatus) {
+    const statuses = [
+        { value: 'Not Started', icon: 'fa-circle', class: 'not-started' },
+        { value: 'In Progress', icon: 'fa-circle', class: 'in-progress' },
+        { value: 'Review', icon: 'fa-circle', class: 'review' },
+        { value: 'On Hold', icon: 'fa-circle', class: 'on-hold' },
+        { value: 'Completed', icon: 'fa-circle', class: 'completed' },
+        { value: 'Cancelled', icon: 'fa-circle', class: 'cancelled' }
+    ];
+    
+    return statuses.map(status => {
+        const isActive = status.value === currentStatus ? 'active' : '';
+        const statusClass = `task-status-${formatTaskStatusClass(status.value)}`;
+        
+        return `
+            <div class="status-dropdown-item ${isActive}" onclick="changeTaskStatus(event, ${taskId}, '${projectId}', '${status.value}')">
+                <i class="fas ${status.icon}"></i>
+                <span>${status.value}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Toggle status dropdown
+function toggleStatusDropdown(event, taskId) {
+    event.stopPropagation();
+    
+    // Close all other dropdowns
+    document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+        if (dropdown.id !== `status-dropdown-${taskId}`) {
+            dropdown.classList.remove('show');
+        }
+    });
+    
+    // Toggle current dropdown
+    const dropdown = document.getElementById(`status-dropdown-${taskId}`);
+    dropdown.classList.toggle('show');
+}
+
+// Change task status
+function changeTaskStatus(event, taskId, projectId, newStatus) {
+    event.stopPropagation();
+    
+    // Close dropdown
+    const dropdown = document.getElementById(`status-dropdown-${taskId}`);
+    dropdown.classList.remove('show');
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('action', 'update_task_status');
+    formData.append('taskId', taskId);
+    formData.append('taskStatus', newStatus);
+    
+    // Send update request
+    fetch('../../Models/php/save_task.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Task status updated to "${newStatus}"`, 'success');
+            
+            // Reload tasks for the project
+            loadTasksForProject(projectId).then(tasks => {
+                const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
+                if (tasksListElement) {
+                    tasksListElement.innerHTML = createTasksHTML(tasks);
+                }
+                
+                // Update task summary
+                const taskSummaryElement = document.getElementById(`task-summary-${projectId}`);
+                if (taskSummaryElement) {
+                    const totalTasks = tasks.length;
+                    const completedTasks = tasks.filter(t => t.task_status === 'Completed').length;
+                    taskSummaryElement.innerHTML = `
+                        <i class="fas fa-tasks"></i> ${completedTasks}/${totalTasks} tasks
+                    `;
+                }
+            });
+        } else {
+            showToast(data.message || 'Error updating task status', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating task status:', error);
+        showToast('Network error: Unable to update task status', 'error');
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.task-status-wrapper')) {
+        document.querySelectorAll('.status-dropdown').forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
+    }
+});
     </script>
 </body>
 </html>
