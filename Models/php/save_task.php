@@ -62,7 +62,23 @@ try {
             'message' => 'Task updated successfully'
         ]);
         
-    } elseif ($action === 'delete_task') {
+    }  elseif ($action === 'update_task_status') {
+        // ✅ NEW HANDLER - Quick status update
+        $stmt = $conn->prepare("UPDATE tasks SET task_status = :task_status, modified_date = CURRENT_TIMESTAMP WHERE task_id = :task_id");
+        
+        $stmt->execute([
+            'task_id' => $_POST['taskId'] ?? '',
+            'task_status' => $_POST['taskStatus'] ?? 'Not Started'
+        ]);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Task status updated successfully'
+        ]);
+        
+    }
+    
+    elseif ($action === 'delete_task') {
         // Delete task
         $stmt = $conn->prepare("DELETE FROM tasks WHERE task_id = :task_id");
         $stmt->execute(['task_id' => $_POST['taskId'] ?? '']);
