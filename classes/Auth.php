@@ -7,6 +7,7 @@ class Auth {
     private $table_users = "users";
     private $table_sessions = "user_sessions";
     private $table_login_attempts = "login_attempts";
+    const ROOT_PAGE = '/CartoCesna/index.php';
     
     public function __construct() {
         $database = new Database();
@@ -61,6 +62,8 @@ class Auth {
         $_SESSION['username'] = $user['username'];
         $_SESSION['session_token'] = $session_token;
         $_SESSION['logged_in'] = true;
+        $_SESSION['last_activity'] = time();
+        $_SESSION['root_page'] = self::ROOT_PAGE;
         
         return [
             'success' => true, 
@@ -268,6 +271,23 @@ class Auth {
             session_start();
         }
         
+        // Check for inactivity (5 minutes)
+        if (!isset($_SESSION['last_activity']) || (time() - $_SESSION['last_activity'] > 300)) {
+            // Invalidate session
+            if (isset($_SESSION['session_token'])) {
+                $query = "UPDATE " . $this->table_sessions . " SET is_active = FALSE WHERE session_token = :session_token";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(':session_token', $_SESSION['session_token']);
+                $stmt->execute();
+            }
+            session_unset();
+            session_destroy();
+            return false;
+        }
+        
+        // Update last activity
+        $_SESSION['last_activity'] = time();
+        
         if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || !isset($_SESSION['session_token'])) {
             return false;
         }
@@ -286,5 +306,75 @@ class Auth {
         $stmt->execute();
         
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Get the role of a user.
+     * If no identifier is provided, uses the current session's user_id.
+     * $user_identifier may be a numeric user ID or a username/email string.
+     * Returns the role string (if available), 'admin'/'user' when using is_admin,
+     * null when no explicit role is set, or false on error/not found.
+     */
+    public function getUserRole($user_identifier = null) {
+        // If no identifier provided, try to read from session
+        if ($user_identifier === null) {
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
+            }
+
+            if (!isset($_SESSION['user_id'])) {
+                return false;
+            }
+
+            $user_id = (int) $_SESSION['user_id'];
+        }
+
+        try {
+            if (isset($user_id)) {
+                $query = "SELECT role, user_role, is_admin FROM " . $this->table_users . " WHERE id = :id LIMIT 1";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindValue(':id', $user_id, PDO::PARAM_INT);
+            } else {
+                $username_or_email = $user_identifier;
+                $query = "SELECT role, user_role, is_admin FROM " . $this->table_users . " WHERE username = :u OR email = :u LIMIT 1";
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindValue(':u', $username_or_email, PDO::PARAM_STR);
+            }
+
+            if (!$stmt) {
+                error_log("Prepare failed in getUserRole: " . print_r($this->conn->errorInfo(), true));
+                return false;
+            }
+
+            $result = $stmt->execute();
+
+            if (!$result) {
+                error_log("Execute failed in getUserRole: " . print_r($stmt->errorInfo(), true));
+                return false;
+            }
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return false;
+            }
+
+            if (!empty($row['role'])) {
+                return $row['role'];
+            }
+
+            if (!empty($row['user_role'])) {
+                return $row['user_role'];
+            }
+
+            if (isset($row['is_admin'])) {
+                return $row['is_admin'] ? 'admin' : 'user';
+            }
+
+            return null;
+        } catch (PDOException $e) {
+            error_log("Database error in getUserRole: " . $e->getMessage());
+            return false;
+        }
     }
 }

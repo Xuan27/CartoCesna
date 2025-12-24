@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<?php
+session_start();
+$_SESSION['root_page'] = $_SERVER['REQUEST_URI'];
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

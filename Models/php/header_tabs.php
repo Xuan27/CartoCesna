@@ -7,7 +7,7 @@
             🚀 Cartocesna
         </div>
         
-        <a href="./index.html" class="tab-item" data-page="index">
+        <a href="./index.php" class="tab-item" data-page="index">
             <span class="tab-icon">🏠</span>
             Home
         </a>
@@ -20,11 +20,6 @@
         <a href="services.html" class="tab-item" data-page="services">
             <span class="tab-icon">🛠️</span>
             Services
-        </a>
-        
-        <a href="portfolio.html" class="tab-item" data-page="portfolio">
-            <span class="tab-icon">💼</span>
-            Portfolio
         </a>
         
         <a href="./list.php" class="tab-item" data-page="article">

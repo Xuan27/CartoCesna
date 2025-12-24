@@ -9,6 +9,7 @@ $response = [
         'isLoggedIn' => isset($_SESSION['user_id']),
         'userId' => $_SESSION['user_id'] ?? null,
         'userName' => $_SESSION['username'] ?? '',
+        'rootPage' => $_SESSION['root_page'] ?? '/CartoCesna/index.php',
     ]
 ];
 

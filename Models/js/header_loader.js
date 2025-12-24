@@ -7,8 +7,8 @@
     'use strict';
     
     // Configuration
-    const CONFIG = {
-        headerUrl: 'Models/php/header_tabs.php',
+    let CONFIG = {
+        headerUrl: '/CartoCesna/Models/php/header_tabs.php', // Will be updated dynamically
         containerId: 'header-container',
         retryAttempts: 3,
         retryDelay: 1000,
@@ -135,23 +135,9 @@
         constructor() {
             this.currentAttempt = 0;
             this.container = null;
-
-            // Get session data via AJAX
-            async function getSessionData() {
-                try {
-                    const response = await fetch('Models/php/get_session.php');
-                    const sessionData = await response.json();
-                    
-                    if (sessionData.success) {
-                        initializeUserState(sessionData.data.isLoggedIn, sessionData.data.userName);
-                        console.log('Session data:', sessionData.data);
-                        return sessionData.data;
-                    }
-                } catch (error) {
-                    console.error('Error getting session data:', error);
-                }
-                return null;
-            }
+            this.sessionData = null;
+            this.basePath = '/CartoCesna/'; // default
+            this.loginUrl = '/CartoCesna/login.php'; // default
         }
         
         async loadHeader(forceReload = false) {
@@ -181,7 +167,7 @@
                 this.container.innerHTML = headerContent;
                 
                 // Initialize header functionality
-                this.initializeHeader();
+                await this.initializeHeader();
                 
                 // Reset attempt counter
                 this.currentAttempt = 0;
@@ -237,7 +223,13 @@
             }
         }
         
-        initializeHeader() {
+        async initializeHeader() {
+            // Fetch session data
+            await this.fetchSessionData();
+            
+            // Update all hrefs to absolute
+            this.updateHrefsToAbsolute();
+            
             // Set up event listeners for tab interactions
             this.setupTabEvents();
             
@@ -245,7 +237,12 @@
             this.setActiveTab();
             
             // Initialize user state
-            this.initializeUserState();
+            if (this.sessionData) {
+                this.initializeUserState(this.sessionData.isLoggedIn, this.sessionData.userName);
+            }
+            
+            // Update home href
+            this.updateHomeHref();
             
             // Emit custom event for external listeners
             document.dispatchEvent(new CustomEvent('headerLoaded', {
@@ -298,7 +295,7 @@
                 // Match by data-page attribute or href
                 if (tabPage === currentPage || 
                     (tabHref && tabHref.includes(currentPage)) ||
-                    (currentPage === 'index' && (tabPage === 'home' || tabHref === 'index.html'))) {
+                    (currentPage === 'index' && (tabPage === 'home' || (this.sessionData && tabHref === this.sessionData.rootPage)))) {
                     tab.classList.add('active');
                 }
             });
@@ -319,6 +316,49 @@
                 
                 window.HeaderTabs.updateUserSection(isLoggedIn, userName);
             }
+        }
+        
+        async fetchSessionData() {
+            try {
+                const response = await fetch(this.basePath + 'Models/php/get_session.php');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const sessionData = await response.json();
+                
+                if (sessionData.success) {
+                    this.sessionData = sessionData.data;
+                    // Update basePath from rootPage
+                    if (this.sessionData.rootPage) {
+                        this.basePath = this.sessionData.rootPage.replace(/\/[^\/]*$/, '/');
+                        this.loginUrl = this.sessionData.rootPage.replace(/\/[^\/]*$/, '/login.php');
+                        CONFIG.headerUrl = this.basePath + 'Models/php/header_tabs.php';
+                    }
+                    console.log('Session data:', sessionData.data);
+                    console.log('Base path set to:', this.basePath);
+                }
+            } catch (error) {
+                console.error('Error fetching session data:', error);
+            }
+        }
+        
+        updateHomeHref() {
+            if (this.sessionData && this.sessionData.rootPage) {
+                const homeTab = this.container.querySelector('.tab-item[data-page="index"]');
+                if (homeTab) {
+                    homeTab.setAttribute('href', this.sessionData.rootPage);
+                }
+            }
+        }
+        
+        updateHrefsToAbsolute() {
+            const links = this.container.querySelectorAll('a[href], link[href]');
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('http') && !href.startsWith('/')) {
+                    link.setAttribute('href', this.basePath + href.replace(/^\.\//, ''));
+                }
+            });
         }
         
         getUserLoginState() {
@@ -365,7 +405,7 @@
             this.setUserLoginState(false, '');
             
             // Optionally redirect to login page
-            // window.location.href = 'login.html';
+            window.location.href = this.loginUrl;
         }
     }
     
