@@ -333,8 +333,8 @@
                     this.sessionData = sessionData.data;
                     // Update basePath from rootPage
                     if (this.sessionData.rootPage) {
-                        this.basePath = this.sessionData.rootPage.replace(/\/[^\/]*$/, '/');
-                        this.loginUrl = this.sessionData.rootPage.replace(/\/[^\/]*$/, '/login.php');
+                        this.sessionData.rootPage = this.basePath;
+                        this.loginUrl = this.basePath + 'login.php';
                         CONFIG.headerUrl = this.basePath + 'Models/php/header_tabs.php';
                     }
                     console.log('Session data:', sessionData.data);
