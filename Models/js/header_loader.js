@@ -8,7 +8,6 @@
     
     // Configuration
     let CONFIG = {
-        headerUrl: '/CartoCesna/Models/php/header_tabs.php', // Will be updated dynamically
         containerId: 'header-container',
         retryAttempts: 3,
         retryDelay: 1000,
@@ -136,8 +135,12 @@
             this.currentAttempt = 0;
             this.container = null;
             this.sessionData = null;
-            this.basePath = '/CartoCesna/'; // default
-            this.loginUrl = '/CartoCesna/login.php'; // default
+            // Compute basePath dynamically from current location (first folder only)
+            const pathParts = window.location.pathname.split('/');
+            this.basePath = pathParts.length > 1 ? '/' + pathParts[1] + '/' : '/';
+            this.loginUrl = this.basePath + 'login.php';
+            // Set initial headerUrl dynamically
+            CONFIG.headerUrl = this.basePath + 'Models/php/header_tabs.php';
         }
         
         async loadHeader(forceReload = false) {

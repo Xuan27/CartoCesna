@@ -17,45 +17,6 @@ $_SESSION['root_page'] = $_SERVER['REQUEST_URI'];
             <div class="loading">Loading header...</div>
         </div>
     </header>
-    <!--<header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">Cartocesna</div>
-                <nav>
-                    <div class="nav-container">-->
-                        <!--Header Tabs-->
-                        <!--If a dropdwon-toggle nees to be included use the class nav-link dropdwon-toggle link in the projects tab-->
-                        <!--<ul class="nav-list">-->
-                            <!--About tab-->
-                            <!--<li class="nav-item dropdown"><a href="Models/php/reset_admin_password.php" class="nav-link">About</a></li>-->
-                            
-                            <!--Projects list tab-->
-                            <!--<li class="nav-item dropdown"><a href="/Projects/Projects_List.html" class="nav-link dropdown-toggle">Projects</a>
-                                <div class="dropdown-menu">
-                                    <div class="dropdown-header">Professional</div>
-                                    <a href="/Projects/Professional/" class="dropdown-item">Web Applications</a>
-                                    <a href="#mobile-apps" class="dropdown-item">Mobile Development</a>
-                                    <a href="#enterprise" class="dropdown-item">Enterprise Solutions</a>
-                                    <div class="dropdown-divider"></div>
-                                    <div class="dropdown-header">Personal</div>
-                                    <a href="./Projects/Personal/index.html" class="dropdown-item">Open Source</a>
-                                    <a href="#experiments" class="dropdown-item">Code Experiments</a>
-                                    <a href="#hobby" class="dropdown-item">Hobby Projects</a>
-                                </div>
-                            </li>-->
-                                
-                            <!--
-                            <li class="nav-item dropdown"><a href="#contact" class="nav-link">Contact</a></li>
-                            
-                            <li class="nav-item dropdown"><a href="Articles/list.html" class="nav-link">Articles</a></li>
-                            
-                            <li class="nav-item dropdown"><a href="login.php" class="nav-link">Log-in</a></li>
-                        </ul>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    </header>-->
 
     <section class="hero">
         <div class="logo-container">
