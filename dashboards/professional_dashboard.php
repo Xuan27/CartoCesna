@@ -3,7 +3,7 @@
 <?php session_start(); 
 // Handle logout
 if (isset($_POST['logout'])) {
-    $root_page = $_SESSION['root_page'] ?? '/CartoCesna/index.php';
+    $root_page = $_SESSION['root_page'];
     session_unset();
     session_destroy();
     $login_url = dirname($root_page) . '/login.php';
@@ -13,7 +13,7 @@ if (isset($_POST['logout'])) {
 
 // If not logged in, redirect
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    $login_url = dirname($_SESSION['root_page'] ?? '/CartoCesna/index.php') . '/login.php';
+    $login_url = dirname($_SESSION['root_page']) . '/login.php';
     header('Location: ' . $login_url);
     exit();
 }
