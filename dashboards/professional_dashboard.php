@@ -141,7 +141,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
             // Auto logout after 1 hour
             logoutTimer = setTimeout(() => {
                 alert('Your session has expired. You will be redirected to the login page.');
-                window.location.href = window.HeaderLoader ? window.HeaderLoader.loginUrl : '/CartoCesna/login.php';
+                window.location.href = window.HeaderLoader ? window.HeaderLoader.loginUrl : <?php echo $_SESSION['root_page'] ?>/login.php';
             }, 60 * 60 * 1000); // 60 minutes
         }
         

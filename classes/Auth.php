@@ -7,7 +7,6 @@ class Auth {
     private $table_users = "users";
     private $table_sessions = "user_sessions";
     private $table_login_attempts = "login_attempts";
-    const ROOT_PAGE = '/CartoCesna/index.php';
     
     public function __construct() {
         $database = new Database();
