@@ -1,35 +1,41 @@
 <!DOCTYPE html>
 
-<?php session_start(); 
+<?php 
+session_start();
+
 // Handle logout
 if (isset($_POST['logout'])) {
-    $root_page = $_SESSION['root_page'];
+    $root_page = $_SESSION['root_page'] ?? '/';
     session_unset();
     session_destroy();
-    $login_url = dirname($root_page) . '/login.php';
+    $login_url = $root_page . 'login.php';
     header('Location: ' . $login_url);
     exit();
 }
 
 // If not logged in, redirect
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    $login_url = dirname($_SESSION['root_page']) . '/login.php';
+    $root_page = $_SESSION['root_page'] ?? '/';
+    $login_url = $root_page . 'login.php';
     header('Location: ' . $login_url);
     exit();
 }
+
+// Get root page for constructing URLs
+$root_page = $_SESSION['root_page'] ?? '/';
 ?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Secure App</title>
-    <link rel="stylesheet" href="../Models/css/dashboard.css">
-    <link rel="stylesheet" href="../Models/css/articles-style.css">
+    <link rel="stylesheet" href="<?php echo $root_page; ?>Models/css/dashboard.css">
+    <link rel="stylesheet" href="<?php echo $root_page; ?>Models/css/articles-style.css">
 </head>
 <body>
 <!-- Include the loader script that loads header tabs-->
-<script src="../Models/js/header_loader.js"></script>
-<script src="../Models/js/header_tabs.js"></script>
+<script src="<?php echo $root_page; ?>Models/js/header_loader.js"></script>
+<script src="<?php echo $root_page; ?>Models/js/header_tabs.js"></script>
     <!--Header tabs-->
     <div id="header-container">
         <div class="loading">Loading header...</div>
@@ -38,7 +44,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
         <div class="nav-container">
             <div class="nav-brand">Secure Dashboard</div>
             <div class="nav-user">
-                <span>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
+                <span>Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>!</span>
                 <form method="POST" style="display: inline;">
                     <button type="submit" name="logout" class="logout-btn">Logout</button>
                 </form>
@@ -53,8 +59,8 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
             
             <div class="user-info">
                 <h3>Your Account Information:</h3>
-                <p><strong>Username:</strong> <?php echo htmlspecialchars($_SESSION['username']); ?></p>
-                <p><strong>User ID:</strong> <?php echo htmlspecialchars($_SESSION['user_id']); ?></p>
+                <p><strong>Username:</strong> <?php echo htmlspecialchars($_SESSION['username'] ?? 'Unknown'); ?></p>
+                <p><strong>User ID:</strong> <?php echo htmlspecialchars($_SESSION['user_id'] ?? 'Unknown'); ?></p>
                 <p><strong>Session Started:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
             </div>
         </div>
@@ -119,9 +125,12 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
     </div>
 
     <!-- Header navigation model -->
-    <script src="../Models/js/header_tabs.js"></script>
+    <script src="<?php echo $root_page; ?>Models/js/header_tabs.js"></script>
 
     <script>
+        // Store root page for JavaScript use
+        const ROOT_PAGE = '<?php echo addslashes($root_page); ?>';
+        
         // Auto-logout warning (optional)
         let warningTimer;
         let logoutTimer;
@@ -141,7 +150,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
             // Auto logout after 1 hour
             logoutTimer = setTimeout(() => {
                 alert('Your session has expired. You will be redirected to the login page.');
-                window.location.href = window.HeaderLoader ? window.HeaderLoader.loginUrl : <?php echo $_SESSION['root_page'] ?>/login.php';
+                window.location.href = ROOT_PAGE + 'login.php';
             }, 60 * 60 * 1000); // 60 minutes
         }
         
@@ -400,8 +409,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
         // Project actions
         function viewProject(projectId, url) {
             const project = allProjects.find(p => p.id === projectId);
-            window.open("../Projects/Professional/survey_projects.php", '_blank');
-            //alert(`Viewing project: ${project.title}\n\nIn a real application, this would open a detailed project view.`);
+            window.open(ROOT_PAGE + "Projects/Professional/survey_projects.php", '_blank');
         }
 
         function editProject(projectId) {

@@ -1,3 +1,5 @@
+<?php 
+session_start(); ?>
 <!-- header-tabs.html - Reusable Header Component -->
 <link rel="stylesheet" href="Models/css/header_tabs.css">
 

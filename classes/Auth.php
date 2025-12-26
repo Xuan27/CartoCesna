@@ -1,6 +1,6 @@
 <?php
-// classes/Auth.php
-require_once 'Private/db_config.php';
+// classes/Auth.php - Fixed version with better error handling
+require_once __DIR__ . '/../Private/db_config.php';
 
 class Auth {
     private $conn;
@@ -9,76 +9,128 @@ class Auth {
     private $table_login_attempts = "login_attempts";
     
     public function __construct() {
-        $database = new Database();
-        $this->conn = $database->getConnection();
+        try {
+            $database = new Database();
+            $this->conn = $database->getConnection();
+            
+            if (!$this->conn) {
+                throw new Exception("Failed to establish database connection");
+            }
+        } catch (Exception $e) {
+            error_log("Auth constructor error: " . $e->getMessage());
+            throw new Exception("Database connection failed: " . $e->getMessage());
+        }
     }
     
     public function login($username_or_email, $password, $remember_me = false) {
-        // Check if account is locked
-        if ($this->isAccountLocked($username_or_email)) {
-            $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
-            return ['success' => false, 'message' => 'Account is temporarily locked due to multiple failed attempts.'];
+        try {
+            // Check if account is locked
+            if ($this->isAccountLocked($username_or_email)) {
+                $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
+                return ['success' => false, 'message' => 'Account is temporarily locked due to multiple failed attempts.'];
+            }
+            
+            // Get user from database
+            $user = $this->getUserByUsernameOrEmail($username_or_email);
+            
+            if (!$user) {
+                $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
+                return ['success' => false, 'message' => 'Invalid credentials.'];
+            }
+            
+            // Check if account is active and verified
+            if (isset($user['is_active']) && !$user['is_active']) {
+                return ['success' => false, 'message' => 'Account is deactivated.'];
+            }
+            
+            if (isset($user['is_verified']) && !$user['is_verified']) {
+                return ['success' => false, 'message' => 'Please verify your email address.'];
+            }
+            
+            // Verify password
+            if (!password_verify($password, $user['password_hash'])) {
+                $this->incrementFailedAttempts($user['id']);
+                $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
+                return ['success' => false, 'message' => 'Invalid credentials.'];
+            }
+            
+            // Reset failed attempts on successful login
+            $this->resetFailedAttempts($user['id']);
+            $this->updateLastLogin($user['id']);
+            $this->logLoginAttempt($username_or_email, true, $_SERVER['REMOTE_ADDR']);
+            
+            // Create session
+            $session_token = $this->createSession($user['id'], $remember_me);
+            
+            // Start PHP session and store user data
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
+            }
+            
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['session_token'] = $session_token;
+            $_SESSION['logged_in'] = true;
+            $_SESSION['last_activity'] = time();
+            
+            // Set root page to current directory
+            $_SESSION['root_page'] = $this->getRootPage();
+            
+            return [
+                'success' => true, 
+                'message' => 'Login successful.',
+                'user' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'first_name' => $user['first_name'] ?? '',
+                    'last_name' => $user['last_name'] ?? ''
+                ]
+            ];
+        } catch (Exception $e) {
+            error_log("Login error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'An error occurred during login. Please try again.'];
+        }
+    }
+    
+    private function getRootPage() {
+        // Try to get from existing session first
+        if (isset($_SESSION['root_page'])) {
+            return $_SESSION['root_page'];
         }
         
-        // Get user from database
-        $user = $this->getUserByUsernameOrEmail($username_or_email);
+        // Get the directory of the current script
+        $scriptPath = $_SERVER['SCRIPT_NAME'];  // Changed from PHP_SELF
+        $pathParts = explode('/', $scriptPath);
         
-        if (!$user) {
-            $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
-            return ['success' => false, 'message' => 'Invalid credentials.'];
+        // Remove the filename to get directory
+        array_pop($pathParts);
+        
+        // Join back to create root path
+        $rootPath = implode('/', $pathParts);
+        
+        // Ensure it starts with / and ends with /
+        if (empty($rootPath) || $rootPath === '') {
+            $rootPath = '/';
+        } else {
+            // Add leading slash if missing
+            if (strpos($rootPath, '/') !== 0) {
+                $rootPath = '/' . $rootPath;
+            }
+            // Add trailing slash if missing
+            if (substr($rootPath, -1) !== '/') {
+                $rootPath .= '/';
+            }
         }
         
-        // Check if account is active and verified
-        if (!$user['is_active']) {
-            return ['success' => false, 'message' => 'Account is deactivated.'];
-        }
-        
-        if (!$user['is_verified']) {
-            return ['success' => false, 'message' => 'Please verify your email address.'];
-        }
-        
-        // Verify password
-        if (!password_verify($password, $user['password_hash'])) {
-            $this->incrementFailedAttempts($user['id']);
-            $this->logLoginAttempt($username_or_email, false, $_SERVER['REMOTE_ADDR']);
-            return ['success' => false, 'message' => 'Invalid credentials.'];
-        }
-        
-        // Reset failed attempts on successful login
-        $this->resetFailedAttempts($user['id']);
-        $this->updateLastLogin($user['id']);
-        $this->logLoginAttempt($username_or_email, true, $_SERVER['REMOTE_ADDR']);
-        
-        // Create session
-        $session_token = $this->createSession($user['id'], $remember_me);
-        
-        // Start PHP session and store user data
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['session_token'] = $session_token;
-        $_SESSION['logged_in'] = true;
-        $_SESSION['last_activity'] = time();
-        $_SESSION['root_page'] = self::ROOT_PAGE;
-        
-        return [
-            'success' => true, 
-            'message' => 'Login successful.',
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-                'first_name' => $user['first_name'],
-                'last_name' => $user['last_name']
-            ]
-        ];
+        return $rootPath;
     }
     
     private function getUserByUsernameOrEmail($username_or_email) {
-        $query = "SELECT id, username, email, password_hash, first_name, last_name, is_active, is_verified, failed_login_attempts, account_locked_until FROM " . $this->table_users . " WHERE username = ? OR email = ? LIMIT 1;";
+        $query = "SELECT id, username, email, password_hash, first_name, last_name, is_active, is_verified, failed_login_attempts, account_locked_until 
+                  FROM " . $this->table_users . " 
+                  WHERE username = :username OR email = :email 
+                  LIMIT 1";
         
         try {
             $stmt = $this->conn->prepare($query);
@@ -88,8 +140,8 @@ class Auth {
                 return false;
             }
             
-        $stmt->bindValue(1, $username_or_email, PDO::PARAM_STR);
-        $stmt->bindValue(2, $username_or_email, PDO::PARAM_STR);
+            $stmt->bindValue(':username', $username_or_email, PDO::PARAM_STR);
+            $stmt->bindValue(':email', $username_or_email, PDO::PARAM_STR);
             
             $result = $stmt->execute();
             
@@ -98,7 +150,7 @@ class Auth {
                 return false;
             }
             
-            return $stmt->fetch();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
             
         } catch (PDOException $e) {
             error_log("Database error in getUserByUsernameOrEmail: " . $e->getMessage());
@@ -111,12 +163,16 @@ class Auth {
         
         if (!$user) return false;
         
-        if ($user['account_locked_until'] && new DateTime($user['account_locked_until']) > new DateTime()) {
-            return true;
+        if (isset($user['account_locked_until']) && $user['account_locked_until']) {
+            $lockUntil = new DateTime($user['account_locked_until']);
+            $now = new DateTime();
+            if ($lockUntil > $now) {
+                return true;
+            }
         }
         
         // Check if too many failed attempts in short period
-        if ($user['failed_login_attempts'] >= 5) {
+        if (isset($user['failed_login_attempts']) && $user['failed_login_attempts'] >= 5) {
             $this->lockAccount($user['id']);
             return true;
         }
@@ -131,10 +187,14 @@ class Auth {
                   SET account_locked_until = :lock_until 
                   WHERE id = :user_id";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':lock_until', $lock_until);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':lock_until', $lock_until);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error locking account: " . $e->getMessage());
+        }
     }
     
     private function incrementFailedAttempts($user_id) {
@@ -173,9 +233,13 @@ class Auth {
                       account_locked_until = NULL 
                   WHERE id = :user_id";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error resetting failed attempts: " . $e->getMessage());
+        }
     }
     
     private function updateLastLogin($user_id) {
@@ -183,9 +247,13 @@ class Auth {
                   SET last_login = CURRENT_TIMESTAMP 
                   WHERE id = :user_id";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->execute();
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error updating last login: " . $e->getMessage());
+        }
     }
     
     private function createSession($user_id, $remember_me = false) {
@@ -198,15 +266,20 @@ class Auth {
                   (user_id, session_token, expires_at, ip_address, user_agent) 
                   VALUES (:user_id, :session_token, :expires_at, :ip_address, :user_agent)";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->bindParam(':session_token', $session_token);
-        $stmt->bindParam(':expires_at', $expires_at);
-        $stmt->bindParam(':ip_address', $_SERVER['REMOTE_ADDR']);
-        $stmt->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT']);
-        $stmt->execute();
-        
-        return $session_token;
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':session_token', $session_token);
+            $stmt->bindParam(':expires_at', $expires_at);
+            $stmt->bindParam(':ip_address', $_SERVER['REMOTE_ADDR']);
+            $stmt->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT']);
+            $stmt->execute();
+            
+            return $session_token;
+        } catch (PDOException $e) {
+            error_log("Error creating session: " . $e->getMessage());
+            return null;
+        }
     }
     
     private function logLoginAttempt($username_or_email, $success, $ip_address) {
@@ -253,9 +326,13 @@ class Auth {
                       SET is_active = FALSE 
                       WHERE session_token = :session_token";
             
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':session_token', $_SESSION['session_token']);
-            $stmt->execute();
+            try {
+                $stmt = $this->conn->prepare($query);
+                $stmt->bindParam(':session_token', $_SESSION['session_token']);
+                $stmt->execute();
+            } catch (PDOException $e) {
+                error_log("Error invalidating session: " . $e->getMessage());
+            }
         }
         
         // Clear PHP session
@@ -270,14 +347,20 @@ class Auth {
             session_start();
         }
         
-        // Check for inactivity (5 minutes)
-        if (!isset($_SESSION['last_activity']) || (time() - $_SESSION['last_activity'] > 300)) {
+        // Check for inactivity (30 minutes)
+        if (!isset($_SESSION['last_activity']) || (time() - $_SESSION['last_activity'] > 1800)) {
             // Invalidate session
             if (isset($_SESSION['session_token'])) {
-                $query = "UPDATE " . $this->table_sessions . " SET is_active = FALSE WHERE session_token = :session_token";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(':session_token', $_SESSION['session_token']);
-                $stmt->execute();
+                try {
+                    $query = "UPDATE " . $this->table_sessions . " 
+                              SET is_active = FALSE 
+                              WHERE session_token = :session_token";
+                    $stmt = $this->conn->prepare($query);
+                    $stmt->bindParam(':session_token', $_SESSION['session_token']);
+                    $stmt->execute();
+                } catch (PDOException $e) {
+                    error_log("Error invalidating inactive session: " . $e->getMessage());
+                }
             }
             session_unset();
             session_destroy();
@@ -300,20 +383,18 @@ class Auth {
                     AND us.is_active = TRUE 
                     AND u.is_active = TRUE";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':session_token', $_SESSION['session_token']);
-        $stmt->execute();
-        
-        return $stmt->rowCount() > 0;
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':session_token', $_SESSION['session_token']);
+            $stmt->execute();
+            
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error checking session: " . $e->getMessage());
+            return false;
+        }
     }
 
-    /**
-     * Get the role of a user.
-     * If no identifier is provided, uses the current session's user_id.
-     * $user_identifier may be a numeric user ID or a username/email string.
-     * Returns the role string (if available), 'admin'/'user' when using is_admin,
-     * null when no explicit role is set, or false on error/not found.
-     */
     public function getUserRole($user_identifier = null) {
         // If no identifier provided, try to read from session
         if ($user_identifier === null) {

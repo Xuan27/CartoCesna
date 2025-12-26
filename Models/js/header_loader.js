@@ -1,6 +1,7 @@
 /**
  * Header Loader - Loads and manages the reusable header component
  * This script should be included in every page that needs the header
+ * Automatically detects the correct base path regardless of server configuration
  */
 
 (function() {
@@ -13,7 +14,8 @@
         retryDelay: 1000,
         enableCache: true,
         cacheKey: 'header-tabs-cache',
-        cacheExpiry: 1000 * 60 * 30 // 30 minutes
+        cacheExpiry: 1000 * 60 * 30, // 30 minutes
+        headerUrl: null // Will be set dynamically
     };
     
     // Cache management
@@ -60,8 +62,6 @@
             }
         }
     };
-
-        
     
     // Loading states
     const LoadingStates = {
@@ -99,7 +99,7 @@
             `;
         },
         
-        showError(container, message, retry) {
+        showError(container, message) {
             container.innerHTML = `
                 <div style="
                     padding: 20px;
@@ -113,7 +113,7 @@
                     <div style="margin-bottom: 10px;">
                         ⚠️ Failed to load header: ${message}
                     </div>
-                    <button onclick="HeaderLoader.loadHeader()" style="
+                    <button onclick="HeaderLoader.loadHeader(true)" style="
                         padding: 8px 16px;
                         background: #721c24;
                         color: white;
@@ -129,18 +129,124 @@
         }
     };
     
+    // Path utilities
+    const PathUtils = {
+        /**
+         * Detects the base path of the application
+         * Returns the path from the domain root to the application root
+         */
+        detectBasePath() {
+            const scriptSrc = document.currentScript?.src || '';
+            const currentPath = window.location.pathname;
+            
+            // Try to find the base path from the script src
+            if (scriptSrc) {
+                const scriptUrl = new URL(scriptSrc);
+                const scriptPath = scriptUrl.pathname;
+                
+                // If script is in Models/js/, go up two levels
+                if (scriptPath.includes('/Models/js/')) {
+                    const baseFromScript = scriptPath.substring(0, scriptPath.indexOf('/Models/js/'));
+                    if (baseFromScript) {
+                        return baseFromScript + '/';
+                    }
+                }
+            }
+            
+            // Try to detect from current page location
+            // Look for common root indicators
+            const pathSegments = currentPath.split('/').filter(Boolean);
+            
+            // If we're in a subdirectory like /dashboards/ or /Projects/
+            const knownSubdirs = ['dashboards', 'Projects', 'Models', 'classes'];
+            for (let i = pathSegments.length - 1; i >= 0; i--) {
+                if (knownSubdirs.includes(pathSegments[i])) {
+                    // The base path is everything before this subdirectory
+                    const basePath = '/' + pathSegments.slice(0, i).join('/');
+                    return basePath ? basePath + '/' : '/';
+                }
+            }
+            
+            // Default: check if we're in a subdirectory
+            if (pathSegments.length > 1) {
+                // Assume first segment is the project name
+                return '/' + pathSegments[0] + '/';
+            }
+            
+            // We're at the root
+            return '/';
+        },
+        
+        /**
+         * Resolves a relative path to an absolute path based on the base path
+         */
+        resolve(basePath, relativePath) {
+            // Remove leading ./ or /
+            relativePath = relativePath.replace(/^\.?\//, '');
+            
+            // Ensure basePath ends with /
+            if (!basePath.endsWith('/')) {
+                basePath += '/';
+            }
+            
+            return basePath + relativePath;
+        },
+        
+        /**
+         * Normalizes a path by removing double slashes and resolving ..
+         */
+        normalize(path) {
+            // Remove double slashes
+            path = path.replace(/\/+/g, '/');
+            
+            // Split into segments
+            const segments = path.split('/');
+            const normalized = [];
+            
+            for (const segment of segments) {
+                if (segment === '..') {
+                    normalized.pop();
+                } else if (segment !== '.' && segment !== '') {
+                    normalized.push(segment);
+                }
+            }
+            
+            // Reconstruct path
+            let result = normalized.join('/');
+            
+            // Preserve leading slash
+            if (path.startsWith('/')) {
+                result = '/' + result;
+            }
+            
+            // Preserve trailing slash if original had it
+            if (path.endsWith('/') && !result.endsWith('/')) {
+                result += '/';
+            }
+            
+            return result;
+        }
+    };
+    
     // Main header loader class
     class HeaderLoader {
         constructor() {
             this.currentAttempt = 0;
             this.container = null;
             this.sessionData = null;
-            // Compute basePath dynamically from current location (first folder only)
-            const pathParts = window.location.pathname.split('/');
-            this.basePath = pathParts.length > 1 ? '/' + pathParts[1] + '/' : '/';
-            this.loginUrl = this.basePath + 'login.php';
-            // Set initial headerUrl dynamically
-            CONFIG.headerUrl = this.basePath + 'Models/php/header_tabs.php';
+            
+            // Detect base path dynamically
+            this.basePath = PathUtils.detectBasePath();
+            console.log('Detected base path:', this.basePath);
+            
+            // Set dependent paths
+            this.loginUrl = PathUtils.normalize(this.basePath + 'login.php');
+            CONFIG.headerUrl = PathUtils.normalize(this.basePath + 'Models/php/header_tabs.php');
+            this.sessionUrl = PathUtils.normalize(this.basePath + 'Models/php/get_session.php');
+            
+            console.log('Header URL:', CONFIG.headerUrl);
+            console.log('Session URL:', this.sessionUrl);
+            console.log('Login URL:', this.loginUrl);
         }
         
         async loadHeader(forceReload = false) {
@@ -222,7 +328,7 @@
                     this.loadHeader();
                 }, CONFIG.retryDelay * this.currentAttempt);
             } else {
-                LoadingStates.showError(this.container, error.message, () => this.loadHeader(true));
+                LoadingStates.showError(this.container, error.message);
             }
         }
         
@@ -230,7 +336,7 @@
             // Fetch session data
             await this.fetchSessionData();
             
-            // Update all hrefs to absolute
+            // Update all hrefs to absolute paths
             this.updateHrefsToAbsolute();
             
             // Set up event listeners for tab interactions
@@ -249,7 +355,7 @@
             
             // Emit custom event for external listeners
             document.dispatchEvent(new CustomEvent('headerLoaded', {
-                detail: { container: this.container }
+                detail: { container: this.container, basePath: this.basePath }
             }));
         }
         
@@ -285,7 +391,7 @@
         setActiveTab() {
             // Get current page from URL
             const currentPath = window.location.pathname;
-            const currentPage = currentPath.split('/').pop().replace('.html', '') || 'index';
+            const currentPage = currentPath.split('/').pop().replace('.php', '').replace('.html', '') || 'index';
             
             // Find and activate the corresponding tab
             const tabs = this.container.querySelectorAll('.tab-item');
@@ -297,8 +403,8 @@
                 
                 // Match by data-page attribute or href
                 if (tabPage === currentPage || 
-                    (tabHref && tabHref.includes(currentPage)) ||
-                    (currentPage === 'index' && (tabPage === 'home' || (this.sessionData && tabHref === this.sessionData.rootPage)))) {
+                    (tabHref && (tabHref.includes(currentPage + '.php') || tabHref.includes(currentPage + '.html'))) ||
+                    (currentPage === 'index' && (tabPage === 'home' || tabPage === 'index'))) {
                     tab.classList.add('active');
                 }
             });
@@ -323,7 +429,7 @@
         
         async fetchSessionData() {
             try {
-                const response = await fetch(this.basePath + 'Models/php/get_session.php');
+                const response = await fetch(this.sessionUrl);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -331,14 +437,7 @@
                 
                 if (sessionData.success) {
                     this.sessionData = sessionData.data;
-                    // Update basePath from rootPage
-                    if (this.sessionData.rootPage) {
-                        this.sessionData.rootPage = this.basePath;
-                        this.loginUrl = this.basePath + 'login.php';
-                        CONFIG.headerUrl = this.basePath + 'Models/php/header_tabs.php';
-                    }
-                    console.log('Session data:', sessionData.data);
-                    console.log('Base path set to:', this.basePath);
+                    console.log('Session data:', this.sessionData);
                 }
             } catch (error) {
                 console.error('Error fetching session data:', error);
@@ -346,11 +445,9 @@
         }
         
         updateHomeHref() {
-            if (this.sessionData && this.sessionData.rootPage) {
-                const homeTab = this.container.querySelector('.tab-item[data-page="index"]');
-                if (homeTab) {
-                    homeTab.setAttribute('href', this.sessionData.rootPage);
-                }
+            const homeTab = this.container.querySelector('.tab-item[data-page="index"]');
+            if (homeTab) {
+                homeTab.setAttribute('href', PathUtils.normalize(this.basePath + 'index.php'));
             }
         }
         
@@ -358,28 +455,24 @@
             const links = this.container.querySelectorAll('a[href], link[href]');
             links.forEach(link => {
                 const href = link.getAttribute('href');
-                if (href && !href.startsWith('http') && !href.startsWith('/')) {
-                    link.setAttribute('href', this.basePath + href.replace(/^\.\//, ''));
+                
+                // Skip external links, anchors, and already absolute paths
+                if (!href || 
+                    href.startsWith('http') || 
+                    href.startsWith('//') || 
+                    href.startsWith('#') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:')) {
+                    return;
+                }
+                
+                // Convert relative paths to absolute
+                if (href.startsWith('./')) {
+                    link.setAttribute('href', PathUtils.normalize(this.basePath + href.substring(2)));
+                } else if (!href.startsWith('/')) {
+                    link.setAttribute('href', PathUtils.normalize(this.basePath + href));
                 }
             });
-        }
-        
-        getUserLoginState() {
-            // This is a simple example - replace with your actual auth check
-            try {
-                return isLoggedIn === 'true';
-            } catch (e) {
-                return false;
-            }
-        }
-        
-        getUserName() {
-            // This is a simple example - replace with your actual user data
-            try {
-                return userName || '';
-            } catch (e) {
-                return '';
-            }
         }
         
         // Public methods for external use
@@ -388,25 +481,15 @@
             this.loadHeader(true);
         }
         
-        setUserLoginState(isLoggedIn, userName = '') {
-            try {
-                localStorage.setItem('userLoggedIn', isLoggedIn.toString());
-                if (userName) {
-                    localStorage.setItem('userName', userName);
-                }
-                
-                // Update header if it's loaded
-                if (this.container && window.HeaderTabs) {
-                    window.HeaderTabs.updateUserSection(isLoggedIn, userName);
-                }
-            } catch (e) {
-                console.warn('Failed to update user state:', e);
-            }
+        getBasePath() {
+            return this.basePath;
+        }
+        
+        resolvePath(relativePath) {
+            return PathUtils.resolve(this.basePath, relativePath);
         }
         
         logout() {
-            this.setUserLoginState(false, '');
-            
             // Optionally redirect to login page
             window.location.href = this.loginUrl;
         }
@@ -428,7 +511,8 @@
     // Expose utility methods globally
     window.HeaderUtils = {
         refreshHeader: () => window.HeaderLoader.refreshHeader(),
-        setUserLogin: (isLoggedIn, userName) => window.HeaderLoader.setUserLoginState(isLoggedIn, userName),
+        getBasePath: () => window.HeaderLoader.getBasePath(),
+        resolvePath: (relativePath) => window.HeaderLoader.resolvePath(relativePath),
         logout: () => window.HeaderLoader.logout(),
         
         // Event listeners helpers
