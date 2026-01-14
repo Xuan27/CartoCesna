@@ -17,6 +17,13 @@ if ($userRole !== 'admin') {
     exit();
 }
 
+// Store user_id before closing session
+$userId = $_SESSION['user_id'];
+
+// CRITICAL: Close session to release lock before infinite loop!
+// Without this, all other requests will be blocked
+session_write_close();
+
 // Set headers for SSE
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
@@ -36,7 +43,7 @@ $db = new Database();
 $conn = $db->getConnection();
 
 // Track last check time
-$lastCheckFile = sys_get_temp_dir() . '/notification_last_check_' . $_SESSION['user_id'] . '.txt';
+$lastCheckFile = sys_get_temp_dir() . '/notification_last_check_' . $userId . '.txt';
 $lastCheck = file_exists($lastCheckFile) ? file_get_contents($lastCheckFile) : date('Y-m-d H:i:s');
 
 // Keep connection alive and check for new pending users

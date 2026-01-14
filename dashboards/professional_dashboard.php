@@ -1,10 +1,13 @@
-<!DOCTYPE html>
+<?php
+require_once __DIR__ . '/../classes/Env.php';
+require_once __DIR__ . '/../classes/Security.php';
 
-<?php 
-session_start();
+// Initialize secure session
+Security::secureSession();
+Security::setSecurityHeaders();
 
 // Check authentication
-require_once '../classes/Auth.php';
+require_once __DIR__ . '/../classes/Auth.php';
 $auth = new Auth();
 
 // Check if user is logged in
@@ -32,7 +35,11 @@ if (isset($_POST['logout'])) {
 
 // Get root page for constructing URLs
 $root_page = $_SESSION['root_page'] ?? '/';
+
+// Close session to release lock for AJAX requests
+session_write_close();
 ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

@@ -1,12 +1,23 @@
-<!DOCTYPE html>
-<?php 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+<?php
+require_once __DIR__ . '/../classes/Env.php';
+require_once __DIR__ . '/../classes/Security.php';
 
-session_start();
+// Configure error display based on environment
+Env::load();
+if (Env::isDebug()) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+}
+
+// Initialize secure session
+Security::secureSession();
+Security::setSecurityHeaders();
 
 // Check authentication
-require_once '../classes/Auth.php';
+require_once __DIR__ . '/../classes/Auth.php';
 $auth = new Auth();
 
 // Check if user is logged in
@@ -25,7 +36,11 @@ if ($userRole !== 'admin') {
 
 // Get root page for constructing URLs
 $root_page = $_SESSION['root_page'] ?? '/';
+
+// Close session to release lock for AJAX requests
+session_write_close();
 ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -313,21 +328,33 @@ $root_page = $_SESSION['root_page'] ?? '/';
         
         // Load pending users
         async function loadPendingUsers() {
+            const container = document.getElementById('usersContainer');
+
             try {
                 const response = await fetch(ROOT_PAGE + 'Models/php/get_pending_users.php');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
                 const data = await response.json();
-                
+
                 if (!data.success) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span style="font-size: 4rem;">⚠️</span>
+                            <h3>Error</h3>
+                            <p>${escapeHtml(data.message || 'Failed to load users')}</p>
+                        </div>
+                    `;
                     showToast(data.message, 'error');
                     return;
                 }
                 
                 // Update count
                 document.getElementById('pendingCount').textContent = data.count;
-                
+
                 // Render users
-                const container = document.getElementById('usersContainer');
-                
                 if (data.users.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
@@ -367,6 +394,16 @@ $root_page = $_SESSION['root_page'] ?? '/';
                 
             } catch (error) {
                 console.error('Error loading users:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size: 4rem;">❌</span>
+                        <h3>Connection Error</h3>
+                        <p>Failed to load pending users. Please refresh the page.</p>
+                        <button onclick="loadPendingUsers()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Retry
+                        </button>
+                    </div>
+                `;
                 showToast('Failed to load pending users', 'error');
             }
         }

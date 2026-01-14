@@ -130,6 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username_or_email']))
     }
 }
 
+// Close session to release lock for AJAX requests
+session_write_close();
+
 // End output buffering for HTML output
 ob_end_flush();
 ?>

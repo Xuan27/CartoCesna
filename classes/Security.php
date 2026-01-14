@@ -155,6 +155,7 @@ class Security {
      * Set secure session configuration
      */
     public static function secureSession() {
+        // Only configure session if not already started
         if (session_status() === PHP_SESSION_NONE) {
             // Set secure session cookie parameters
             $isHttps = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
@@ -171,15 +172,8 @@ class Security {
             session_start();
         }
 
-        // Regenerate session ID periodically to prevent fixation
-        if (!isset($_SESSION['last_regeneration'])) {
-            session_regenerate_id(true);
-            $_SESSION['last_regeneration'] = time();
-        } elseif (time() - $_SESSION['last_regeneration'] > 300) {
-            // Regenerate every 5 minutes
-            session_regenerate_id(true);
-            $_SESSION['last_regeneration'] = time();
-        }
+        // Note: Session regeneration is handled in Auth::login() to prevent
+        // invalidating sessions on every page load
     }
 
     /**

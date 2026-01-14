@@ -1,7 +1,11 @@
-<!DOCTYPE html>
 <?php
 session_start();
+// Store any session data we need
+$root_page = $_SESSION['root_page'] ?? '/CartoCesna/';
+// Close session to release lock for AJAX requests
+session_write_close();
 ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
