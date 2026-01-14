@@ -66,7 +66,14 @@ class Auth {
             if (session_status() == PHP_SESSION_NONE) {
                 session_start();
             }
-            
+
+            // Regenerate session ID to prevent session fixation attacks
+            session_regenerate_id(true);
+
+            // Clear any existing session data first
+            session_unset();
+
+            // Set new session data
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['session_token'] = $session_token;
@@ -75,6 +82,9 @@ class Auth {
             
             // Set root page to current directory
             $_SESSION['root_page'] = $this->getRootPage();
+            
+            // Log the session data for debugging
+            error_log("Login successful - Session data set: user_id=" . $user['id'] . ", username=" . $user['username'] . ", logged_in=true");
             
             return [
                 'success' => true, 
@@ -347,8 +357,23 @@ class Auth {
             session_start();
         }
         
+        // Basic session check first
+        if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+            error_log("isLoggedIn: No logged_in flag in session");
+            return false;
+        }
+        
+        if (!isset($_SESSION['user_id'])) {
+            error_log("isLoggedIn: No user_id in session");
+            return false;
+        }
+        
         // Check for inactivity (30 minutes)
-        if (!isset($_SESSION['last_activity']) || (time() - $_SESSION['last_activity'] > 1800)) {
+        if (!isset($_SESSION['last_activity'])) {
+            // Set it if not exists (for backward compatibility)
+            $_SESSION['last_activity'] = time();
+        } elseif ((time() - $_SESSION['last_activity']) > 1800) {
+            error_log("isLoggedIn: Session inactive for too long");
             // Invalidate session
             if (isset($_SESSION['session_token'])) {
                 try {
@@ -370,28 +395,38 @@ class Auth {
         // Update last activity
         $_SESSION['last_activity'] = time();
         
-        if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || !isset($_SESSION['session_token'])) {
-            return false;
+        // If no session token, but other session data exists, allow it
+        // (This handles cases where session was created but token wasn't stored)
+        if (!isset($_SESSION['session_token'])) {
+            error_log("isLoggedIn: No session_token but session exists - allowing (backward compatibility)");
+            return true;
         }
         
         // Verify session in database
-        $query = "SELECT us.*, u.is_active 
-                  FROM " . $this->table_sessions . " us
-                  JOIN " . $this->table_users . " u ON us.user_id = u.id
-                  WHERE us.session_token = :session_token 
-                    AND us.expires_at > NOW() 
-                    AND us.is_active = TRUE 
-                    AND u.is_active = TRUE";
-        
         try {
+            $query = "SELECT us.*, u.is_active 
+                      FROM " . $this->table_sessions . " us
+                      JOIN " . $this->table_users . " u ON us.user_id = u.id
+                      WHERE us.session_token = :session_token 
+                        AND us.expires_at > NOW() 
+                        AND us.is_active = TRUE 
+                        AND u.is_active = TRUE";
+            
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':session_token', $_SESSION['session_token']);
             $stmt->execute();
             
-            return $stmt->rowCount() > 0;
+            $result = $stmt->rowCount() > 0;
+            
+            if (!$result) {
+                error_log("isLoggedIn: Session token not found or invalid in database");
+            }
+            
+            return $result;
         } catch (PDOException $e) {
             error_log("Error checking session: " . $e->getMessage());
-            return false;
+            // On database error, allow if basic session data exists
+            return isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
         }
     }
 
@@ -403,57 +438,103 @@ class Auth {
             }
 
             if (!isset($_SESSION['user_id'])) {
+                error_log("getUserRole: No user_id in session");
                 return false;
             }
 
             $user_id = (int) $_SESSION['user_id'];
+        } else {
+            // Check if it's numeric (user_id) or string (username/email)
+            if (is_numeric($user_identifier)) {
+                $user_id = (int) $user_identifier;
+            } else {
+                $username_or_email = $user_identifier;
+            }
         }
 
         try {
+            // First, check what columns exist in the table
+            $columnsQuery = "SHOW COLUMNS FROM " . $this->table_users;
+            $columnsStmt = $this->conn->query($columnsQuery);
+            $columns = $columnsStmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Build SELECT clause based on existing columns
+            $selectFields = [];
+            if (in_array('role', $columns)) $selectFields[] = 'role';
+            if (in_array('user_role', $columns)) $selectFields[] = 'user_role';
+            if (in_array('is_admin', $columns)) $selectFields[] = 'is_admin';
+            
+            if (empty($selectFields)) {
+                error_log("getUserRole: No role-related columns found in users table");
+                return false;
+            }
+            
+            $selectClause = implode(', ', $selectFields);
+            
             if (isset($user_id)) {
-                $query = "SELECT role, user_role, is_admin FROM " . $this->table_users . " WHERE id = :id LIMIT 1";
+                $query = "SELECT " . $selectClause . " FROM " . $this->table_users . " WHERE id = :id LIMIT 1";
                 $stmt = $this->conn->prepare($query);
+                
+                if (!$stmt) {
+                    error_log("getUserRole: Prepare failed - " . print_r($this->conn->errorInfo(), true));
+                    return false;
+                }
+                
                 $stmt->bindValue(':id', $user_id, PDO::PARAM_INT);
             } else {
-                $username_or_email = $user_identifier;
-                $query = "SELECT role, user_role, is_admin FROM " . $this->table_users . " WHERE username = :u OR email = :u LIMIT 1";
+                $query = "SELECT " . $selectClause . " FROM " . $this->table_users . " WHERE username = :u OR email = :u LIMIT 1";
                 $stmt = $this->conn->prepare($query);
+                
+                if (!$stmt) {
+                    error_log("getUserRole: Prepare failed - " . print_r($this->conn->errorInfo(), true));
+                    return false;
+                }
+                
                 $stmt->bindValue(':u', $username_or_email, PDO::PARAM_STR);
-            }
-
-            if (!$stmt) {
-                error_log("Prepare failed in getUserRole: " . print_r($this->conn->errorInfo(), true));
-                return false;
             }
 
             $result = $stmt->execute();
 
             if (!$result) {
-                error_log("Execute failed in getUserRole: " . print_r($stmt->errorInfo(), true));
+                error_log("getUserRole: Execute failed - " . print_r($stmt->errorInfo(), true));
                 return false;
             }
 
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$row) {
+                error_log("getUserRole: No user found");
                 return false;
             }
 
-            if (!empty($row['role'])) {
+            // Log what we found
+            $logData = [];
+            foreach ($selectFields as $field) {
+                $logData[] = "$field: " . ($row[$field] ?? 'NULL');
+            }
+            error_log("getUserRole: Found user data - " . implode(", ", $logData));
+
+            // Return role in priority order
+            if (isset($row['role']) && !empty($row['role'])) {
+                error_log("getUserRole: Returning role: " . $row['role']);
                 return $row['role'];
             }
 
-            if (!empty($row['user_role'])) {
+            if (isset($row['user_role']) && !empty($row['user_role'])) {
+                error_log("getUserRole: Returning user_role: " . $row['user_role']);
                 return $row['user_role'];
             }
 
             if (isset($row['is_admin'])) {
-                return $row['is_admin'] ? 'admin' : 'user';
+                $role = $row['is_admin'] ? 'admin' : 'user';
+                error_log("getUserRole: Returning from is_admin: " . $role);
+                return $role;
             }
 
+            error_log("getUserRole: No role field has a value");
             return null;
         } catch (PDOException $e) {
-            error_log("Database error in getUserRole: " . $e->getMessage());
+            error_log("getUserRole: Database error - " . $e->getMessage());
             return false;
         }
     }

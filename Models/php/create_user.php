@@ -1,9 +1,11 @@
 <?php
 // create_user.php - Creates a new user in the database
+require_once '../../classes/Security.php';
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+
+// Set secure CORS headers
+Security::setCorsHeaders();
 
 require_once '../../Private/db_config.php';
 
@@ -17,6 +19,14 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input) {
     echo json_encode(['success' => false, 'message' => 'Invalid JSON input']);
+    exit;
+}
+
+// Validate CSRF token (from header or body)
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $input['csrf_token'] ?? '';
+if (!Security::validateCsrfToken($csrf_token)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Invalid security token. Please refresh and try again.']);
     exit;
 }
 

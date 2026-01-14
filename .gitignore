@@ -4,3 +4,7 @@ launch.json
 template.php
 db_config.php
 
+# Environment files (contain secrets)
+.env
+!.env.example
+

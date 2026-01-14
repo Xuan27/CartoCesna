@@ -410,3 +410,50 @@ body {
     color: #666;
     font-size: 0.9rem;
 }
+
+/* Additional styles for personal dashboard categories */
+/* Add these to your existing dashboard.css file */
+
+/* Personal project category badges */
+.type-learning {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.type-hobby {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.type-creative {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+}
+
+.type-opensource {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.type-experiment {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+}
+
+/* On-hold status badge */
+.status-on-hold {
+    background: rgba(156, 163, 175, 0.1);
+    color: #9ca3af;
+}
+
+/* Dashboard switcher link styling */
+.nav-user a {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.nav-user a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

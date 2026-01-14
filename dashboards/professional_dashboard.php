@@ -3,21 +3,30 @@
 <?php 
 session_start();
 
+// Check authentication
+require_once '../classes/Auth.php';
+$auth = new Auth();
+
+// Check if user is logged in
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+    $root_page = $_SESSION['root_page'] ?? '/';
+    header('Location: ' . $root_page . 'login.php');
+    exit();
+}
+
+// Check if user is admin or professional
+$userRole = $auth->getUserRole($_SESSION['user_id']);
+if ($userRole !== 'admin' && $userRole !== 'professional_user') {
+    header('Location: ' . ($_SESSION['root_page'] ?? '/') . 'dashboard.php');
+    exit();
+}
+
 // Handle logout
 if (isset($_POST['logout'])) {
     $root_page = $_SESSION['root_page'] ?? '/';
     session_unset();
     session_destroy();
-    $login_url = $root_page . 'login.php';
-    header('Location: ' . $login_url);
-    exit();
-}
-
-// If not logged in, redirect
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
-    $root_page = $_SESSION['root_page'] ?? '/';
-    $login_url = $root_page . 'login.php';
-    header('Location: ' . $login_url);
+    header('Location: ' . $root_page . 'login.php');
     exit();
 }
 
@@ -28,7 +37,7 @@ $root_page = $_SESSION['root_page'] ?? '/';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Secure App</title>
+    <title>Dashboard - Professional Projects</title>
     <link rel="stylesheet" href="<?php echo $root_page; ?>Models/css/dashboard.css">
     <link rel="stylesheet" href="<?php echo $root_page; ?>Models/css/articles-style.css">
 </head>
@@ -36,15 +45,37 @@ $root_page = $_SESSION['root_page'] ?? '/';
 <!-- Include the loader script that loads header tabs-->
 <script src="<?php echo $root_page; ?>Models/js/header_loader.js"></script>
 <script src="<?php echo $root_page; ?>Models/js/header_tabs.js"></script>
+
     <!--Header tabs-->
     <div id="header-container">
         <div class="loading">Loading header...</div>
     </div>
+    
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-brand">Secure Dashboard</div>
+            <div class="nav-brand">Professional Dashboard</div>
             <div class="nav-user">
                 <span>Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? 'User'); ?>!</span>
+                
+                <?php if ($userRole === 'admin') { ?>
+                    <!-- Inbox/Notifications Icon -->
+                    <a href="<?php echo $root_page; ?>dashboards/verify_users.php" 
+                       id="inboxIcon"
+                       style="position: relative; color: white; text-decoration: none; margin: 0 10px; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 5px; display: inline-flex; align-items: center; gap: 5px;"
+                       title="Pending User Verifications">
+                        📬 Inbox
+                        <span id="inboxBadge" 
+                              style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; font-weight: bold; text-align: center; line-height: 20px;">
+                            0
+                        </span>
+                    </a>
+                    
+                    <a href="<?php echo $root_page; ?>dashboards/personal_dashboard.php" 
+                       style="color: white; text-decoration: none; margin: 0 10px; padding: 8px 15px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                        🔄 Switch to Personal
+                    </a>
+                <?php } ?>
+                
                 <form method="POST" style="display: inline;">
                     <button type="submit" name="logout" class="logout-btn">Logout</button>
                 </form>
@@ -54,82 +85,281 @@ $root_page = $_SESSION['root_page'] ?? '/';
 
     <div class="container">
         <div class="welcome-card">
-            <h1>Dashboard</h1>
-            <p>You have successfully logged in to the secure area.</p>
+            <h1>Professional Dashboard</h1>
+            <p>Manage your professional and client projects</p>
             
             <div class="user-info">
                 <h3>Your Account Information:</h3>
                 <p><strong>Username:</strong> <?php echo htmlspecialchars($_SESSION['username'] ?? 'Unknown'); ?></p>
                 <p><strong>User ID:</strong> <?php echo htmlspecialchars($_SESSION['user_id'] ?? 'Unknown'); ?></p>
-                <p><strong>Session Started:</strong> <?php echo date('Y-m-d H:i:s'); ?></p>
+                <p><strong>Role:</strong> <?php echo htmlspecialchars($userRole); ?></p>
+                <p><strong>Dashboard Type:</strong> Professional Projects</p>
             </div>
         </div>
 
-<div class="dashboard-container">
-        <div class="header">
-            <h1>Projects Dashboard</h1>
-            <p>Navigate through your personal and professional projects</p>
-        </div>
-
-        <div class="controls">
-            <input type="text" class="search-box" id="searchInput" placeholder="Search projects by name, description, or technology...">
-            <select class="filter-select" id="typeFilter">
-                <option value="">All Types</option>
-                <option value="personal">Personal</option>
-                <option value="professional">Professional</option>
-                <option value="client">Client Work</option>
-            </select>
-            <select class="filter-select" id="statusFilter">
-                <option value="">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="in-progress">In Progress</option>
-                <option value="planning">Planning</option>
-            </select>
-        </div>
-
-<!--Survey Projects Manager dashboard link-->
-        <div class="header">
-            <h1>Professional Survey Projects</h1>
-            <p>Manage and view all Professional Survey Projects</p>
-            <button class="btn btn-primary" onclick="viewProject(1)">List Projects</button>
-        </div>
-
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" id="totalProjects">0</div>
-                <div class="stat-label">Total Projects</div>
+        <div class="dashboard-container">
+            <div class="header">
+                <h1>Projects Dashboard</h1>
+                <p>Navigate through your personal and professional projects</p>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="completedProjects">0</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="inProgressProjects">0</div>
-                <div class="stat-label">In Progress</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="planningProjects">0</div>
-                <div class="stat-label">Planning</div>
-            </div>
-        </div>
 
-        <div id="projectsContainer">
-            <div class="loading" id="loadingIndicator">Loading projects...</div>
-            <div class="projects-grid" id="projectsGrid" style="display: none;"></div>
-            <div class="no-results" id="noResults" style="display: none;">
-                <h3>No projects found</h3>
-                <p>Try adjusting your search criteria or filters.</p>
+            <div class="controls">
+                <input type="text" class="search-box" id="searchInput" placeholder="Search projects by name, description, or technology...">
+                <select class="filter-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="personal">Personal</option>
+                    <option value="professional">Professional</option>
+                    <option value="client">Client Work</option>
+                </select>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="planning">Planning</option>
+                </select>
+            </div>
+
+            <!--Survey Projects Manager dashboard link-->
+            <div class="header">
+                <h1>Professional Survey Projects</h1>
+                <p>Manage and view all Professional Survey Projects</p>
+                <button class="btn btn-primary" onclick="viewProject(1)">List Projects</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalProjects">0</div>
+                    <div class="stat-label">Total Projects</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completedProjects">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="inProgressProjects">0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="planningProjects">0</div>
+                    <div class="stat-label">Planning</div>
+                </div>
+            </div>
+
+            <div id="projectsContainer">
+                <div class="loading" id="loadingIndicator">Loading projects...</div>
+                <div class="projects-grid" id="projectsGrid" style="display: none;"></div>
+                <div class="no-results" id="noResults" style="display: none;">
+                    <h3>No projects found</h3>
+                    <p>Try adjusting your search criteria or filters.</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Header navigation model -->
-    <script src="<?php echo $root_page; ?>Models/js/header_tabs.js"></script>
-
     <script>
         // Store root page for JavaScript use
         const ROOT_PAGE = '<?php echo addslashes($root_page); ?>';
+        
+        // Real-time notification system using Server-Sent Events
+        let eventSource = null;
+        
+        function initializeNotifications() {
+            if (!document.getElementById('inboxBadge')) {
+                return; // Not admin, skip
+            }
+            
+            // Close existing connection if any
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            // Create SSE connection
+            eventSource = new EventSource(ROOT_PAGE + 'Models/php/notifications_stream.php');
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'pending_users_update') {
+                        updateInboxBadge(data.count);
+                        
+                        // Show notification if there are new users
+                        if (data.new_users && data.new_users.length > 0) {
+                            showNotificationAlert(data.new_users);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error parsing SSE message:', error);
+                }
+            };
+            
+            eventSource.onerror = function(error) {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                
+                // Retry connection after 10 seconds
+                setTimeout(() => {
+                    console.log('Reconnecting to notification stream...');
+                    initializeNotifications();
+                }, 10000);
+            };
+            
+            // Initial load
+            fetchInitialCount();
+        }
+        
+        async function fetchInitialCount() {
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/get_pending_users.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateInboxBadge(data.count);
+                }
+            } catch (error) {
+                console.error('Error fetching initial count:', error);
+            }
+        }
+        
+        function updateInboxBadge(count) {
+            const badge = document.getElementById('inboxBadge');
+            const icon = document.getElementById('inboxIcon');
+            
+            if (!badge || !icon) return;
+            
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'block';
+                badge.style.animation = 'pulse 2s infinite';
+            } else {
+                badge.style.display = 'none';
+                badge.style.animation = 'none';
+            }
+        }
+        
+        function showNotificationAlert(newUsers) {
+            // Create notification toast
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                z-index: 10000;
+                min-width: 300px;
+                max-width: 400px;
+                border-left: 4px solid #3b82f6;
+                animation: slideInRight 0.3s ease;
+            `;
+            
+            const userName = newUsers[0].username;
+            const userEmail = newUsers[0].email;
+            const count = newUsers.length;
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: start; gap: 15px;">
+                    <div style="font-size: 2rem;">👤</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: #1e293b; margin-bottom: 5px;">
+                            New User Registration
+                        </div>
+                        <div style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">
+                            <strong>${userName}</strong><br>
+                            ${userEmail}
+                            ${count > 1 ? `<br><em>+${count - 1} more user(s)</em>` : ''}
+                        </div>
+                        <a href="${ROOT_PAGE}dashboards/verify_users.php" 
+                           style="display: inline-block; background: #3b82f6; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                            Review Now →
+                        </a>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.5rem; padding: 0; line-height: 1;">
+                        ×
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 10000);
+            
+            // Play notification sound (optional)
+            playNotificationSound();
+        }
+        
+        function playNotificationSound() {
+            // Create a simple notification beep
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                // Sound not supported or blocked
+                console.log('Notification sound not available');
+            }
+        }
+        
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOutRight {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize on page load
+        if (document.getElementById('inboxBadge')) {
+            initializeNotifications();
+        }
+        
+        // Clean up SSE connection when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
         
         // Auto-logout warning (optional)
         let warningTimer;
@@ -142,7 +372,6 @@ $root_page = $_SESSION['root_page'] ?? '/';
             // Warn user 5 minutes before session expires
             warningTimer = setTimeout(() => {
                 if (confirm('Your session will expire in 5 minutes. Click OK to extend your session.')) {
-                    // Make AJAX call to refresh session (implement as needed)
                     resetTimers();
                 }
             }, 55 * 60 * 1000); // 55 minutes
@@ -162,9 +391,7 @@ $root_page = $_SESSION['root_page'] ?? '/';
         document.addEventListener('keypress', resetTimers);
         document.addEventListener('mousemove', resetTimers);
 
-
-
-         // Mock database data - replace this with actual database fetching
+        // Mock database data - replace this with actual database fetching
         const mockProjects = [
             {
                 id: 1,
@@ -197,58 +424,6 @@ $root_page = $_SESSION['root_page'] ?? '/';
                 startDate: "2024-02-01",
                 estimatedCompletion: "2024-08-30",
                 client: "FinanceFirst Bank"
-            },
-            {
-                id: 4,
-                title: "AI-Powered Task Manager",
-                type: "personal",
-                status: "planning",
-                description: "An intelligent task management system that uses machine learning to prioritize tasks and predict completion times.",
-                technologies: ["Python", "TensorFlow", "Flask", "React"],
-                startDate: "2024-05-01",
-                estimatedCompletion: "2024-10-15"
-            },
-            {
-                id: 5,
-                title: "Corporate CRM System",
-                type: "professional",
-                status: "completed",
-                description: "Custom CRM system for managing customer relationships, sales pipeline, and automated reporting.",
-                technologies: ["Vue.js", "Laravel", "MySQL", "Redis"],
-                startDate: "2023-09-01",
-                completedDate: "2024-01-30",
-                client: "BusinessPro Inc"
-            },
-            {
-                id: 6,
-                title: "Fitness Tracking App",
-                type: "client",
-                status: "in-progress",
-                description: "Mobile app for tracking workouts, nutrition, and health metrics with social features and gamification.",
-                technologies: ["Flutter", "Dart", "Firebase", "Chart.js"],
-                startDate: "2024-03-15",
-                estimatedCompletion: "2024-09-01",
-                client: "FitLife Studio"
-            },
-            {
-                id: 7,
-                title: "Open Source UI Library",
-                type: "personal",
-                status: "in-progress",
-                description: "Creating a comprehensive UI component library for React applications with accessibility-first design.",
-                technologies: ["React", "TypeScript", "Storybook", "Jest"],
-                startDate: "2024-01-01",
-                estimatedCompletion: "2024-07-01"
-            },
-            {
-                id: 8,
-                title: "Data Analytics Dashboard",
-                type: "professional",
-                status: "planning",
-                description: "Real-time analytics dashboard for monitoring business KPIs and generating automated insights.",
-                technologies: ["D3.js", "Python", "Django", "PostgreSQL", "Docker"],
-                startDate: "2024-06-01",
-                estimatedCompletion: "2024-11-15"
             }
         ];
 
@@ -274,7 +449,7 @@ $root_page = $_SESSION['root_page'] ?? '/';
             return new Promise((resolve) => {
                 setTimeout(() => {
                     resolve(mockProjects);
-                }, 1500); // Simulate network delay
+                }, 1500);
             });
         }
 
@@ -407,7 +582,7 @@ $root_page = $_SESSION['root_page'] ?? '/';
         }
 
         // Project actions
-        function viewProject(projectId, url) {
+        function viewProject(projectId) {
             const project = allProjects.find(p => p.id === projectId);
             window.open(ROOT_PAGE + "Projects/Professional/survey_projects.php", '_blank');
         }

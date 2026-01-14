@@ -1,15 +1,30 @@
 <?php
-// login.php - Improved version with debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// login.php - Secure login page
+require_once __DIR__ . '/classes/Env.php';
+require_once __DIR__ . '/classes/Security.php';
+
+// Load environment and configure error reporting based on environment
+Env::load();
+if (Env::isDebug()) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+}
 ini_set('log_errors', 1);
 
 // Start output buffering to prevent header issues
 ob_start();
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// Initialize secure session
+Security::secureSession();
+
+// Set security headers
+Security::setSecurityHeaders();
+
+// Enforce HTTPS in production
+Security::enforceHttps();
 
 // Set root page in session if not already set
 if (!isset($_SESSION['root_page'])) {
@@ -32,13 +47,12 @@ if (!isset($_SESSION['root_page'])) {
     $_SESSION['root_page'] = $rootPath;
 }
 
-// Debug logging function
+// Debug logging function (only logs in debug mode)
 function debugLog($message) {
-    error_log("[LOGIN DEBUG] " . $message);
+    if (Env::isDebug()) {
+        error_log("[LOGIN DEBUG] " . $message);
+    }
 }
-
-debugLog("Login page accessed");
-debugLog("Root page set to: " . $_SESSION['root_page']);
 
 // If already logged in, redirect immediately
 if (isset($_SESSION['logged_in']) && $_SESSION['logged_in']) {
@@ -57,70 +71,61 @@ $form_data = [
     'remember_me' => false
 ];
 
-$debug_info = [];
-
 // Process login form submission ONLY if form was actually submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['username_or_email'])) {
     debugLog("Processing login form submission");
-    
-    require_once 'classes/Auth.php';
-    
-    $username_or_email = trim($_POST['username_or_email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $remember_me = isset($_POST['remember_me']);
-    
-    // Preserve form data for repopulation on error
-    $form_data['username_or_email'] = $username_or_email;
-    $form_data['remember_me'] = $remember_me;
-    
-    debugLog("Username/Email: " . $username_or_email);
-    
-    if (empty($username_or_email) || empty($password)) {
-        $message = 'Please fill in all required fields.';
+
+    // Validate CSRF token
+    if (!Security::validateCsrfToken()) {
+        $message = 'Invalid request. Please try again.';
         $message_type = 'error';
-        debugLog("Validation failed: empty fields");
     } else {
-        try {
-            $auth = new Auth();
-            debugLog("Auth object created");
-            
-            $result = $auth->login($username_or_email, $password, $remember_me);
-            debugLog("Login result: " . json_encode($result));
-            
-            if ($result['success']) {
-                debugLog("Login successful!");
-                
-                // Double check session is set
-                debugLog("Session after login - logged_in: " . ($_SESSION['logged_in'] ?? 'NOT SET'));
-                debugLog("Session after login - user_id: " . ($_SESSION['user_id'] ?? 'NOT SET'));
-                debugLog("Session after login - username: " . ($_SESSION['username'] ?? 'NOT SET'));
-                
-                // Verify we can call isLoggedIn
-                $checkLogin = $auth->isLoggedIn();
-                debugLog("isLoggedIn() check: " . ($checkLogin ? 'TRUE' : 'FALSE'));
-                
-                if (!$checkLogin) {
-                    debugLog("WARNING: Login succeeded but isLoggedIn() returns false!");
-                    $debug_info[] = "Login succeeded but isLoggedIn() returns false";
-                }
-                
-                // Clear output buffer and redirect
-                ob_end_clean();
-                $dashboardUrl = $_SESSION['root_page'] . 'dashboard.php';
-                debugLog("Attempting redirect to: " . $dashboardUrl);
-                header('Location: ' . $dashboardUrl);
-                exit();
-            } else {
-                $message = $result['message'];
-                $message_type = 'error';
-                debugLog("Login failed: " . $result['message']);
-            }
-        } catch (Exception $e) {
-            error_log("Login exception: " . $e->getMessage());
-            debugLog("Login exception: " . $e->getMessage());
-            $message = 'An error occurred. Please try again.';
+        require_once 'classes/Auth.php';
+
+        $username_or_email = trim($_POST['username_or_email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $remember_me = isset($_POST['remember_me']);
+
+        // Preserve form data for repopulation on error
+        $form_data['username_or_email'] = $username_or_email;
+        $form_data['remember_me'] = $remember_me;
+
+        debugLog("Username/Email: " . $username_or_email);
+
+        if (empty($username_or_email) || empty($password)) {
+            $message = 'Please fill in all required fields.';
             $message_type = 'error';
-            $debug_info[] = "Exception: " . $e->getMessage();
+            debugLog("Validation failed: empty fields");
+        } else {
+            try {
+                $auth = new Auth();
+                debugLog("Auth object created");
+
+                $result = $auth->login($username_or_email, $password, $remember_me);
+                debugLog("Login result: " . ($result['success'] ? 'success' : 'failed'));
+
+                if ($result['success']) {
+                    debugLog("Login successful!");
+
+                    // Regenerate CSRF token after successful login
+                    Security::regenerateCsrfToken();
+
+                    // Clear output buffer and redirect
+                    ob_end_clean();
+                    $dashboardUrl = $_SESSION['root_page'] . 'dashboard.php';
+                    debugLog("Attempting redirect to: " . $dashboardUrl);
+                    header('Location: ' . $dashboardUrl);
+                    exit();
+                } else {
+                    $message = $result['message'];
+                    $message_type = 'error';
+                    debugLog("Login failed: " . $result['message']);
+                }
+            } catch (Exception $e) {
+                error_log("Login exception: " . $e->getMessage());
+                $message = 'An error occurred. Please try again.';
+                $message_type = 'error';
+            }
         }
     }
 }
@@ -157,19 +162,8 @@ ob_end_flush();
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($debug_info) && (isset($_GET['debug']) || true)): ?>
-                <div class="debug-info">
-                    <strong>Debug Info:</strong><br>
-                    <?php foreach ($debug_info as $info): ?>
-                        <?php echo htmlspecialchars($info); ?><br>
-                    <?php endforeach; ?>
-                    <br>
-                    <strong>Session Data:</strong><br>
-                    <pre><?php print_r($_SESSION); ?></pre>
-                </div>
-            <?php endif; ?>
-
             <form method="POST" action="" id="loginForm">
+                <?php echo Security::csrfField(); ?>
                 <div class="form-group">
                     <label for="username_or_email">Username or Email</label>
                     <input 
@@ -235,12 +229,6 @@ ob_end_flush();
 
             <div class="forgot-password">
                 <a href="forgot-password.php">Forgot your password?</a>
-            </div>
-            
-            <div style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px; font-size: 12px;">
-                <strong>Debug Links:</strong><br>
-                <a href="debug_session.php">Check Session Status</a> | 
-                <a href="debug_login.php">Login Diagnostics</a>
             </div>
         </div>
     </div>
