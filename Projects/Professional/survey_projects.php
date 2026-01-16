@@ -695,7 +695,12 @@ function createProjectRow(project) {
             <div style="display: flex; align-items: center;">
                 <i class="fas fa-chevron-right expand-icon"></i>
                 <div>
-                    <div class="project-id">${project.projectId}</div>
+                    <div class="project-id">
+                        ${project.projectId}
+                        <button class="copy-id-btn" onclick="event.stopPropagation(); copyProjectId('${project.projectId}')" title="Copy Project ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                     <div class="project-name">${project.projectName}</div>
                 </div>
             </div>
@@ -1146,6 +1151,15 @@ function copyFolderPath(folderPath, linkType) {
     });
 }
 
+// Copy project ID to clipboard
+function copyProjectId(projectId) {
+    navigator.clipboard.writeText(projectId).then(() => {
+        showToast(`Project ID "${projectId}" copied to clipboard!`);
+    }).catch(() => {
+        showToast('Failed to copy Project ID', 'error');
+    });
+}
+
 // Copy task folder path
 function copyTaskPath(taskPath, taskName) {
     navigator.clipboard.writeText(taskPath).then(() => {
@@ -1510,10 +1524,13 @@ function createTasksHTML(tasks) {
                     <div class="task-folder-links">
                         ${generateTaskFolderLinks(task.project_id, task)}
                         ${task.task_link ? `
-                            <a href="file:///${task.task_link.replace(/N:\\\\/g, uncPath)}" target="_blank" class="task-folder-link" style="border-color: #6366f1;" title="Task Folder: ${task.task_link}">
+                            <span class="task-folder-link" style="border-color: #6366f1; cursor: default;">
                                 <i class="fas fa-folder" style="color: #6366f1;"></i>
-                                <span>Task</span>
-                            </a>
+                                <span style="font-size: 0.75rem; color: var(--gray-600);">${task.task_link}</span>
+                            </span>
+                            <button class="copy-id-btn" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}');" title="Copy Task Folder Path">
+                                <i class="fas fa-copy"></i>
+                            </button>
                         ` : ''}
                     </div>
                     ${task.notes ? `
