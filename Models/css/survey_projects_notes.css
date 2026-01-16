@@ -1030,6 +1030,49 @@ body {
             color: var(--gray-600);
         }
 
+        /* Task Folder Quick Links */
+        .task-folder-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--gray-200);
+        }
+
+        .task-folder-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .task-folder-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-folder-link i {
+            font-size: 0.625rem;
+        }
+
+        .task-folder-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .task-folder-link.disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
 @media (max-width: 1024px) {
     .sidebar {
         transform: translateX(-100%);

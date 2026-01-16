@@ -9,8 +9,18 @@ try {
     
     if ($action === 'add_task') {
         // Add new task
-        $stmt = $conn->prepare("INSERT INTO tasks (project_id, phase_number, task_name, task_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, estimated_hours, actual_hours, notes) VALUES (:project_id, :phase_number, :task_name, :task_type, :task_status, :task_priority, :task_link, :start_date, :due_date, :completion_date, :assigned_to, :created_by, :estimated_hours, :actual_hours, :notes)");
-        
+        // Handle folder_overrides JSON field
+        $folderOverrides = null;
+        if (!empty($_POST['folderOverrides'])) {
+            // Validate JSON
+            $decoded = json_decode($_POST['folderOverrides'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $folderOverrides = $_POST['folderOverrides'];
+            }
+        }
+
+        $stmt = $conn->prepare("INSERT INTO tasks (project_id, phase_number, task_name, task_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, estimated_hours, actual_hours, notes, folder_overrides) VALUES (:project_id, :phase_number, :task_name, :task_type, :task_status, :task_priority, :task_link, :start_date, :due_date, :completion_date, :assigned_to, :created_by, :estimated_hours, :actual_hours, :notes, :folder_overrides)");
+
         $stmt->execute([
             'project_id' => $_POST['projectId'] ?? '',
             'phase_number' => $_POST['phaseNumber'] ?? null,
@@ -26,9 +36,10 @@ try {
             'created_by' => $_POST['createdBy'] ?? null,
             'estimated_hours' => !empty($_POST['estimatedHours']) ? $_POST['estimatedHours'] : null,
             'actual_hours' => !empty($_POST['actualHours']) ? $_POST['actualHours'] : null,
-            'notes' => $_POST['notes'] ?? null
+            'notes' => $_POST['notes'] ?? null,
+            'folder_overrides' => $folderOverrides
         ]);
-        
+
         echo json_encode([
             'success' => true,
             'message' => 'Task added successfully',
@@ -37,8 +48,17 @@ try {
         
     } elseif ($action === 'update_task') {
         // Update existing task
-        $stmt = $conn->prepare("UPDATE tasks SET phase_number = :phase_number, task_name = :task_name, task_type = :task_type, task_status = :task_status, task_priority = :task_priority, task_link = :task_link, start_date = :start_date, due_date = :due_date, completion_date = :completion_date, assigned_to = :assigned_to, modified_by = :modified_by, estimated_hours = :estimated_hours, actual_hours = :actual_hours, notes = :notes WHERE task_id = :task_id");
-        
+        // Handle folder_overrides JSON field
+        $folderOverrides = null;
+        if (!empty($_POST['folderOverrides'])) {
+            $decoded = json_decode($_POST['folderOverrides'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $folderOverrides = $_POST['folderOverrides'];
+            }
+        }
+
+        $stmt = $conn->prepare("UPDATE tasks SET phase_number = :phase_number, task_name = :task_name, task_type = :task_type, task_status = :task_status, task_priority = :task_priority, task_link = :task_link, start_date = :start_date, due_date = :due_date, completion_date = :completion_date, assigned_to = :assigned_to, modified_by = :modified_by, estimated_hours = :estimated_hours, actual_hours = :actual_hours, notes = :notes, folder_overrides = :folder_overrides WHERE task_id = :task_id");
+
         $stmt->execute([
             'task_id' => $_POST['taskId'] ?? '',
             'phase_number' => $_POST['phaseNumber'] ?? null,
@@ -54,9 +74,10 @@ try {
             'modified_by' => $_POST['modifiedBy'] ?? null,
             'estimated_hours' => !empty($_POST['estimatedHours']) ? $_POST['estimatedHours'] : null,
             'actual_hours' => !empty($_POST['actualHours']) ? $_POST['actualHours'] : null,
-            'notes' => $_POST['notes'] ?? null
+            'notes' => $_POST['notes'] ?? null,
+            'folder_overrides' => $folderOverrides
         ]);
-        
+
         echo json_encode([
             'success' => true,
             'message' => 'Task updated successfully'
