@@ -96,10 +96,22 @@ try {
             'success' => true,
             'message' => 'Task status updated successfully'
         ]);
-        
-    }
-    
-    elseif ($action === 'delete_task') {
+
+    } elseif ($action === 'update_task_notes') {
+        // Quick notes update
+        $stmt = $conn->prepare("UPDATE tasks SET notes = :notes, modified_date = CURRENT_TIMESTAMP WHERE task_id = :task_id");
+
+        $stmt->execute([
+            'task_id' => $_POST['taskId'] ?? '',
+            'notes' => $_POST['notes'] ?? ''
+        ]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Task notes updated successfully'
+        ]);
+
+    } elseif ($action === 'delete_task') {
         // Delete task
         $stmt = $conn->prepare("DELETE FROM tasks WHERE task_id = :task_id");
         $stmt->execute(['task_id' => $_POST['taskId'] ?? '']);

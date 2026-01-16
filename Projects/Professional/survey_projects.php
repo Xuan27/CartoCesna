@@ -695,12 +695,7 @@ function createProjectRow(project) {
             <div style="display: flex; align-items: center;">
                 <i class="fas fa-chevron-right expand-icon"></i>
                 <div>
-                    <div class="project-id">
-                        ${project.projectId}
-                        <button class="copy-id-btn" onclick="event.stopPropagation(); copyProjectId('${project.projectId}')" title="Copy Project ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
+                    <div class="project-id">${project.projectId}</div>
                     <div class="project-name">${project.projectName}</div>
                 </div>
             </div>
@@ -1169,6 +1164,94 @@ function copyTaskPath(taskPath, taskName) {
     });
 }
 
+// Edit task notes inline on double-click
+function editTaskNotes(element) {
+    event.stopPropagation();
+
+    // Prevent multiple editors
+    if (element.querySelector('textarea')) return;
+
+    const taskId = element.dataset.taskId;
+    const projectId = element.dataset.projectId;
+    const contentSpan = element.querySelector('.task-notes-content');
+    const currentNotes = contentSpan.textContent.trim();
+    const isPlaceholder = contentSpan.querySelector('em') !== null;
+
+    // Store original content
+    const originalContent = isPlaceholder ? '' : currentNotes;
+
+    // Replace with textarea
+    element.innerHTML = `
+        <i class="fas fa-sticky-note"></i>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+            <textarea class="task-notes-editor" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--primary-color); border-radius: 4px; font-size: 0.875rem; resize: vertical;">${originalContent}</textarea>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); cancelNotesEdit(this, '${originalContent.replace(/'/g, "\\'")}', ${taskId}, '${projectId}')">Cancel</button>
+                <button class="btn btn-xs btn-primary" onclick="event.stopPropagation(); saveTaskNotes(${taskId}, '${projectId}')">Save</button>
+            </div>
+        </div>
+    `;
+
+    // Focus the textarea
+    const textarea = element.querySelector('textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+// Cancel notes editing
+function cancelNotesEdit(button, originalContent, taskId, projectId) {
+    const notesDiv = button.closest('.task-notes');
+    const displayContent = originalContent ? originalContent.replace(/\n/g, '<br>') : '<em style="color: var(--gray-400);">Double-click to add notes...</em>';
+    notesDiv.innerHTML = `
+        <i class="fas fa-sticky-note"></i>
+        <span class="task-notes-content">${displayContent}</span>
+    `;
+}
+
+// Save task notes to database
+function saveTaskNotes(taskId, projectId) {
+    const notesDiv = document.querySelector(`.task-notes[data-task-id="${taskId}"]`);
+    const textarea = notesDiv.querySelector('textarea');
+    const newNotes = textarea.value.trim();
+
+    // Show saving state
+    const saveBtn = notesDiv.querySelector('.btn-primary');
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('action', 'update_task_notes');
+    formData.append('taskId', taskId);
+    formData.append('notes', newNotes);
+
+    fetch('../../Models/php/save_task.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update display with line breaks preserved
+            const displayContent = newNotes ? newNotes.replace(/\n/g, '<br>') : '<em style="color: var(--gray-400);">Double-click to add notes...</em>';
+            notesDiv.innerHTML = `
+                <i class="fas fa-sticky-note"></i>
+                <span class="task-notes-content">${displayContent}</span>
+            `;
+            showToast('Notes saved successfully!', 'success');
+        } else {
+            showToast(data.message || 'Failed to save notes', 'error');
+            saveBtn.textContent = 'Save';
+            saveBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error saving notes:', error);
+        showToast('Failed to save notes', 'error');
+        saveBtn.textContent = 'Save';
+        saveBtn.disabled = false;
+    });
+}
+
 // Export data
 function exportData() {
     const dataStr = JSON.stringify(filteredProjects, null, 2);
@@ -1524,21 +1607,19 @@ function createTasksHTML(tasks) {
                     <div class="task-folder-links">
                         ${generateTaskFolderLinks(task.project_id, task)}
                         ${task.task_link ? `
-                            <span class="task-folder-link" style="border-color: #6366f1; cursor: default;">
+                            <span class="task-folder-link" style="border-color: #6366f1; cursor: default;" title="${task.task_link}">
                                 <i class="fas fa-folder" style="color: #6366f1;"></i>
-                                <span style="font-size: 0.75rem; color: var(--gray-600);">${task.task_link}</span>
+                                <span style="font-size: 0.75rem; color: var(--gray-600);">${task.task_link.split('\\').pop()}</span>
                             </span>
-                            <button class="copy-id-btn" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}');" title="Copy Task Folder Path">
+                            <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}');" title="Copy Task Folder Path">
                                 <i class="fas fa-copy"></i>
                             </button>
                         ` : ''}
                     </div>
-                    ${task.notes ? `
-                        <div class="task-notes">
-                            <i class="fas fa-sticky-note"></i>
-                            <span>${task.notes}</span>
-                        </div>
-                    ` : ''}
+                    <div class="task-notes" data-task-id="${task.task_id}" data-project-id="${task.project_id}" ondblclick="editTaskNotes(this)" title="Double-click to edit">
+                        <i class="fas fa-sticky-note"></i>
+                        <span class="task-notes-content">${task.notes ? task.notes.replace(/\n/g, '<br>') : '<em style="color: var(--gray-400);">Double-click to add notes...</em>'}</span>
+                    </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <div class="task-status-wrapper">
