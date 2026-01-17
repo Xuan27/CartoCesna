@@ -138,116 +138,123 @@ $root_page = $_SESSION['root_page'] ?? '/';
         </div>
     </div>
 
+    <!-- Edit Project Modal -->
+    <div id="projectModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; overflow-y: auto;">
+        <div class="modal-content" style="max-width: 700px; margin: 2rem auto; background: white; border-radius: 12px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);">
+            <div class="modal-header">
+                <h2 id="projectModalTitle">Edit Project</h2>
+                <button class="close-button" onclick="closeProjectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="projectForm" onsubmit="saveProject(event)">
+                    <input type="hidden" id="editProjectId" name="project_id">
+                    <input type="hidden" name="project_type" value="personal">
+                    <input type="hidden" name="is_new" value="0">
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectTitle">Project Title *</label>
+                            <input type="text" class="form-input" id="projectTitle" name="title" required placeholder="Enter project title">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectTypeCategory">Category</label>
+                            <select class="form-select" id="projectTypeCategory" name="project_type_category">
+                                <option value="learning">Learning</option>
+                                <option value="web_development">Web Development</option>
+                                <option value="mobile_app">Mobile App</option>
+                                <option value="data_science">Data Science</option>
+                                <option value="machine_learning">Machine Learning</option>
+                                <option value="game_development">Game Development</option>
+                                <option value="automation">Automation</option>
+                                <option value="experiment">Experiment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectStatus">Status</label>
+                            <select class="form-select" id="projectStatus" name="status">
+                                <option value="idea">Idea</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="completed">Completed</option>
+                                <option value="abandoned">Abandoned</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectPriority">Priority</label>
+                            <select class="form-select" id="projectPriority" name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectDescription">Description</label>
+                            <textarea class="form-textarea" id="projectDescription" name="description" rows="3" placeholder="Brief description of the project"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectStartDate">Start Date</label>
+                            <input type="date" class="form-input" id="projectStartDate" name="start_date">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectEndDate">End Date</label>
+                            <input type="date" class="form-input" id="projectEndDate" name="end_date">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectTechnologies">Technologies (comma-separated)</label>
+                            <input type="text" class="form-input" id="projectTechnologies" name="technologies_input" placeholder="e.g., React, Node.js, PostgreSQL">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectUrl">Project URL</label>
+                            <input type="url" class="form-input" id="projectUrl" name="project_url" placeholder="https://...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectGithubUrl">GitHub URL</label>
+                            <input type="url" class="form-input" id="projectGithubUrl" name="github_url" placeholder="https://github.com/...">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectNotes">Notes</label>
+                            <textarea class="form-textarea" id="projectNotes" name="notes" rows="2" placeholder="Additional notes..."></textarea>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="projectPublic" name="is_public" checked>
+                                <span>Public Project</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                        <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; display: none; z-index: 10000;">
+        <span id="toastMessage"></span>
+    </div>
+
     <script>
         // Store root page for JavaScript use
         const ROOT_PAGE = '<?php echo addslashes($root_page); ?>';
-        
-        // Mock personal projects data
-        const mockProjects = [
-            {
-                id: 1,
-                title: "Learning React and TypeScript",
-                category: "learning",
-                status: "in-progress",
-                description: "Deep dive into React with TypeScript, building a series of progressively complex applications to master modern frontend development.",
-                technologies: ["React", "TypeScript", "Vite", "TailwindCSS"],
-                startDate: "2024-01-01",
-                estimatedCompletion: "2024-06-30"
-            },
-            {
-                id: 2,
-                title: "Home Automation System",
-                category: "hobby",
-                status: "in-progress",
-                description: "Building a smart home automation system using Raspberry Pi, sensors, and custom software to control lights, temperature, and security.",
-                technologies: ["Python", "Raspberry Pi", "IoT", "MQTT"],
-                startDate: "2023-10-15",
-                estimatedCompletion: "2024-05-01"
-            },
-            {
-                id: 3,
-                title: "Photography Portfolio Site",
-                category: "creative",
-                status: "completed",
-                description: "A beautiful, responsive portfolio website showcasing my photography work with galleries, lightbox effects, and contact form.",
-                technologies: ["HTML5", "CSS3", "JavaScript", "PhotoSwipe"],
-                startDate: "2023-08-01",
-                completedDate: "2023-11-20"
-            },
-            {
-                id: 4,
-                title: "Contribute to Vue.js Docs",
-                category: "opensource",
-                status: "in-progress",
-                description: "Contributing to Vue.js documentation by writing tutorials, fixing errors, and helping translate content to Spanish.",
-                technologies: ["Vue.js", "Markdown", "Git", "Documentation"],
-                startDate: "2024-02-01",
-                estimatedCompletion: "Ongoing"
-            },
-            {
-                id: 5,
-                title: "3D Printing Projects",
-                category: "hobby",
-                status: "in-progress",
-                description: "Learning 3D modeling and printing. Creating custom organizers, hobby parts, and artistic sculptures.",
-                technologies: ["Blender", "Fusion 360", "3D Printing"],
-                startDate: "2023-12-01",
-                estimatedCompletion: "Ongoing"
-            },
-            {
-                id: 6,
-                title: "Machine Learning Study Group",
-                category: "learning",
-                status: "completed",
-                description: "Completed Andrew Ng's Machine Learning course and built several ML projects including image classification and sentiment analysis.",
-                technologies: ["Python", "TensorFlow", "Scikit-learn", "Jupyter"],
-                startDate: "2023-06-01",
-                completedDate: "2023-12-15"
-            },
-            {
-                id: 7,
-                title: "Music Production Experiments",
-                category: "creative",
-                status: "on-hold",
-                description: "Learning electronic music production, sound design, and composition using digital audio workstation software.",
-                technologies: ["Ableton Live", "Sound Design", "MIDI"],
-                startDate: "2023-09-01",
-                pausedDate: "2024-01-15"
-            },
-            {
-                id: 8,
-                title: "Arduino Weather Station",
-                category: "experiment",
-                status: "planning",
-                description: "Planning to build a complete weather station with Arduino that measures temperature, humidity, pressure, and uploads data to the cloud.",
-                technologies: ["Arduino", "C++", "Sensors", "Cloud API"],
-                startDate: "2024-04-01",
-                estimatedCompletion: "2024-08-01"
-            },
-            {
-                id: 9,
-                title: "Personal Blog Platform",
-                category: "learning",
-                status: "completed",
-                description: "Built a custom blog platform from scratch to learn backend development, authentication, and database design.",
-                technologies: ["Node.js", "Express", "MongoDB", "EJS"],
-                startDate: "2023-04-01",
-                completedDate: "2023-09-30"
-            },
-            {
-                id: 10,
-                title: "Game Development with Unity",
-                category: "hobby",
-                status: "planning",
-                description: "Starting to learn Unity and C# to create 2D indie games. First project will be a platformer puzzle game.",
-                technologies: ["Unity", "C#", "Game Design"],
-                startDate: "2024-05-01",
-                estimatedCompletion: "2024-12-31"
-            }
-        ];
 
-        let allProjects = [...mockProjects];
-        let filteredProjects = [...mockProjects];
+        let allProjects = [];
+        let filteredProjects = [];
 
         // DOM elements
         const searchInput = document.getElementById('searchInput');
@@ -263,13 +270,40 @@ $root_page = $_SESSION['root_page'] ?? '/';
         const inProgressProjectsEl = document.getElementById('inProgressProjects');
         const planningProjectsEl = document.getElementById('planningProjects');
 
-        // Simulate database fetch
-        function fetchProjects() {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(mockProjects);
-                }, 1000);
-            });
+        // Fetch personal projects from API
+        async function fetchProjects() {
+            const response = await fetch(ROOT_PAGE + 'Models/php/projects_api.php?action=get_projects');
+            const data = await response.json();
+
+            if (data.success) {
+                // Get only personal projects
+                const projects = [];
+                if (data.projects.personal) {
+                    data.projects.personal.forEach(p => {
+                        // Map category from project_type or purpose
+                        let category = p.purpose || p.project_type || 'other';
+                        // Normalize status format
+                        let status = (p.status || 'in_progress').replace(/_/g, '-');
+
+                        projects.push({
+                            id: p.id,
+                            project_id: p.project_id,
+                            title: p.title || 'Untitled',
+                            category: category,
+                            status: status,
+                            description: p.description || 'No description',
+                            technologies: p.technologies_used || p.technologies || [],
+                            startDate: p.start_date,
+                            endDate: p.end_date,
+                            completedDate: p.end_date,
+                            created_at: p.created_at
+                        });
+                    });
+                }
+                return projects;
+            } else {
+                throw new Error(data.message || 'Failed to fetch projects');
+            }
         }
 
         // Initialize dashboard
@@ -332,7 +366,11 @@ $root_page = $_SESSION['root_page'] ?? '/';
             noResults.style.display = 'none';
             projectsGrid.style.display = 'grid';
 
-            projectsGrid.innerHTML = filteredProjects.map(project => `
+            projectsGrid.innerHTML = filteredProjects.map(project => {
+                const technologies = Array.isArray(project.technologies) ? project.technologies : [];
+                const displayDate = project.completedDate || project.endDate || project.startDate || project.created_at;
+
+                return `
                 <div class="project-card">
                     <div class="project-header">
                         <div>
@@ -340,30 +378,29 @@ $root_page = $_SESSION['root_page'] ?? '/';
                         </div>
                         <span class="project-type type-${project.category}">${project.category}</span>
                     </div>
-                    
+
                     <div class="project-description">${project.description}</div>
-                    
+
                     <div class="project-meta">
                         <span class="project-status status-${project.status}">
-                            ${project.status.replace('-', ' ').toUpperCase()}
+                            ${project.status.replace(/-/g, ' ').toUpperCase()}
                         </span>
                         <span class="project-date">
-                            ${formatDate(project.status === 'completed' ? project.completedDate : 
-                              project.status === 'on-hold' ? project.pausedDate :
-                              project.startDate)}
+                            ${formatDate(displayDate)}
                         </span>
                     </div>
-                    
+
                     <div class="project-tech">
-                        ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                        ${technologies.length > 0 ? technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('') : '<span style="color: #94a3b8; font-size: 0.85em;">No technologies specified</span>'}
                     </div>
-                    
+
                     <div class="project-actions">
-                        <button class="btn btn-primary" onclick="viewProject(${project.id})">View Details</button>
-                        <button class="btn btn-secondary" onclick="editProject(${project.id})">Edit</button>
+                        <button class="btn btn-primary" onclick="viewProject('${project.project_id}')">View Details</button>
+                        <button class="btn btn-secondary" onclick="editProject('${project.project_id}')">Edit</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function formatDate(dateString) {
@@ -402,14 +439,130 @@ $root_page = $_SESSION['root_page'] ?? '/';
 
         // Project actions
         function viewProject(projectId) {
-            const project = allProjects.find(p => p.id === projectId);
-            alert(`Viewing project: ${project.title}\n\nIn a real application, this would open a detailed project view.`);
+            const project = allProjects.find(p => p.project_id === projectId);
+            if (project) {
+                const technologies = Array.isArray(project.technologies) ? project.technologies.join(', ') : 'None';
+                alert(`Project: ${project.title}\n\nCategory: ${project.category}\nStatus: ${project.status}\nDescription: ${project.description}\nTechnologies: ${technologies}`);
+            }
         }
 
         function editProject(projectId) {
-            const project = allProjects.find(p => p.id === projectId);
-            alert(`Editing project: ${project.title}\n\nIn a real application, this would open an edit form.`);
+            // Find the project in allProjects (need to get full data from API)
+            fetchProjectDetails(projectId);
         }
+
+        async function fetchProjectDetails(projectId) {
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/projects_api.php?action=get_project&project_id=' + projectId + '&project_type=personal');
+                const data = await response.json();
+
+                if (data.success && data.project) {
+                    openEditProjectModal(data.project);
+                } else {
+                    showToast('Failed to load project details', 'error');
+                }
+            } catch (error) {
+                console.error('Error fetching project:', error);
+                showToast('Error loading project', 'error');
+            }
+        }
+
+        function openEditProjectModal(project) {
+            document.getElementById('projectModalTitle').textContent = 'Edit Project';
+            document.getElementById('editProjectId').value = project.project_id;
+
+            // Populate form fields
+            document.getElementById('projectTitle').value = project.title || '';
+            document.getElementById('projectTypeCategory').value = project.project_type || 'other';
+            document.getElementById('projectStatus').value = project.status || 'idea';
+            document.getElementById('projectPriority').value = project.priority || 'medium';
+            document.getElementById('projectDescription').value = project.description || '';
+            document.getElementById('projectStartDate').value = project.start_date || '';
+            document.getElementById('projectEndDate').value = project.end_date || '';
+
+            const technologies = Array.isArray(project.technologies_used) ? project.technologies_used.join(', ') :
+                                 (Array.isArray(project.technologies) ? project.technologies.join(', ') : '');
+            document.getElementById('projectTechnologies').value = technologies;
+
+            document.getElementById('projectUrl').value = project.project_url || '';
+            document.getElementById('projectGithubUrl').value = project.github_url || '';
+            document.getElementById('projectNotes').value = project.notes || '';
+            document.getElementById('projectPublic').checked = project.is_public == 1;
+
+            const modal = document.getElementById('projectModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        async function saveProject(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Convert technologies input to array
+            const techInput = document.getElementById('projectTechnologies').value;
+            if (techInput) {
+                const techArray = techInput.split(',').map(t => t.trim()).filter(t => t);
+                formData.append('technologies', JSON.stringify(techArray));
+            }
+
+            formData.append('action', 'save_project');
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/projects_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message || 'Project saved successfully!', 'success');
+                    closeProjectModal();
+                    // Reload projects
+                    initDashboard();
+                } else {
+                    showToast(data.message || 'Failed to save project', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving project:', error);
+                showToast('An error occurred while saving', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Project';
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = message;
+            toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+            toast.style.color = 'white';
+            toast.style.display = 'block';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('projectModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProjectModal();
+            }
+        });
 
         // Initialize the dashboard when the page loads
         document.addEventListener('DOMContentLoaded', initDashboard);

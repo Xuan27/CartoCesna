@@ -420,10 +420,14 @@
         
         initializeUserState(isLoggedIn, userName) {
             // Check if user management functions exist and call them
-            if (typeof window.HeaderTabs !== 'undefined' && 
-                typeof window.HeaderTabs.updateUserSection === 'function') {
-                
-                window.HeaderTabs.updateUserSection(isLoggedIn, userName);
+            try {
+                if (typeof window.HeaderTabs !== 'undefined' &&
+                    typeof window.HeaderTabs.updateUserSection === 'function') {
+
+                    window.HeaderTabs.updateUserSection(isLoggedIn, userName);
+                }
+            } catch (error) {
+                console.warn('Error updating user state:', error);
             }
         }
         

@@ -75,16 +75,24 @@
     function updateUserSection(isLoggedIn, userName) {
         const loginLink = document.getElementById('login-link');
         const userAvatar = document.getElementById('user-avatar');
-        
+
         if (isLoggedIn && userName) {
-            loginLink.style.display = 'inline-flex';
-            loginLink.innerText = 'Dashboard';
-            userAvatar.style.display = 'inline-flex';
-            userAvatar.textContent = userName.substring(0, 2).toUpperCase();
-            userAvatar.title = userName;
+            if (loginLink) {
+                loginLink.style.display = 'inline-flex';
+                loginLink.innerText = 'Dashboard';
+            }
+            if (userAvatar) {
+                userAvatar.style.display = 'inline-flex';
+                userAvatar.textContent = userName.substring(0, 2).toUpperCase();
+                userAvatar.title = userName;
+            }
         } else {
-            loginLink.style.display = 'inline-flex';
-            userAvatar.style.display = 'none';
+            if (loginLink) {
+                loginLink.style.display = 'inline-flex';
+            }
+            if (userAvatar) {
+                userAvatar.style.display = 'none';
+            }
         }
     }
     

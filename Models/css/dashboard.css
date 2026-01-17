@@ -166,6 +166,37 @@ body {
     color: #be185d;
 }
 
+/* Professional project type badges */
+.type-development {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.type-internal {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.type-consulting {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.type-collaboration {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.type-research {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+.type-other {
+    background: #f1f5f9;
+    color: #475569;
+}
+
 .project-description {
     color: #64748b;
     margin-bottom: 16px;
@@ -456,4 +487,126 @@ body {
 
 .nav-user a:hover {
     background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-button:hover {
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: white;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-select {
+    cursor: pointer;
+}
+
+/* Survey projects section styling */
+.survey-projects-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.survey-projects-section h1,
+.survey-projects-section p {
+    color: white;
+}
+
+.survey-projects-section .btn-primary {
+    background: white;
+    color: #667eea;
+    border-color: white;
+}
+
+.survey-projects-section .btn-primary:hover {
+    background: #f8fafc;
+    color: #764ba2;
 }

@@ -17,12 +17,26 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
     exit();
 }
 
-// Check if user is admin or professional
+// Check if user is admin, enterprise, or professional
 $userRole = $auth->getUserRole($_SESSION['user_id']);
-if ($userRole !== 'admin' && $userRole !== 'professional_user') {
+$allowedRoles = ['admin', 'enterprise_user', 'professional_user', 'surveyor_ww'];
+if (!in_array($userRole, $allowedRoles)) {
     header('Location: ' . ($_SESSION['root_page'] ?? '/') . 'dashboard.php');
     exit();
 }
+
+// Determine user type for access control
+$userType = 'personal';
+if ($userRole === 'admin') {
+    $userType = 'admin';
+} elseif ($userRole === 'enterprise_user') {
+    $userType = 'enterprise';
+} elseif (in_array($userRole, ['professional_user', 'surveyor_ww'])) {
+    $userType = 'professional';
+}
+
+// Check if user can view survey projects
+$canViewSurveyProjects = in_array($userType, ['admin', 'enterprise']);
 
 // Handle logout
 if (isset($_POST['logout'])) {
@@ -114,24 +128,33 @@ session_write_close();
                 <input type="text" class="search-box" id="searchInput" placeholder="Search projects by name, description, or technology...">
                 <select class="filter-select" id="typeFilter">
                     <option value="">All Types</option>
-                    <option value="personal">Personal</option>
-                    <option value="professional">Professional</option>
-                    <option value="client">Client Work</option>
+                    <option value="development">Development</option>
+                    <option value="internal">Internal</option>
+                    <option value="consulting">Consulting</option>
+                    <option value="collaboration">Collaboration</option>
+                    <option value="research">Research</option>
+                    <option value="other">Other</option>
                 </select>
                 <select class="filter-select" id="statusFilter">
                     <option value="">All Status</option>
                     <option value="completed">Completed</option>
-                    <option value="in-progress">In Progress</option>
+                    <option value="in_progress">In Progress</option>
                     <option value="planning">Planning</option>
+                    <option value="on_hold">On Hold</option>
                 </select>
+                <button class="btn btn-primary" onclick="openAddProjectModal()">
+                    <span style="margin-right: 5px;">+</span> Add Project
+                </button>
             </div>
 
-            <!--Survey Projects Manager dashboard link-->
-            <div class="header">
+            <?php if ($canViewSurveyProjects): ?>
+            <!--Survey Projects Manager dashboard link - Only for admin and enterprise users-->
+            <div class="header survey-projects-section">
                 <h1>Professional Survey Projects</h1>
                 <p>Manage and view all Professional Survey Projects</p>
-                <button class="btn btn-primary" onclick="viewProject(1)">List Projects</button>
+                <button class="btn btn-primary" onclick="openSurveyProjects()">List Projects</button>
             </div>
+            <?php endif; ?>
 
             <div class="stats-grid">
                 <div class="stat-card">
@@ -161,6 +184,132 @@ session_write_close();
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Add/Edit Project Modal -->
+    <div id="projectModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; overflow-y: auto;">
+        <div class="modal-content" style="max-width: 700px; margin: 2rem auto; background: white; border-radius: 12px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);">
+            <div class="modal-header">
+                <h2 id="projectModalTitle">Add New Project</h2>
+                <button class="close-button" onclick="closeProjectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="projectForm" onsubmit="saveProject(event)">
+                    <input type="hidden" id="editProjectId" name="project_id">
+                    <input type="hidden" id="isNewProject" name="is_new" value="1">
+
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectTitle">Project Title *</label>
+                            <input type="text" class="form-input" id="projectTitle" name="title" required placeholder="Enter project title">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectCategory">Project Category</label>
+                            <select class="form-select" id="projectCategory" name="project_type">
+                                <option value="personal">Personal</option>
+                                <option value="professional">Professional</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectTypeCategory">Type</label>
+                            <select class="form-select" id="projectTypeCategory" name="project_type_category">
+                                <option value="development">Development</option>
+                                <option value="internal">Internal</option>
+                                <option value="consulting">Consulting</option>
+                                <option value="collaboration">Collaboration</option>
+                                <option value="research">Research</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectStatus">Status</label>
+                            <select class="form-select" id="projectStatus" name="status">
+                                <option value="planning">Planning</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="review">Review</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectPriority">Priority</label>
+                            <select class="form-select" id="projectPriority" name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectDescription">Description</label>
+                            <textarea class="form-textarea" id="projectDescription" name="description" rows="3" placeholder="Brief description of the project"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectStartDate">Start Date</label>
+                            <input type="date" class="form-input" id="projectStartDate" name="start_date">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectDueDate">Due Date</label>
+                            <input type="date" class="form-input" id="projectDueDate" name="due_date">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectTechnologies">Technologies (comma-separated)</label>
+                            <input type="text" class="form-input" id="projectTechnologies" name="technologies_input" placeholder="e.g., React, Node.js, PostgreSQL">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectUrl">Project URL</label>
+                            <input type="url" class="form-input" id="projectUrl" name="project_url" placeholder="https://...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="projectRepoUrl">Repository URL</label>
+                            <input type="url" class="form-input" id="projectRepoUrl" name="repository_url" placeholder="https://github.com/...">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label" for="projectNotes">Notes</label>
+                            <textarea class="form-textarea" id="projectNotes" name="notes" rows="2" placeholder="Additional notes..."></textarea>
+                        </div>
+
+                        <div class="form-group" id="visibilityGroup">
+                            <label class="form-label" for="projectVisibility">Visibility</label>
+                            <select class="form-select" id="projectVisibility" name="visibility">
+                                <option value="all">All Users</option>
+                                <option value="professional" selected>Professional & Above</option>
+                                <option value="enterprise_only">Enterprise Only</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="projectFeatured" name="is_featured">
+                                <span>Featured Project</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                        <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 8px; display: none; z-index: 10000;">
+        <span id="toastMessage"></span>
     </div>
 
     <script>
@@ -398,44 +547,13 @@ session_write_close();
         document.addEventListener('keypress', resetTimers);
         document.addEventListener('mousemove', resetTimers);
 
-        // Mock database data - replace this with actual database fetching
-        const mockProjects = [
-            {
-                id: 1,
-                title: "E-commerce Platform Redesign",
-                type: "professional",
-                status: "completed",
-                description: "Complete redesign of the company's e-commerce platform with modern UI/UX principles and improved performance.",
-                technologies: ["React", "Node.js", "MongoDB", "AWS"],
-                startDate: "2024-01-15",
-                completedDate: "2024-03-20",
-                client: "TechCorp Solutions",
-            },
-            {
-                id: 2,
-                title: "Personal Portfolio Website",
-                type: "personal",
-                status: "completed",
-                description: "A responsive portfolio website showcasing my work and skills with modern animations and interactive elements.",
-                technologies: ["HTML5", "CSS3", "JavaScript", "GSAP"],
-                startDate: "2023-11-01",
-                completedDate: "2023-12-15"
-            },
-            {
-                id: 3,
-                title: "Mobile Banking App",
-                type: "client",
-                status: "in-progress",
-                description: "Developing a secure mobile banking application with biometric authentication and real-time transactions.",
-                technologies: ["React Native", "Firebase", "Node.js", "PostgreSQL"],
-                startDate: "2024-02-01",
-                estimatedCompletion: "2024-08-30",
-                client: "FinanceFirst Bank"
-            }
-        ];
+        // User type from PHP for access control
+        const USER_TYPE = '<?php echo $userType; ?>';
+        const CAN_VIEW_SURVEY = <?php echo $canViewSurveyProjects ? 'true' : 'false'; ?>;
 
-        let allProjects = [...mockProjects];
-        let filteredProjects = [...mockProjects];
+        let allProjects = [];
+        let filteredProjects = [];
+        let userAccess = {};
 
         // DOM elements
         const searchInput = document.getElementById('searchInput');
@@ -451,13 +569,31 @@ session_write_close();
         const inProgressProjectsEl = document.getElementById('inProgressProjects');
         const planningProjectsEl = document.getElementById('planningProjects');
 
-        // Simulate database fetch
-        function fetchProjects() {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve(mockProjects);
-                }, 1500);
-            });
+        // Fetch projects from API
+        async function fetchProjects() {
+            const response = await fetch(ROOT_PAGE + 'Models/php/projects_api.php?action=get_projects');
+            const data = await response.json();
+
+            if (data.success) {
+                // Only show professional projects in professional dashboard
+                const projects = [];
+
+                // Add professional projects only
+                if (data.projects.professional) {
+                    data.projects.professional.forEach(p => {
+                        projects.push({
+                            ...p,
+                            type: 'professional',
+                            id: p.id || p.project_id,
+                            technologies: p.technologies || []
+                        });
+                    });
+                }
+
+                return projects;
+            } else {
+                throw new Error(data.message || 'Failed to fetch projects');
+            }
         }
 
         // Initialize dashboard
@@ -520,39 +656,47 @@ session_write_close();
             noResults.style.display = 'none';
             projectsGrid.style.display = 'grid';
 
-            projectsGrid.innerHTML = filteredProjects.map(project => `
+            projectsGrid.innerHTML = filteredProjects.map(project => {
+                const technologies = Array.isArray(project.technologies) ? project.technologies : [];
+                const statusDisplay = (project.status || 'planning').replace(/_/g, ' ').toUpperCase();
+                const statusClass = (project.status || 'planning').replace(/_/g, '-');
+                const displayDate = project.completed_date || project.end_date || project.start_date || project.created_at;
+
+                const projectType = project.project_type || 'development';
+                const projectTypeDisplay = projectType.charAt(0).toUpperCase() + projectType.slice(1);
+
+                return `
                 <div class="project-card">
                     <div class="project-header">
                         <div>
-                            <div class="project-title">${project.title}</div>
-                            ${project.client ? `<div style="color: #95a5a6; font-size: 0.9em;">Client: ${project.client}</div>` : ''}
+                            <div class="project-title">${project.title || 'Untitled Project'}</div>
+                            ${project.subtitle ? `<div style="color: #95a5a6; font-size: 0.9em;">${project.subtitle}</div>` : ''}
                         </div>
-                        <span class="project-type type-${project.type}">${project.type}</span>
+                        <span class="project-type type-${projectType}">${projectTypeDisplay}</span>
                     </div>
-                    
-                    <div class="project-description">${project.description}</div>
-                    
+
+                    <div class="project-description">${project.description || 'No description available.'}</div>
+
                     <div class="project-meta">
-                        <span class="project-status status-${project.status}">
-                            ${project.status.replace('-', ' ').toUpperCase()}
+                        <span class="project-status status-${statusClass}">
+                            ${statusDisplay}
                         </span>
                         <span class="project-date">
-                            ${formatDate(project.status === 'completed' ? project.completedDate : 
-                              project.status === 'in-progress' ? project.startDate : 
-                              project.startDate)}
+                            ${displayDate ? formatDate(displayDate) : 'No date'}
                         </span>
                     </div>
-                    
+
                     <div class="project-tech">
-                        ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                        ${technologies.length > 0 ? technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('') : '<span style="color: #94a3b8; font-size: 0.85em;">No technologies specified</span>'}
                     </div>
-                    
+
                     <div class="project-actions">
-                        <button class="btn btn-primary" onclick="viewProject(${project.id})">View Details</button>
-                        <button class="btn btn-secondary" onclick="editProject(${project.id})">Edit</button>
+                        <button class="btn btn-primary" onclick="viewProjectDetails('${project.project_id}', 'professional')">View Details</button>
+                        <button class="btn btn-secondary" onclick="editProject('${project.project_id}', 'professional')">Edit</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function formatDate(dateString) {
@@ -578,7 +722,7 @@ session_write_close();
                     project.technologies.some(tech => tech.toLowerCase().includes(searchTerm)) ||
                     (project.client && project.client.toLowerCase().includes(searchTerm));
 
-                const matchesType = !typeFilter_val || project.type === typeFilter_val;
+                const matchesType = !typeFilter_val || project.project_type === typeFilter_val;
                 const matchesStatus = !statusFilter_val || project.status === statusFilter_val;
 
                 return matchesSearch && matchesType && matchesStatus;
@@ -589,15 +733,151 @@ session_write_close();
         }
 
         // Project actions
-        function viewProject(projectId) {
-            const project = allProjects.find(p => p.id === projectId);
+        function openSurveyProjects() {
             window.open(ROOT_PAGE + "Projects/Professional/survey_projects.php", '_blank');
         }
 
-        function editProject(projectId) {
-            const project = allProjects.find(p => p.id === projectId);
-            alert(`Editing project: ${project.title}\n\nIn a real application, this would open an edit form.`);
+        function viewProjectDetails(projectId, projectType) {
+            const project = allProjects.find(p => p.project_id === projectId);
+            if (project) {
+                // For now, show an alert with project details - can be enhanced to a modal
+                const technologies = Array.isArray(project.technologies) ? project.technologies.join(', ') : 'None';
+                alert(`Project: ${project.title}\n\nType: ${projectType}\nStatus: ${project.status}\nDescription: ${project.description || 'N/A'}\nTechnologies: ${technologies}`);
+            }
         }
+
+        function editProject(projectId, projectType) {
+            const project = allProjects.find(p => p.project_id === projectId);
+            if (project) {
+                openEditProjectModal(project, projectType);
+            }
+        }
+
+        // Modal functions
+        function openAddProjectModal() {
+            document.getElementById('projectModalTitle').textContent = 'Add New Project';
+            document.getElementById('projectForm').reset();
+            document.getElementById('editProjectId').value = '';
+            document.getElementById('isNewProject').value = '1';
+            document.getElementById('projectCategory').value = 'professional';
+
+            // Show visibility field only for professional projects
+            updateVisibilityField();
+
+            const modal = document.getElementById('projectModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent body scrolling
+        }
+
+        function openEditProjectModal(project, projectType) {
+            document.getElementById('projectModalTitle').textContent = 'Edit Project';
+            document.getElementById('editProjectId').value = project.project_id;
+            document.getElementById('isNewProject').value = '0';
+
+            // Populate form fields
+            document.getElementById('projectTitle').value = project.title || '';
+            document.getElementById('projectCategory').value = projectType;
+            document.getElementById('projectTypeCategory').value = project.project_type || 'development';
+            document.getElementById('projectStatus').value = project.status || 'planning';
+            document.getElementById('projectPriority').value = project.priority || 'medium';
+            document.getElementById('projectDescription').value = project.description || '';
+            document.getElementById('projectStartDate').value = project.start_date || '';
+            document.getElementById('projectDueDate').value = project.due_date || project.end_date || '';
+
+            const technologies = Array.isArray(project.technologies) ? project.technologies.join(', ') : '';
+            document.getElementById('projectTechnologies').value = technologies;
+
+            document.getElementById('projectUrl').value = project.project_url || '';
+            document.getElementById('projectRepoUrl').value = project.repository_url || project.github_url || '';
+            document.getElementById('projectNotes').value = project.notes || '';
+            document.getElementById('projectVisibility').value = project.visibility || 'professional';
+            document.getElementById('projectFeatured').checked = project.is_featured == 1;
+
+            updateVisibilityField();
+
+            const modal = document.getElementById('projectModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateVisibilityField() {
+            const category = document.getElementById('projectCategory').value;
+            const visibilityGroup = document.getElementById('visibilityGroup');
+            visibilityGroup.style.display = category === 'professional' ? 'block' : 'none';
+        }
+
+        // Listen for category change
+        document.getElementById('projectCategory').addEventListener('change', updateVisibilityField);
+
+        async function saveProject(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            // Convert technologies input to array
+            const techInput = document.getElementById('projectTechnologies').value;
+            if (techInput) {
+                const techArray = techInput.split(',').map(t => t.trim()).filter(t => t);
+                formData.append('technologies', JSON.stringify(techArray));
+            }
+
+            formData.append('action', 'save_project');
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/projects_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message || 'Project saved successfully!', 'success');
+                    closeProjectModal();
+                    // Reload projects
+                    initDashboard();
+                } else {
+                    showToast(data.message || 'Failed to save project', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving project:', error);
+                showToast('An error occurred while saving', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Project';
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = message;
+            toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+            toast.style.color = 'white';
+            toast.style.display = 'block';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('projectModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeProjectModal();
+            }
+        });
 
         // Initialize the dashboard when the page loads
         document.addEventListener('DOMContentLoaded', initDashboard);
