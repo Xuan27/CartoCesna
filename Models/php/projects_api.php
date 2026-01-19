@@ -12,6 +12,139 @@ require_once __DIR__ . '/../../classes/Env.php';
 require_once __DIR__ . '/../../classes/Security.php';
 require_once __DIR__ . '/../../Private/db_config.php';
 
+/**
+ * Generate project ID in format 00_001, 00_002, etc.
+ * Auto-increments based on existing projects
+ */
+function generateProjectId($conn, $type = 'professional') {
+    $table = $type === 'personal' ? 'personal_projects' : 'professional_projects';
+
+    // Get the highest project_id number
+    $stmt = $conn->query("SELECT project_id FROM $table ORDER BY id DESC LIMIT 1");
+    $lastProject = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($lastProject && preg_match('/(\d+)_(\d+)/', $lastProject['project_id'], $matches)) {
+        // Increment the sequence number
+        $prefix = intval($matches[1]);
+        $sequence = intval($matches[2]) + 1;
+
+        // If sequence reaches 999, increment prefix
+        if ($sequence > 999) {
+            $prefix++;
+            $sequence = 1;
+        }
+    } else {
+        // First project
+        $prefix = 0;
+        $sequence = 1;
+    }
+
+    return str_pad($prefix, 2, '0', STR_PAD_LEFT) . '_' . str_pad($sequence, 3, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Create project folder structure with template files
+ */
+function createProjectFolder($projectId, $type = 'Professional') {
+    $basePath = __DIR__ . '/../../Projects/' . $type . '/' . $projectId;
+
+    // Create main project folder
+    if (!file_exists($basePath)) {
+        if (!mkdir($basePath, 0755, true)) {
+            error_log("Failed to create project folder: $basePath");
+            return null;
+        }
+    }
+
+    // Create thumbnail folder
+    $thumbnailPath = $basePath . '/thumbnail';
+    if (!file_exists($thumbnailPath)) {
+        mkdir($thumbnailPath, 0755, true);
+    }
+
+    // Create template HTML file
+    $templateContent = '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project ' . htmlspecialchars($projectId) . '</title>
+    <link rel="stylesheet" href="../../Models/css/project-template.css">
+</head>
+<body>
+    <div class="project-container">
+        <header class="project-header">
+            <h1>Project ' . htmlspecialchars($projectId) . '</h1>
+            <p class="project-id">ID: ' . htmlspecialchars($projectId) . '</p>
+        </header>
+
+        <main class="project-content">
+            <section class="project-description">
+                <h2>Description</h2>
+                <p>Add your project description here.</p>
+            </section>
+
+            <section class="project-details">
+                <h2>Details</h2>
+                <ul>
+                    <li><strong>Status:</strong> Planning</li>
+                    <li><strong>Category:</strong> TBD</li>
+                    <li><strong>Created:</strong> ' . date('Y-m-d') . '</li>
+                </ul>
+            </section>
+
+            <section class="project-gallery">
+                <h2>Gallery</h2>
+                <div class="gallery-grid">
+                    <!-- Add images here -->
+                </div>
+            </section>
+        </main>
+
+        <footer class="project-footer">
+            <p>&copy; ' . date('Y') . ' CartoCesna</p>
+        </footer>
+    </div>
+</body>
+</html>';
+
+    $templateFile = $basePath . '/index.html';
+    if (!file_exists($templateFile)) {
+        file_put_contents($templateFile, $templateContent);
+    }
+
+    // Return relative path for database storage
+    return 'Projects/' . $type . '/' . $projectId;
+}
+
+/**
+ * Get thumbnail image from project folder
+ */
+function getProjectThumbnail($projectFolderLink) {
+    if (empty($projectFolderLink)) {
+        return null;
+    }
+
+    $basePath = __DIR__ . '/../../' . $projectFolderLink . '/thumbnail';
+
+    if (!file_exists($basePath) || !is_dir($basePath)) {
+        return null;
+    }
+
+    // Look for image files in thumbnail folder
+    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    $files = scandir($basePath);
+
+    foreach ($files as $file) {
+        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if (in_array($ext, $imageExtensions)) {
+            return $projectFolderLink . '/thumbnail/' . $file;
+        }
+    }
+
+    return null;
+}
+
 // Initialize secure session
 Security::secureSession();
 
@@ -155,7 +288,7 @@ function getProjects($conn, $userType, $userId) {
         }
     }
 
-    // Parse JSON fields
+    // Parse JSON fields and get thumbnails
     foreach (['personal', 'professional'] as $type) {
         foreach ($projects[$type] as &$project) {
             // Handle technologies (professional) or technologies_used (personal)
@@ -168,6 +301,10 @@ function getProjects($conn, $userType, $userId) {
             if (isset($project['tags']) && is_string($project['tags'])) {
                 $project['tags'] = json_decode($project['tags'], true) ?? [];
             }
+
+            // Get thumbnail from project folder
+            $folderLink = $project['project_folder_link'] ?? null;
+            $project['thumbnail_url'] = getProjectThumbnail($folderLink);
         }
     }
 
@@ -343,9 +480,16 @@ function savePersonalProject($conn, $userId, $isNew) {
             if (!empty($_POST['keep_project_id']) && !empty($_POST['project_id'])) {
                 $data['project_id'] = $_POST['project_id'];
             } else {
-                $data['project_id'] = 'PERS-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+                // Generate project_id in format 00_001, 00_002, etc.
+                $data['project_id'] = generateProjectId($conn, 'personal');
             }
             $data['created_by'] = $userId;
+
+            // Create project folder structure
+            $folderPath = createProjectFolder($data['project_id'], 'Personal');
+            if ($folderPath) {
+                $data['github_url'] = $folderPath; // Store folder path in github_url field for personal projects
+            }
 
             $columns = implode(', ', array_keys($data));
             $placeholders = ':' . implode(', :', array_keys($data));
@@ -354,7 +498,7 @@ function savePersonalProject($conn, $userId, $isNew) {
             $stmt->execute($data);
 
             $message = !empty($_POST['keep_project_id']) ? 'Project moved to Personal' : 'Project created';
-            echo json_encode(['success' => true, 'message' => $message, 'project_id' => $data['project_id']]);
+            echo json_encode(['success' => true, 'message' => $message, 'project_id' => $data['project_id'], 'folder_path' => $folderPath ?? null]);
         } else {
             $projectId = $_POST['project_id'];
             $setClauses = [];
@@ -435,9 +579,16 @@ function saveProfessionalProject($conn, $userId, $userType, $isNew) {
             if (!empty($_POST['keep_project_id']) && !empty($_POST['project_id'])) {
                 $data['project_id'] = $_POST['project_id'];
             } else {
-                $data['project_id'] = 'PROF-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+                // Generate project_id in format 00_001, 00_002, etc.
+                $data['project_id'] = generateProjectId($conn, 'professional');
             }
             $data['created_by'] = $userId;
+
+            // Create project folder structure
+            $folderPath = createProjectFolder($data['project_id'], 'Professional');
+            if ($folderPath) {
+                $data['project_folder_link'] = $folderPath;
+            }
 
             $columns = implode(', ', array_keys($data));
             $placeholders = ':' . implode(', :', array_keys($data));
@@ -446,7 +597,7 @@ function saveProfessionalProject($conn, $userId, $userType, $isNew) {
             $stmt->execute($data);
 
             $message = !empty($_POST['keep_project_id']) ? 'Project moved successfully' : 'Project created';
-            echo json_encode(['success' => true, 'message' => $message, 'project_id' => $data['project_id']]);
+            echo json_encode(['success' => true, 'message' => $message, 'project_id' => $data['project_id'], 'folder_path' => $folderPath ?? null]);
         } else {
             $projectId = $_POST['project_id'];
             $setClauses = [];

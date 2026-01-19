@@ -129,6 +129,9 @@ session_write_close();
                 <select class="filter-select" id="typeFilter">
                     <option value="">All Types</option>
                     <option value="development">Development</option>
+                    <option value="gis">GIS</option>
+                    <option value="land_surveying">Land Surveying</option>
+                    <option value="3d_scanning">3D Scanning</option>
                     <option value="internal">Internal</option>
                     <option value="consulting">Consulting</option>
                     <option value="collaboration">Collaboration</option>
@@ -216,6 +219,9 @@ session_write_close();
                             <label class="form-label" for="projectTypeCategory">Type</label>
                             <select class="form-select" id="projectTypeCategory" name="project_type_category">
                                 <option value="development">Development</option>
+                                <option value="gis">GIS</option>
+                                <option value="land_surveying">Land Surveying</option>
+                                <option value="3d_scanning">3D Scanning</option>
                                 <option value="internal">Internal</option>
                                 <option value="consulting">Consulting</option>
                                 <option value="collaboration">Collaboration</option>
@@ -663,16 +669,35 @@ session_write_close();
                 const displayDate = project.completed_date || project.end_date || project.start_date || project.created_at;
 
                 const projectType = project.project_type || 'development';
-                const projectTypeDisplay = projectType.charAt(0).toUpperCase() + projectType.slice(1);
+                // Format project type display (handle underscores and special cases)
+                const projectTypeDisplay = projectType.replace(/_/g, ' ').replace(/3d/i, '3D').split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+                // Thumbnail image
+                const thumbnailUrl = project.thumbnail_url ? ROOT_PAGE + project.thumbnail_url : null;
+                const thumbnailHtml = thumbnailUrl
+                    ? `<div class="project-thumbnail" style="width: 100%; height: 150px; overflow: hidden; border-radius: 8px 8px 0 0; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
+                         <img src="${thumbnailUrl}" alt="${project.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                       </div>`
+                    : '';
+
+                // Website link
+                const websiteLink = project.project_url
+                    ? `<a href="${project.project_url}" target="_blank" class="btn btn-link" style="color: #3b82f6; text-decoration: none; font-size: 0.85em; display: inline-flex; align-items: center; gap: 4px;" title="Visit Website">
+                         <span style="font-size: 1.1em;">🔗</span> Website
+                       </a>`
+                    : '';
 
                 return `
                 <div class="project-card">
+                    ${thumbnailHtml}
                     <div class="project-header">
                         <div>
                             <div class="project-title">${project.title || 'Untitled Project'}</div>
                             ${project.subtitle ? `<div style="color: #95a5a6; font-size: 0.9em;">${project.subtitle}</div>` : ''}
+                            <div style="color: #64748b; font-size: 0.8em; margin-top: 4px;">ID: ${project.project_id}</div>
                         </div>
-                        <span class="project-type type-${projectType}">${projectTypeDisplay}</span>
+                        <span class="project-type type-${projectType.replace(/_/g, '-')}">${projectTypeDisplay}</span>
                     </div>
 
                     <div class="project-description">${project.description || 'No description available.'}</div>
@@ -690,9 +715,12 @@ session_write_close();
                         ${technologies.length > 0 ? technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('') : '<span style="color: #94a3b8; font-size: 0.85em;">No technologies specified</span>'}
                     </div>
 
-                    <div class="project-actions">
-                        <button class="btn btn-primary" onclick="viewProjectDetails('${project.project_id}', 'professional')">View Details</button>
-                        <button class="btn btn-secondary" onclick="editProject('${project.project_id}', 'professional')">Edit</button>
+                    <div class="project-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <button class="btn btn-primary" onclick="viewProjectDetails('${project.project_id}', 'professional')">View</button>
+                            <button class="btn btn-secondary" onclick="editProject('${project.project_id}', 'professional')">Edit</button>
+                        </div>
+                        ${websiteLink}
                     </div>
                 </div>
             `;
