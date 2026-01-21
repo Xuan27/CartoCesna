@@ -296,7 +296,9 @@ $root_page = $_SESSION['root_page'] ?? '/';
                             startDate: p.start_date,
                             endDate: p.end_date,
                             completedDate: p.end_date,
-                            created_at: p.created_at
+                            created_at: p.created_at,
+                            thumbnail_url: p.thumbnail_url || null,
+                            project_url: p.project_url || null
                         });
                     });
                 }
@@ -370,13 +372,34 @@ $root_page = $_SESSION['root_page'] ?? '/';
                 const technologies = Array.isArray(project.technologies) ? project.technologies : [];
                 const displayDate = project.completedDate || project.endDate || project.startDate || project.created_at;
 
+                // Format category display
+                const categoryDisplay = project.category.replace(/_/g, ' ').split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+                // Thumbnail image
+                const thumbnailUrl = project.thumbnail_url ? ROOT_PAGE + project.thumbnail_url : null;
+                const thumbnailHtml = thumbnailUrl
+                    ? `<div class="project-thumbnail" style="width: 100%; height: 150px; overflow: hidden; border-radius: 8px 8px 0 0; margin: -20px -20px 15px -20px; width: calc(100% + 40px);">
+                         <img src="${thumbnailUrl}" alt="${project.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                       </div>`
+                    : '';
+
+                // Website link
+                const websiteLink = project.project_url
+                    ? `<a href="${project.project_url}" target="_blank" class="btn btn-link" style="color: #3b82f6; text-decoration: none; font-size: 0.85em; display: inline-flex; align-items: center; gap: 4px;" title="Visit Website">
+                         <span style="font-size: 1.1em;">🔗</span> Website
+                       </a>`
+                    : '';
+
                 return `
                 <div class="project-card">
+                    ${thumbnailHtml}
                     <div class="project-header">
                         <div>
                             <div class="project-title">${project.title}</div>
+                            <div style="color: #64748b; font-size: 0.8em; margin-top: 4px;">ID: ${project.project_id}</div>
                         </div>
-                        <span class="project-type type-${project.category}">${project.category}</span>
+                        <span class="project-type type-${project.category.replace(/_/g, '-')}">${categoryDisplay}</span>
                     </div>
 
                     <div class="project-description">${project.description}</div>
@@ -394,9 +417,12 @@ $root_page = $_SESSION['root_page'] ?? '/';
                         ${technologies.length > 0 ? technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('') : '<span style="color: #94a3b8; font-size: 0.85em;">No technologies specified</span>'}
                     </div>
 
-                    <div class="project-actions">
-                        <button class="btn btn-primary" onclick="viewProject('${project.project_id}')">View Details</button>
-                        <button class="btn btn-secondary" onclick="editProject('${project.project_id}')">Edit</button>
+                    <div class="project-actions" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <button class="btn btn-primary" onclick="viewProject('${project.project_id}')">View</button>
+                            <button class="btn btn-secondary" onclick="editProject('${project.project_id}')">Edit</button>
+                        </div>
+                        ${websiteLink}
                     </div>
                 </div>
             `;

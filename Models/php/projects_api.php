@@ -468,6 +468,7 @@ function savePersonalProject($conn, $userId, $isNew) {
         'end_date' => $_POST['end_date'] ?: null,
         'project_url' => $_POST['project_url'] ?? null,
         'github_url' => $_POST['github_url'] ?? null,
+        'project_folder_link' => $_POST['project_folder_link'] ?? null,
         'technologies_used' => $technologies,
         'tags' => $tags,
         'notes' => $_POST['notes'] ?? null,
@@ -488,7 +489,7 @@ function savePersonalProject($conn, $userId, $isNew) {
             // Create project folder structure
             $folderPath = createProjectFolder($data['project_id'], 'Personal');
             if ($folderPath) {
-                $data['github_url'] = $folderPath; // Store folder path in github_url field for personal projects
+                $data['project_folder_link'] = $folderPath;
             }
 
             $columns = implode(', ', array_keys($data));

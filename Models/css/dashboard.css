@@ -486,6 +486,36 @@ body {
     color: #ec4899;
 }
 
+.type-web_development, .type-web-development {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.type-mobile_app, .type-mobile-app {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.type-data_science, .type-data-science {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+.type-machine_learning, .type-machine-learning {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+}
+
+.type-game_development, .type-game-development {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.type-automation {
+    background: rgba(20, 184, 166, 0.1);
+    color: #14b8a6;
+}
+
 /* On-hold status badge */
 .status-on-hold {
     background: rgba(156, 163, 175, 0.1);
