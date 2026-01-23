@@ -3,8 +3,6 @@
 launch.json
 template.php
 db_config.php
-Projects/Personal
-Projects/Professional
 
 # Environment files (contain secrets)
 .env

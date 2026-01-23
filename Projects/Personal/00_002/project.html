@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapas COVID-19 - Nuevo Laredo</title>
+    <link rel="stylesheet" href="../../Models/css/projects.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Mapas COVID-19 Nuevo Laredo</h1>
+            <p>Visualización de casos de COVID-19 en la región fronteriza</p>
+            <div class="date-updated">📅 Actualizado: Junio 2025</div>
+        </div>
+
+        <div class="maps-grid">
+            <div class="map-card">
+                <h3>🗺️ Mapa de Casos Octrubre, 2020</h3>
+                <p class="map-description">
+                    Distribución geográfica de casos activos de COVID-19 en Nuevo Laredo y áreas metropolitanas
+                </p>
+                <div class="loading pulse">
+                    <p>⚠️ Para ver este mapa, reemplace "map1.pdf" con su archivo PDF real</p>
+                </div>
+                <iframe class="pdf-viewer" src="Densidad_Enero2021.pdf" type="application/pdf"
+                    title="Mapa de Casos Activos COVID-19"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                </iframe>
+                <div class="error-message" style="display: none;">
+                    No se pudo cargar el PDF. Asegúrese de que el archivo "map1.pdf" esté en el mismo directorio.
+                </div>
+                <a href="map1.pdf" class="download-btn" download>
+                    📥 Descargar Mapa de Casos Activos
+                </a>
+            </div>
+
+            <div class="map-card">
+                <h3>📈 Mapa de Casos Julio, 2021</h3>
+                <p class="map-description">
+                    Análisis temporal de la evolución de casos COVID-19 por zonas geográficas de Nuevo Laredo
+                </p>
+                <div class="loading pulse">
+                    <p>⚠️ Para ver este mapa, reemplace "map2.pdf" con su archivo PDF real</p>
+                </div>
+                <iframe class="pdf-viewer" src="Julio2021.svg" type="application/svg"
+                    title="Mapa de Tendencias COVID-19"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                </iframe>
+                <div class="error-message" style="display: none;">
+                    No se pudo cargar el PDF. Asegúrese de que el archivo "map2.pdf" esté en el mismo directorio.
+                </div>
+                <a href="map2.pdf" class="download-btn" download>
+                    📥 Descargar Mapa de Casos Julio, 2021
+                </a>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h2 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">📊 Estadísticas Generales</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Mapas Disponibles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">2021</div>
+                    <div class="stat-label">Año de Actualización</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">PDF/SVG</div>
+                    <div class="stat-label">Formato de Mapas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">NLD</div>
+                    <div class="stat-label">Nuevo Laredo</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add smooth scrolling and enhanced interactivity
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add loading states for PDFs
+            const pdfViewers = document.querySelectorAll('.pdf-viewer');
+
+            pdfViewers.forEach(viewer => {
+                viewer.addEventListener('load', function () {
+                    const loadingDiv = this.parentElement.querySelector('.loading');
+                    if (loadingDiv) {
+                        loadingDiv.style.display = 'none';
+                    }
+                });
+            });
+
+            // Add hover effects to cards
+            const cards = document.querySelectorAll('.map-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-10px) scale(1.02)';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Add click tracking for downloads
+            const downloadBtns = document.querySelectorAll('.download-btn');
+            downloadBtns.forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    // You can add analytics tracking here
+                    console.log('Map downloaded:', this.textContent);
+                });
+            });
+        });
+
+        // Add viewport animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const animatedElements = document.querySelectorAll('.map-card, .stats-section');
+            animatedElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+
+</html>

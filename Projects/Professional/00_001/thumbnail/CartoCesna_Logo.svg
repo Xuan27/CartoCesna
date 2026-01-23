@@ -1,0 +1,59 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black Background -->
+  <rect width="400" height="400" fill="#000000"/>
+  
+  <!-- Circle representing the world -->
+  <circle cx="200" cy="200" r="130" fill="none" stroke="#DAA520" stroke-width="2" />
+  
+  <!-- Geometric continent shapes -->
+  <!-- North America -->
+  <path d="M120,120 L160,130 L170,150 L150,170 L130,180 L110,160 L120,120" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- South America -->
+  <path d="M150,200 L160,220 L150,250 L130,270 L120,250 L130,220 L150,200" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Europe -->
+  <path d="M200,130 L220,120 L240,130 L230,150 L210,160 L190,150 L200,130" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Africa -->
+  <path d="M190,170 L220,180 L230,210 L210,240 L180,250 L170,220 L190,170" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Asia -->
+  <path d="M250,140 L290,150 L300,180 L280,220 L250,230 L230,210 L240,180 L250,140" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Australia -->
+  <path d="M270,250 L290,260 L290,280 L270,290 L250,280 L250,260 L270,250" 
+        fill="#DAA520" opacity="0.3" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Two C-shaped latitude lines - more geometric -->
+  <path d="M100,150 L140,130 L260,130 L300,150 L300,160 L260,180 L140,180 L100,160 Z" 
+        fill="none" 
+        stroke="#DAA520" 
+        stroke-width="6" 
+        stroke-linejoin="round"/>
+  
+  <path d="M120,230 L160,210 L240,210 L280,230 L280,240 L240,260 L160,260 L120,240 Z" 
+        fill="none" 
+        stroke="#DAA520" 
+        stroke-width="6" 
+        stroke-linejoin="round"/>
+  
+  <!-- Grid lines (longitude) -->
+  <line x1="200" y1="70" x2="200" y2="330" stroke="#DAA520" stroke-width="0.5" opacity="0.5" />
+  <line x1="140" y1="80" x2="260" y2="320" stroke="#DAA520" stroke-width="0.5" opacity="0.5" />
+  <line x1="260" y1="80" x2="140" y2="320" stroke="#DAA520" stroke-width="0.5" opacity="0.5" />
+  
+  <!-- Cardinal points -->
+  <circle cx="200" cy="70" r="2" fill="#DAA520"/>
+  <circle cx="200" cy="330" r="2" fill="#DAA520"/>
+  <circle cx="70" cy="200" r="2" fill="#DAA520"/>
+  <circle cx="330" cy="200" r="2" fill="#DAA520"/>
+  
+  <!-- Equator line -->
+  <line x1="70" y1="200" x2="330" y2="200" stroke="#DAA520" stroke-width="0.5" opacity="0.5" stroke-dasharray="5,5"/>
+</svg>
