@@ -7,9 +7,19 @@ $root_page = '/CartoCesna/';
 // Determine file system path for includes
 $base_path = dirname(__DIR__, 3); // Go up 3 levels: 00_002 -> Professional -> Projects -> CartoCesna
 
-// Check if user is logged in for edit permissions
+// Include Auth class to get user role
+require_once $base_path . '/classes/Auth.php';
+require_once $base_path . '/Private/db_config.php';
+
+// Check if user is logged in and is admin for edit permissions
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
-$canEdit = $isLoggedIn; // Only logged-in users can edit
+$userRole = '';
+if ($isLoggedIn && isset($_SESSION['user_id'])) {
+    $db = new Database();
+    $auth = new Auth($db->getConnection());
+    $userRole = $auth->getUserRole($_SESSION['user_id']);
+}
+$canEdit = $isLoggedIn && $userRole === 'admin'; // Only admin users can edit
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -346,6 +356,116 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
         .back-link:hover {
             color: #0066cc;
         }
+
+        /* Search Styles */
+        .search-container {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            color: #999;
+            font-size: 18px;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            display: none;
+        }
+
+        .search-clear.visible {
+            display: block;
+        }
+
+        .search-clear:hover {
+            color: #666;
+        }
+
+        .search-results-info {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .highlight {
+            background-color: #fff3cd;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        /* Item Details Styles */
+        .item-details {
+            margin-top: 4px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .item-notes {
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .item-book-ref {
+            color: #8e44ad;
+            margin-top: 2px;
+        }
+
+        .item-book-ref::before {
+            content: "📚 ";
+        }
+
+        /* Form textarea */
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
     </style>
 </head>
 <body>
@@ -357,20 +477,32 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
         </a>
 
         <div class="library-header">
-            <div>
-                <h1>Texas Survey Legal Library</h1>
-                <p>Boundary Law, State Statutes, and Professional Practices</p>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h1>Texas Survey Legal Library</h1>
+                        <p>Boundary Law, State Statutes, and Professional Practices</p>
+                    </div>
+                    <?php if ($canEdit): ?>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="toggleEditMode">
+                            <span>Edit Mode</span>
+                        </button>
+                        <button class="btn btn-primary" id="addSectionBtn" style="display: none;">
+                            <span>+ Add Section</span>
+                        </button>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search by keyword (title, notes, book reference...)">
+                        <button class="search-clear" id="searchClear" title="Clear search">&times;</button>
+                    </div>
+                    <div class="search-results-info" id="searchResultsInfo"></div>
+                </div>
             </div>
-            <?php if ($canEdit): ?>
-            <div class="header-actions">
-                <button class="btn btn-secondary" id="toggleEditMode">
-                    <span>Edit Mode</span>
-                </button>
-                <button class="btn btn-primary" id="addSectionBtn" style="display: none;">
-                    <span>+ Add Section</span>
-                </button>
-            </div>
-            <?php endif; ?>
         </div>
 
         <div class="library-grid" id="libraryGrid">
@@ -437,6 +569,14 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
                         <option value="reference">Reference</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label for="itemBookReference">Book Reference (optional)</label>
+                    <input type="text" id="itemBookReference" name="book_reference" placeholder="e.g., Brown's Boundary Control, Ch. 5">
+                </div>
+                <div class="form-group">
+                    <label for="itemNotes">Notes (optional)</label>
+                    <textarea id="itemNotes" name="notes" placeholder="Additional notes or description..."></textarea>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeItemModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Item</button>
@@ -450,6 +590,7 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
         const canEdit = <?php echo $canEdit ? 'true' : 'false'; ?>;
         let editMode = false;
         let libraryData = { sections: [] };
+        let searchQuery = '';
 
         // Load library data
         async function loadLibrary() {
@@ -465,19 +606,78 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
             }
         }
 
+        // Filter library data based on search query
+        function getFilteredData() {
+            if (!searchQuery.trim()) {
+                return libraryData;
+            }
+
+            const query = searchQuery.toLowerCase();
+            const filteredSections = [];
+            let totalMatches = 0;
+
+            libraryData.sections.forEach(section => {
+                const matchingItems = section.items.filter(item => {
+                    const titleMatch = item.title?.toLowerCase().includes(query);
+                    const notesMatch = item.notes?.toLowerCase().includes(query);
+                    const bookRefMatch = item.book_reference?.toLowerCase().includes(query);
+                    const typeMatch = item.type?.toLowerCase().includes(query);
+                    return titleMatch || notesMatch || bookRefMatch || typeMatch;
+                });
+
+                if (matchingItems.length > 0 || section.name.toLowerCase().includes(query)) {
+                    filteredSections.push({
+                        ...section,
+                        items: matchingItems.length > 0 ? matchingItems :
+                               section.name.toLowerCase().includes(query) ? section.items : []
+                    });
+                    totalMatches += matchingItems.length || section.items.length;
+                }
+            });
+
+            return { sections: filteredSections, totalMatches };
+        }
+
+        // Highlight search matches
+        function highlightText(text, query) {
+            if (!query || !text) return escapeHtml(text || '');
+            const escapedText = escapeHtml(text);
+            const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+            return escapedText.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         // Render library
         function renderLibrary() {
             const grid = document.getElementById('libraryGrid');
+            const resultsInfo = document.getElementById('searchResultsInfo');
+            const filteredData = getFilteredData();
 
-            if (libraryData.sections.length === 0) {
-                grid.innerHTML = '<div class="empty-section">No sections yet. Click "Add Section" to get started.</div>';
+            // Update search results info
+            if (searchQuery.trim()) {
+                const totalItems = libraryData.sections.reduce((acc, s) => acc + s.items.length, 0);
+                const matchCount = filteredData.totalMatches || 0;
+                resultsInfo.textContent = `Found ${matchCount} item${matchCount !== 1 ? 's' : ''} matching "${searchQuery}" (out of ${totalItems} total)`;
+            } else {
+                resultsInfo.textContent = '';
+            }
+
+            if (filteredData.sections.length === 0) {
+                if (searchQuery.trim()) {
+                    grid.innerHTML = '<div class="no-results">No items found matching your search.</div>';
+                } else {
+                    grid.innerHTML = '<div class="empty-section">No sections yet. Click "Add Section" to get started.</div>';
+                }
                 return;
             }
 
-            grid.innerHTML = libraryData.sections.map(section => `
+            grid.innerHTML = filteredData.sections.map(section => `
                 <div class="library-section" data-section-id="${section.id}">
                     <div class="section-header">
-                        <h2>${escapeHtml(section.name)}</h2>
+                        <h2>${highlightText(section.name, searchQuery)}</h2>
                         ${canEdit ? `
                         <div class="section-actions" style="display: ${editMode ? 'flex' : 'none'}">
                             <button class="btn btn-icon btn-secondary" onclick="openItemModal('${section.id}')" title="Add Item">+</button>
@@ -493,10 +693,16 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
                                 <li class="library-item" data-item-id="${item.id}">
                                     <div class="item-content">
                                         ${item.url
-                                            ? `<a href="${escapeHtml(item.url)}" target="_blank">${escapeHtml(item.title)}</a>`
-                                            : `<span>${escapeHtml(item.title)}</span>`
+                                            ? `<a href="${escapeHtml(item.url)}" target="_blank">${highlightText(item.title, searchQuery)}</a>`
+                                            : `<span>${highlightText(item.title, searchQuery)}</span>`
                                         }
                                         <span class="resource-type type-${item.type}">${item.type}</span>
+                                        ${item.book_reference || item.notes ? `
+                                        <div class="item-details">
+                                            ${item.book_reference ? `<div class="item-book-ref">${highlightText(item.book_reference, searchQuery)}</div>` : ''}
+                                            ${item.notes ? `<div class="item-notes">${highlightText(item.notes, searchQuery)}</div>` : ''}
+                                        </div>
+                                        ` : ''}
                                     </div>
                                     ${canEdit ? `
                                     <div class="item-actions" style="display: ${editMode ? 'flex' : 'none'}">
@@ -611,6 +817,8 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
                     document.getElementById('itemTitle').value = item.title;
                     document.getElementById('itemUrl').value = item.url || '';
                     document.getElementById('itemType').value = item.type;
+                    document.getElementById('itemBookReference').value = item.book_reference || '';
+                    document.getElementById('itemNotes').value = item.notes || '';
                 }
             } else {
                 title.textContent = 'Add Item';
@@ -693,7 +901,9 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
                         item_id: itemId || undefined,
                         title: formData.get('title'),
                         url: formData.get('url'),
-                        type: formData.get('type')
+                        type: formData.get('type'),
+                        book_reference: formData.get('book_reference'),
+                        notes: formData.get('notes')
                     })
                 });
                 const data = await response.json();
@@ -722,6 +932,23 @@ $canEdit = $isLoggedIn; // Only logged-in users can edit
             document.getElementById('addSectionBtn')?.addEventListener('click', () => openSectionModal());
             document.getElementById('addSectionBtnAlt')?.addEventListener('click', () => openSectionModal());
         }
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            searchClear.classList.toggle('visible', searchQuery.length > 0);
+            renderLibrary();
+        });
+
+        searchClear.addEventListener('click', () => {
+            searchQuery = '';
+            searchInput.value = '';
+            searchClear.classList.remove('visible');
+            renderLibrary();
+        });
 
         // Close modals on outside click
         document.querySelectorAll('.modal').forEach(modal => {

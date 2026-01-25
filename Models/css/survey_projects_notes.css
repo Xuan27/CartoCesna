@@ -1132,3 +1132,222 @@ body {
     cursor: pointer;
     padding: 0.5rem;
 }
+
+/* Point Ranges Styles */
+.point-ranges-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.point-ranges-icon:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.point-ranges-icon i {
+    font-size: 0.65rem;
+}
+
+.point-ranges-icon.empty {
+    background: var(--gray-300);
+    color: var(--gray-600);
+    box-shadow: none;
+}
+
+.point-ranges-icon.empty:hover {
+    background: var(--gray-400);
+}
+
+/* Point Ranges Modal */
+.point-ranges-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.point-ranges-modal.active {
+    display: flex;
+}
+
+.point-ranges-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.point-ranges-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.point-ranges-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.point-ranges-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.point-ranges-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.point-ranges-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: calc(80vh - 70px);
+}
+
+.point-range-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.point-range-card:last-child {
+    margin-bottom: 0;
+}
+
+.point-range-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.point-range-card-header i {
+    color: var(--primary-color);
+}
+
+.point-range-card-header strong {
+    font-size: 0.95rem;
+    color: var(--gray-800);
+}
+
+.point-range-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+.point-range-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.point-range-detail.full-width {
+    grid-column: 1 / -1;
+}
+
+.point-range-detail-label {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.point-range-detail-value {
+    font-size: 0.85rem;
+    color: var(--gray-800);
+}
+
+.point-range-status-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.point-range-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.point-range-status-badge.yes {
+    background: rgba(22, 163, 74, 0.1);
+    color: var(--success-color);
+}
+
+.point-range-status-badge.no {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--danger-color);
+}
+
+.point-ranges-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.point-ranges-empty i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.5;
+}
+
+.point-ranges-empty p {
+    margin: 0;
+}

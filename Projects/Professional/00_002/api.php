@@ -2,8 +2,22 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if user is logged in for write operations
+// Determine file system path for includes
+$base_path = dirname(__DIR__, 3); // Go up 3 levels: 00_002 -> Professional -> Projects -> CartoCesna
+
+// Include Auth class to get user role
+require_once $base_path . '/classes/Auth.php';
+require_once $base_path . '/Private/db_config.php';
+
+// Check if user is logged in and is admin for write operations
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
+$userRole = '';
+if ($isLoggedIn && isset($_SESSION['user_id'])) {
+    $db = new Database();
+    $auth = new Auth($db->getConnection());
+    $userRole = $auth->getUserRole($_SESSION['user_id']);
+}
+$isAdmin = $isLoggedIn && $userRole === 'admin';
 
 // Data file path
 $dataFile = __DIR__ . '/data.json';
@@ -35,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $action = $input['action'] ?? null;
 
-    // Check authentication for write operations
-    if (!$isLoggedIn) {
-        echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in.']);
+    // Check authentication for write operations - admin only
+    if (!$isAdmin) {
+        echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin access required.']);
         exit;
     }
 
@@ -107,6 +121,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = trim($input['title'] ?? '');
             $url = trim($input['url'] ?? '');
             $type = $input['type'] ?? 'reference';
+            $notes = trim($input['notes'] ?? '');
+            $bookReference = trim($input['book_reference'] ?? '');
 
             if (empty($sectionId) || empty($title)) {
                 echo json_encode(['success' => false, 'message' => 'Section ID and title are required']);
@@ -120,7 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'id' => generateId(),
                         'title' => $title,
                         'url' => $url ?: null,
-                        'type' => $type
+                        'type' => $type,
+                        'notes' => $notes ?: null,
+                        'book_reference' => $bookReference ?: null
                     ];
                     $section['items'][] = $newItem;
                     $found = true;
@@ -142,6 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $title = trim($input['title'] ?? '');
             $url = trim($input['url'] ?? '');
             $type = $input['type'] ?? 'reference';
+            $notes = trim($input['notes'] ?? '');
+            $bookReference = trim($input['book_reference'] ?? '');
 
             if (empty($sectionId) || empty($itemId) || empty($title)) {
                 echo json_encode(['success' => false, 'message' => 'Section ID, item ID, and title are required']);
@@ -156,6 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $item['title'] = $title;
                             $item['url'] = $url ?: null;
                             $item['type'] = $type;
+                            $item['notes'] = $notes ?: null;
+                            $item['book_reference'] = $bookReference ?: null;
                             $found = true;
                             break 2;
                         }
