@@ -36,6 +36,10 @@
                     <i class="fas fa-chart-bar"></i>
                     Analytics
                 </a>
+                <a href="./checklists.php" class="nav-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    Checklists
+                </a>
                 <a href="./tools.php" class="nav-item">
                     <i class="fas fa-tools"></i>
                     Tools
@@ -688,6 +692,7 @@ function createTasksHTML(tasks) {
                         <span><i class="fas fa-calendar"></i> ${dueDate}</span>
                         ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
                         ${renderPointRangesIcon(task)}
+                        ${renderChecklistButton(task)}
                         ${task.task_link ? `
                             <span style="display: flex; align-items: center; gap: 0.25rem;">
                                 <a href="file:///${task.task_link.replace(/N:\\\\/g, uncPath)}" target="_blank" style="color: var(--primary-color);">
@@ -1771,6 +1776,7 @@ function createTasksHTML(tasks) {
                         <span><i class="fas fa-calendar"></i> ${dueDate}</span>
                         ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
                         ${renderPointRangesIcon(task)}
+                        ${renderChecklistButton(task)}
                     </div>
                     <div class="task-folder-links">
                         ${generateTaskFolderLinks(task.project_id, task)}
@@ -1910,6 +1916,389 @@ document.addEventListener('click', function(event) {
         });
     }
 });
+    </script>
+
+    <!-- Checklist Modal -->
+    <div class="checklist-modal" id="checklistModal">
+        <div class="checklist-modal-content">
+            <div class="checklist-modal-header">
+                <div class="checklist-modal-header-top">
+                    <h3><i class="fas fa-clipboard-check"></i> <span id="checklistModalTitle">Checklist</span></h3>
+                    <button class="checklist-modal-close" onclick="closeChecklistModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <span class="progress-text" id="checklistProgressText">0 / 0 completed</span>
+                <div class="checklist-progress-bar">
+                    <div class="checklist-progress-bar-fill" id="checklistProgressFill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="checklist-modal-body" id="checklistModalBody">
+                <div style="text-align: center; padding: 2rem; color: var(--gray-400);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                    <p>Loading checklist...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Picker Modal -->
+    <div class="checklist-modal" id="templatePickerModal">
+        <div class="checklist-modal-content" style="max-width: 500px;">
+            <div class="checklist-modal-header">
+                <div class="checklist-modal-header-top">
+                    <h3><i class="fas fa-clipboard-list"></i> Select Checklist</h3>
+                    <button class="checklist-modal-close" onclick="closeTemplatePicker()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="template-picker" id="templatePickerBody">
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ========== CHECKLIST INTEGRATION ==========
+    const CHECKLIST_API = '../../Models/php/checklist_api.php';
+    let checklistSummaries = {};
+    let currentChecklistTaskId = null;
+
+    // Load checklist summaries for a batch of task IDs
+    async function loadChecklistSummaries(taskIds) {
+        if (!taskIds || taskIds.length === 0) return;
+        try {
+            const response = await fetch(`${CHECKLIST_API}?action=get_checklist_summaries&task_ids=${taskIds.join(',')}`);
+            const data = await response.json();
+            if (data.success && data.summaries) {
+                Object.assign(checklistSummaries, data.summaries);
+            }
+        } catch (error) {
+            console.error('Error loading checklist summaries:', error);
+        }
+    }
+
+    // Render a checklist button for a task
+    function renderChecklistButton(task) {
+        const summary = checklistSummaries[task.task_id];
+
+        if (!summary) {
+            // No data loaded yet - will appear after summaries load
+            return `<span class="checklist-btn-placeholder" data-task-id="${task.task_id}"></span>`;
+        }
+
+        if (summary.total > 0) {
+            // Has progress records
+            const pct = Math.round((summary.completed / summary.total) * 100);
+            const isComplete = summary.completed === summary.total;
+            const btnClass = isComplete ? 'checklist-complete' : 'checklist-in-progress';
+            return `
+                <button class="checklist-btn ${btnClass}"
+                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
+                        title="Checklist: ${summary.completed}/${summary.total}">
+                    <i class="fas ${isComplete ? 'fa-check-circle' : 'fa-clipboard-check'}"></i>
+                    ${summary.completed}/${summary.total}
+                    <span class="checklist-progress-mini"><span class="checklist-progress-mini-fill" style="width:${pct}%"></span></span>
+                </button>
+            `;
+        } else if (summary.has_template) {
+            // Template exists but not yet initialized
+            if (summary.template_count > 1) {
+                return `
+                    <button class="checklist-btn checklist-pick"
+                            onclick="event.stopPropagation(); showTemplatePicker(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
+                            title="Select a checklist template">
+                        <i class="fas fa-clipboard-list"></i> Select Checklist
+                    </button>
+                `;
+            }
+            return `
+                <button class="checklist-btn checklist-not-started"
+                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
+                        title="Open checklist">
+                    <i class="fas fa-clipboard-check"></i> Checklist
+                </button>
+            `;
+        }
+
+        // No template for this task type
+        return '';
+    }
+
+    // Show checklist modal
+    async function showChecklistModal(taskId, taskName) {
+        currentChecklistTaskId = taskId;
+        document.getElementById('checklistModalTitle').textContent = taskName || 'Checklist';
+        document.getElementById('checklistModalBody').innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--gray-400);">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                <p>Loading checklist...</p>
+            </div>
+        `;
+        document.getElementById('checklistProgressText').textContent = '';
+        document.getElementById('checklistProgressFill').style.width = '0%';
+        document.getElementById('checklistModal').classList.add('active');
+
+        try {
+            const response = await fetch(`${CHECKLIST_API}?action=get_task_checklist&task_id=${taskId}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                document.getElementById('checklistModalBody').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                        <p>${data.message || 'Error loading checklist'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (data.pick_template) {
+                // Need to pick a template first
+                closeChecklistModal();
+                showTemplatePicker(taskId, taskName, data.templates);
+                return;
+            }
+
+            if (!data.checklist) {
+                document.getElementById('checklistModalBody').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                        <i class="fas fa-clipboard" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                        <p>No checklist template exists for this task type.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            renderChecklistItems(data.checklist);
+
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('checklistModalBody').innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                    <p>Network error loading checklist</p>
+                </div>
+            `;
+        }
+    }
+
+    // Render checklist items in modal
+    function renderChecklistItems(checklist) {
+        const { items, total, completed, template_name } = checklist;
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById('checklistProgressText').textContent = `${completed} / ${total} completed (${pct}%)`;
+        document.getElementById('checklistProgressFill').style.width = `${pct}%`;
+
+        // Group by category
+        const grouped = {};
+        items.forEach(item => {
+            const cat = item.category || 'General';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(item);
+        });
+
+        let html = '';
+        for (const [category, catItems] of Object.entries(grouped)) {
+            html += `<div class="checklist-category-header">${escapeHtmlChecklist(category)}</div>`;
+            catItems.forEach(item => {
+                const checked = parseInt(item.is_completed) ? 'checked' : '';
+                const completedClass = parseInt(item.is_completed) ? 'completed' : '';
+                const meta = parseInt(item.is_completed) && item.completed_by
+                    ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)} - ${new Date(item.completed_date).toLocaleDateString()}</div>`
+                    : '';
+                html += `
+                    <label class="checklist-item ${completedClass}">
+                        <input type="checkbox" ${checked}
+                               onchange="toggleChecklistItem(${currentChecklistTaskId}, ${item.item_id}, this)">
+                        <div>
+                            <div class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}</div>
+                            ${meta}
+                        </div>
+                    </label>
+                `;
+            });
+        }
+
+        document.getElementById('checklistModalBody').innerHTML = html;
+    }
+
+    // Toggle a checklist item
+    async function toggleChecklistItem(taskId, itemId, checkbox) {
+        try {
+            const response = await fetch(CHECKLIST_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'toggle_item',
+                    task_id: taskId,
+                    item_id: itemId,
+                    completed_by: 'User'
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // Update progress bar
+                const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+                document.getElementById('checklistProgressText').textContent = `${data.completed} / ${data.total} completed (${pct}%)`;
+                document.getElementById('checklistProgressFill').style.width = `${pct}%`;
+
+                // Update item UI
+                const label = checkbox.closest('.checklist-item');
+                if (data.is_completed) {
+                    label.classList.add('completed');
+                } else {
+                    label.classList.remove('completed');
+                }
+
+                // Update cached summary
+                checklistSummaries[taskId] = {
+                    total: data.total,
+                    completed: data.completed,
+                    template_id: checklistSummaries[taskId]?.template_id
+                };
+            } else {
+                checkbox.checked = !checkbox.checked;
+                showToast(data.message || 'Error toggling item', 'error');
+            }
+        } catch (error) {
+            checkbox.checked = !checkbox.checked;
+            console.error('Error:', error);
+        }
+    }
+
+    function closeChecklistModal() {
+        document.getElementById('checklistModal').classList.remove('active');
+        // Refresh the task display to update buttons
+        if (currentChecklistTaskId) {
+            refreshChecklistButtons();
+        }
+        currentChecklistTaskId = null;
+    }
+
+    // Refresh checklist button displays after changes
+    async function refreshChecklistButtons() {
+        const taskIds = Object.keys(checklistSummaries);
+        if (taskIds.length > 0) {
+            await loadChecklistSummaries(taskIds);
+            // Update placeholder buttons
+            document.querySelectorAll('.checklist-btn, .checklist-btn-placeholder').forEach(el => {
+                const taskId = el.dataset?.taskId || el.getAttribute('onclick')?.match(/\d+/)?.[0];
+                if (taskId && checklistSummaries[taskId]) {
+                    // Re-render by reloading the project tasks
+                }
+            });
+        }
+    }
+
+    // Template picker
+    async function showTemplatePicker(taskId, taskName, templates) {
+        currentChecklistTaskId = taskId;
+
+        if (!templates) {
+            try {
+                const response = await fetch(`${CHECKLIST_API}?action=get_templates_for_task&task_id=${taskId}`);
+                const data = await response.json();
+                if (data.success) templates = data.templates;
+            } catch (error) {
+                console.error('Error:', error);
+                return;
+            }
+        }
+
+        if (!templates || templates.length === 0) {
+            showToast('No templates available for this task type', 'error');
+            return;
+        }
+
+        const html = templates.map(t => `
+            <div class="template-picker-item" onclick="assignTemplate(${taskId}, ${t.template_id}, '${(taskName || '').replace(/'/g, "\\'")}')">
+                <i class="fas fa-clipboard-check"></i>
+                <div class="template-picker-info">
+                    <h4>${escapeHtmlChecklist(t.template_name)}</h4>
+                    ${t.description ? `<p>${escapeHtmlChecklist(t.description)}</p>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('templatePickerBody').innerHTML = html;
+        document.getElementById('templatePickerModal').classList.add('active');
+    }
+
+    function closeTemplatePicker() {
+        document.getElementById('templatePickerModal').classList.remove('active');
+    }
+
+    // Assign template to task
+    async function assignTemplate(taskId, templateId, taskName) {
+        try {
+            const response = await fetch(CHECKLIST_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'assign_template',
+                    task_id: taskId,
+                    template_id: templateId
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                closeTemplatePicker();
+                showChecklistModal(taskId, taskName);
+            } else {
+                showToast(data.message || 'Error assigning template', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Network error', 'error');
+        }
+    }
+
+    function escapeHtmlChecklist(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Hook into task loading to fetch checklist summaries
+    const _originalLoadTasksForProject = typeof loadTasksForProject === 'function' ? loadTasksForProject : null;
+
+    if (_originalLoadTasksForProject) {
+        const origFn = loadTasksForProject;
+        loadTasksForProject = async function(projectId) {
+            const tasks = await origFn(projectId);
+            if (tasks && tasks.length > 0) {
+                const taskIds = tasks.map(t => t.task_id);
+                await loadChecklistSummaries(taskIds);
+            }
+            return tasks;
+        };
+    }
+
+    // Load summaries on initial page load for visible tasks
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Wait for projects to load, then scan for task IDs
+        setTimeout(async () => {
+            const taskElements = document.querySelectorAll('[data-task-id]');
+            const ids = [...new Set(Array.from(taskElements).map(el => el.dataset.taskId).filter(Boolean))];
+            if (ids.length > 0) {
+                await loadChecklistSummaries(ids);
+            }
+        }, 2000);
+    });
+
+    // Close checklist modals on outside click
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'checklistModal') {
+            closeChecklistModal();
+        }
+        if (e.target.id === 'templatePickerModal') {
+            closeTemplatePicker();
+        }
+    });
     </script>
 </body>
 </html>

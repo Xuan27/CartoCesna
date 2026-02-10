@@ -652,6 +652,10 @@
                     <i class="fas fa-chart-bar"></i>
                     Analytics
                 </a>
+                <a href="./checklists.php" class="nav-item">
+                    <i class="fas fa-clipboard-check"></i>
+                    Checklists
+                </a>
                 <a href="./tools.php" class="nav-item active">
                     <i class="fas fa-tools"></i>
                     Tools
