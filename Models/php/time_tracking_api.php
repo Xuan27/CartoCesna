@@ -57,7 +57,7 @@ try {
 
         $entryId = (int)$pdo->lastInsertId();
 
-        $getStmt = $pdo->prepare("SELECT start_time FROM time_entries WHERE entry_id = :id");
+        $getStmt = $pdo->prepare("SELECT UNIX_TIMESTAMP(start_time) AS start_time FROM time_entries WHERE entry_id = :id");
         $getStmt->execute([':id' => $entryId]);
         $entry = $getStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -123,7 +123,7 @@ try {
     elseif ($action === 'get_active_timer') {
 
         $stmt = $pdo->query(
-            "SELECT entry_id, project_id, task_id, task_name, project_name, start_time
+            "SELECT entry_id, project_id, task_id, task_name, project_name, UNIX_TIMESTAMP(start_time) AS start_time
              FROM time_entries
              WHERE end_time IS NULL
              ORDER BY start_time DESC

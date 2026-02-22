@@ -2061,7 +2061,7 @@ async function checkActiveTimer() {
             timerState.taskId    = parseInt(e.task_id);
             timerState.projectId = e.project_id;
             timerState.taskName  = e.task_name;
-            timerState.startTime = new Date(e.start_time).getTime();
+            timerState.startTime = e.start_time * 1000;
             startTimerTick();
             showTimerBanner(e.task_name, e.project_name);
         }
@@ -2102,7 +2102,7 @@ async function startTimer(taskId, projectId, taskName, projectName) {
         timerState.taskId    = taskId;
         timerState.projectId = projectId;
         timerState.taskName  = taskName;
-        timerState.startTime = new Date(data.start_time).getTime();
+        timerState.startTime = data.start_time * 1000;
 
         startTimerTick();
         showTimerBanner(taskName, projectName);
