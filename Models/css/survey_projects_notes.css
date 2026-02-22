@@ -1797,3 +1797,354 @@ body {
     height: 14px;
     accent-color: var(--primary-color);
 }
+
+/* ========== Coordinate Type Badge ========== */
+.coordinate-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.coordinate-type-grid {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0284c7;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.coordinate-type-surface {
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+    border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+.coordinate-type-calibration {
+    background: rgba(168, 85, 247, 0.12);
+    color: #7c3aed;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* ========== Google Maps Plus Code Button ========== */
+.plus-code-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    background: #1a73e8;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+    vertical-align: middle;
+}
+
+.plus-code-map-btn:hover {
+    background: #1557b0;
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.plus-code-map-btn i {
+    font-size: 0.65rem;
+}
+
+/* ========== Time Tracker Styles ========== */
+
+/* Active timer banner — floating pill, bottom-right corner */
+.active-timer-banner {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    background: linear-gradient(135deg, #065f46, #047857);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(4, 120, 87, 0.45);
+    max-width: 380px;
+    animation: bannerSlideIn 0.25s ease-out;
+}
+
+@keyframes bannerSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Blinking red dot */
+.timer-pulse {
+    color: #f87171;
+    animation: timerPulse 1.2s ease-in-out infinite;
+    font-size: 0.75rem;
+}
+
+@keyframes timerPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.2; }
+}
+
+/* Monospace elapsed time */
+.timer-count {
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    background: rgba(255,255,255,0.15);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+}
+
+.timer-label-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* Play button on task rows */
+.timer-play-btn {
+    background: var(--success-color) !important;
+    color: #fff !important;
+    border: none !important;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.timer-play-btn:hover {
+    background: #15803d !important;
+    transform: translateY(-1px);
+}
+
+/* Active (running) state — red stop button on task row */
+.timer-play-btn.timer-active {
+    background: var(--danger-color) !important;
+    animation: timerBtnPulse 2s ease-in-out infinite;
+}
+
+.timer-play-btn.timer-active:hover {
+    background: #b91c1c !important;
+}
+
+@keyframes timerBtnPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.5); }
+    50%       { box-shadow: 0 0 0 4px rgba(220,38,38,0); }
+}
+
+/* Elapsed mini-display on active task button */
+.timer-btn-elapsed {
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.65rem;
+    margin-left: 0.25rem;
+}
+
+/* Stop button inside banner */
+.timer-stop-btn {
+    background: rgba(255,255,255,0.2) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    padding: 0.25rem 0.6rem !important;
+    font-size: 0.75rem !important;
+    height: auto !important;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.timer-stop-btn:hover {
+    background: rgba(255,255,255,0.35) !important;
+}
+
+/* Hours tracker inline display */
+.hours-tracker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+}
+
+.hours-tracker i {
+    font-size: 0.65rem;
+}
+
+.hours-on-track    { color: var(--success-color); background: rgba(22,163,74,0.08);  border-color: rgba(22,163,74,0.2); }
+.hours-near-budget { color: var(--warning-color); background: rgba(217,119,6,0.08); border-color: rgba(217,119,6,0.2); }
+.hours-over-budget { color: var(--danger-color);  background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.2); }
+
+.hours-time-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* ── Timesheet Modal ── */
+.timesheet-modal-content {
+    max-width: 960px !important;
+}
+
+.timesheet-week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.timesheet-week-nav button {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--gray-300);
+    background: var(--white);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.timesheet-week-nav button:hover {
+    background: var(--gray-50);
+}
+
+#timesheetWeekLabel {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.95rem;
+    min-width: 220px;
+    text-align: center;
+}
+
+/* Timesheet table */
+.timesheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    overflow-x: auto;
+}
+
+.timesheet-table th {
+    background: var(--gray-50);
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.timesheet-table th:first-child,
+.timesheet-table th:nth-child(2),
+.timesheet-table th:nth-child(3) {
+    text-align: left;
+}
+
+.timesheet-table td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    text-align: center;
+    color: var(--gray-700);
+    vertical-align: middle;
+}
+
+.timesheet-table td:first-child,
+.timesheet-table td:nth-child(2),
+.timesheet-table td:nth-child(3) {
+    text-align: left;
+}
+
+.timesheet-table tr:hover td {
+    background: var(--gray-50);
+}
+
+/* Total row */
+.timesheet-total-row td {
+    background: var(--gray-100) !important;
+    font-weight: 700;
+    color: var(--gray-900);
+    border-top: 2px solid var(--gray-300);
+}
+
+/* Day columns — highlight today */
+.timesheet-today-col {
+    background: rgba(37, 99, 235, 0.06) !important;
+}
+
+.timesheet-today-col th,
+.timesheet-today-col td {
+    color: var(--primary-color);
+}
+
+th.today-header {
+    background: rgba(37, 99, 235, 0.12) !important;
+    color: var(--primary-color);
+}
+
+td.today-cell {
+    background: rgba(37, 99, 235, 0.05) !important;
+}
+
+/* Empty cell */
+.timesheet-empty-cell {
+    color: var(--gray-300);
+    font-size: 0.75rem;
+}
+
+/* Copy for Vantagepoint button */
+.btn-vantagepoint {
+    background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+    color: #fff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-vantagepoint:hover {
+    opacity: 0.88;
+}
+
+/* Timesheet footer toolbar */
+.timesheet-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.timesheet-grand-total {
+    font-weight: 700;
+    color: var(--gray-800);
+    font-size: 0.9rem;
+}
+
+/* Scrollable table wrapper */
+.timesheet-table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--border-radius);
+}

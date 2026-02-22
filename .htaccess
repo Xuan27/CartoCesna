@@ -1,0 +1,12 @@
+# CartoCesna Apache Configuration
+
+# ── PHP upload limits for GLB model files ──────────────────────
+php_value upload_max_filesize 512M
+php_value post_max_size       512M
+php_value max_execution_time  300
+php_value memory_limit        512M
+
+# ── Clean URLs for tour viewer ──────────────────────────────────
+# Uncomment these lines once mod_rewrite is confirmed enabled:
+# RewriteEngine On
+# RewriteRule ^tour/([a-f0-9]+)$ /CartoCesna/tour_viewer.php?token=$1 [L,QSA]

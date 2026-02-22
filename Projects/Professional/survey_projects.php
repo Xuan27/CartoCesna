@@ -44,12 +44,26 @@
                     <i class="fas fa-tools"></i>
                     Tools
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
+                    <i class="fas fa-clock"></i>
+                    <span class="nav-text">Timesheet</span>
+                </a>
+                <a href="#" class="nav-item" data-tooltip="Settings">
                     <i class="fas fa-cog"></i>
-                    Settings
+                    <span class="nav-text">Settings</span>
                 </a>
             </nav>
         </div>
+    </div>
+
+    <!-- Active Timer Banner -->
+    <div id="activeTimerBanner" class="active-timer-banner" style="display:none;">
+        <i class="fas fa-circle timer-pulse"></i>
+        <span class="timer-label-text" id="activeTimerLabel">Recording...</span>
+        <span id="activeTimerDisplay" class="timer-count">0:00:00</span>
+        <button onclick="stopActiveTimer()" class="btn timer-stop-btn">
+            <i class="fas fa-stop"></i> Stop
+        </button>
     </div>
 
     <!-- Main Content -->
@@ -228,6 +242,19 @@
                                    placeholder="Austin, Travis County, Texas">
                         </div>
                         <div class="form-group">
+                            <label class="form-label" for="plus_code">
+                                Google Plus Code
+                                <a href="https://maps.google.com/pluscodes/" target="_blank"
+                                   style="font-size:0.75rem;font-weight:400;color:var(--primary-color);margin-left:0.4rem;">
+                                    What's this?
+                                </a>
+                            </label>
+                            <input type="text" class="form-input" id="plus_code" name="plus_code"
+                                   placeholder="e.g. 87G8Q2PV+W3 or 2PVH+W3 Austin, Texas"
+                                   style="font-family:monospace;text-transform:uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()">
+                        </div>
+                        <div class="form-group">
                             <label class="form-label" for="scale_factor">Scale Factor</label>
                             <input type="text" class="form-input" id="scale_factor" name="scale_factor"
                                    placeholder="1.0000000">
@@ -280,6 +307,16 @@
                                 <option value="Topographic Survey">Topographic Survey</option>
                                 <option value="As-Built Survey">As-Built Survey</option>
                                 <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="coordinateType">Coordinate Type</label>
+                            <select class="form-select" id="coordinateType" name="coordinateType">
+                                <option value="">— Not specified —</option>
+                                <option value="Grid">Grid</option>
+                                <option value="Surface">Surface</option>
+                                <option value="Calibration">Calibration</option>
                             </select>
                         </div>
                         
@@ -556,6 +593,17 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let currentEditingProject = null;
 
+// ── Timer state ──────────────────────────────────────────────────────────────
+let timerState = {
+    isRunning: false,
+    entryId:   null,
+    taskId:    null,
+    projectId: null,
+    taskName:  null,
+    intervalId: null,
+    startTime:  null,
+};
+
 // DOM element references (will be set after DOM loads)
 let projectIdInput, projectFolderLinkInput, projectSurveyFolderLinkInput, 
     projectDrawingFolderLinkInput, projectContractLinkInput, projectQAQCLinkInput, 
@@ -575,9 +623,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set up auto-fill functionality
     setupAutoFill();
-    
+
     // Load projects from server
     loadProjects();
+
+    // Restore any active timer session
+    checkActiveTimer();
 });
 
 function loadProjects() {
@@ -651,6 +702,19 @@ function loadTasksForProject(projectId) {
         console.error('Error loading tasks:', error);
         return [];
     });
+}
+
+// Round hours to the nearest 0.5 increment using threshold rules:
+//   fraction ≤ 0.01  → keep whole hours (e.g. 1.005 → 1.0)
+//   fraction > 0.01  → round up to next half  (e.g. 1.03 → 1.5)
+//   fraction > 0.51  → round up to next whole (e.g. 1.52 → 2.0)
+function roundToHalf(value) {
+    if (!value || value <= 0) return 0;
+    const whole    = Math.floor(value);
+    const fraction = value - whole;
+    if (fraction > 0.51) return whole + 1;
+    if (fraction > 0.01) return whole + 0.5;
+    return whole;
 }
 
 // Helper function to format task type for CSS class
@@ -904,6 +968,21 @@ function createProjectRow(project) {
                     <div class="detail-item">
                         <span class="detail-label">Location</span>
                         <span class="detail-value">${project.location || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Plus Code</span>
+                        <span class="detail-value">
+                            ${project.plus_code
+                                ? `<span style="font-family:monospace;font-size:0.85rem;">${project.plus_code}</span>
+                                   <a href="https://www.google.com/maps?q=${encodeURIComponent(project.plus_code)}"
+                                      target="_blank"
+                                      class="plus-code-map-btn"
+                                      title="Open in Google Maps"
+                                      onclick="event.stopPropagation()">
+                                       <i class="fas fa-map-marker-alt"></i> Maps
+                                   </a>`
+                                : '<span style="color:var(--gray-400);">Not set</span>'}
+                        </span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">Scale Factor</span>
@@ -1192,7 +1271,7 @@ function saveProjectChanges() {
     const fieldIds = [
         'projectName', 'projectStatus', 'projectFolderLink', 'surveyFolderLink',
         'drawingFolderLink', 'contractLink', 'qaQcFolderLink', 'researchFolderLink',
-        'fieldFolderLink', 'notes', 'modifiedBy', 'location', 'scale_factor'
+        'fieldFolderLink', 'notes', 'modifiedBy', 'location', 'plus_code', 'scale_factor'
     ];
 
     // Add form data
@@ -1593,6 +1672,7 @@ function editTask(taskId, projectId) {
         document.getElementById('taskProjectId').value = task.project_id;
         document.getElementById('taskName').value = task.task_name || '';
         document.getElementById('taskType').value = task.task_type || '';
+        document.getElementById('coordinateType').value = task.coordinate_type || '';
         document.getElementById('taskStatus').value = task.task_status || 'Not Started';
         document.getElementById('taskPriority').value = task.task_priority || 'Medium';
         document.getElementById('phaseNumber').value = task.phase_number || '';
@@ -1600,8 +1680,8 @@ function editTask(taskId, projectId) {
         document.getElementById('startDate').value = task.start_date || '';
         document.getElementById('dueDate').value = task.due_date || '';
         document.getElementById('completionDate').value = task.completion_date || '';
-        document.getElementById('estimatedHours').value = task.estimated_hours || '';
-        document.getElementById('actualHours').value = task.actual_hours || '';
+        document.getElementById('estimatedHours').value = task.estimated_hours ? roundToHalf(parseFloat(task.estimated_hours)) : '';
+        document.getElementById('actualHours').value = task.actual_hours ? roundToHalf(parseFloat(task.actual_hours)) : '';
         document.getElementById('taskLink').value = task.task_link || '';
         document.getElementById('taskNotes').value = task.notes || '';
 
@@ -1747,7 +1827,7 @@ function deleteTask(taskId, projectId) {
     });
 }
 
-// Create tasks HTML with edit/delete buttons and clickable status
+// Create tasks HTML with edit/delete buttons, clickable status, and timer
 function createTasksHTML(tasks) {
     if (!tasks || tasks.length === 0) {
         return `
@@ -1757,18 +1837,56 @@ function createTasksHTML(tasks) {
             </div>
         `;
     }
-    
+
     return tasks.map(task => {
         const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
         const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
         const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
         const uncPath = "westwoodps.local\\\\Global Projects";
+        const safeTaskName = (task.task_name || '').replace(/'/g, "\\'");
+
+        // Look up project name from allProjects
+        const proj = allProjects.find(p => p.projectId === task.project_id);
+        const projectName = (proj ? proj.projectName : task.project_id).replace(/'/g, "\\'");
+
+        // Timer button state
+        const isActive = timerState.isRunning && timerState.taskId === task.task_id;
+        const timerBtnClass = isActive ? 'timer-play-btn timer-active' : 'timer-play-btn';
+        const timerBtnTitle = isActive ? 'Stop timer' : 'Start timer';
+        const timerBtnIcon = isActive ? 'fa-stop' : 'fa-play';
+        const timerElapsed = isActive ? `<span class="timer-btn-elapsed" id="timer-btn-elapsed-${task.task_id}"></span>` : '';
+
+        // Hours tracker
+        const actual = parseFloat(task.actual_hours) || 0;
+        const estimated = parseFloat(task.estimated_hours) || 0;
+        let hoursClass = '';
+        let timeLeftHtml = '';
+        if (estimated > 0) {
+            const ratio = actual / estimated;
+            hoursClass = ratio >= 1 ? 'hours-over-budget' : (ratio >= 0.8 ? 'hours-near-budget' : 'hours-on-track');
+            const left = estimated - actual;
+            if (left > 0) {
+                timeLeftHtml = `<span class="hours-time-left hours-on-track" title="Time remaining"><i class="fas fa-arrow-right"></i>${left.toFixed(1)}h left</span>`;
+            } else if (left < 0) {
+                timeLeftHtml = `<span class="hours-time-left hours-over-budget" title="Over budget"><i class="fas fa-exclamation-triangle"></i>${Math.abs(left).toFixed(1)}h over</span>`;
+            } else {
+                timeLeftHtml = `<span class="hours-time-left hours-near-budget" title="On budget"><i class="fas fa-check"></i>0h left</span>`;
+            }
+        }
+        const hoursDisplay = `
+            <span class="hours-tracker ${hoursClass}" title="Actual vs Estimated hours">
+                <i class="fas fa-hourglass-half"></i>
+                <span id="actual-hours-${task.task_id}">${actual.toFixed(1)}h</span>
+                /
+                <span>${estimated > 0 ? estimated + 'h' : '?h'}</span>
+            </span>${timeLeftHtml}`;
 
         return `
             <div class="task-item">
                 <div class="task-info">
                     <div class="task-header">
                         <span class="task-type-badge ${taskTypeClass}">${task.task_type}</span>
+                        ${task.coordinate_type ? `<span class="coordinate-type-badge coordinate-type-${task.coordinate_type.toLowerCase()}">${task.coordinate_type}</span>` : ''}
                         <span class="task-name">${task.task_name}</span>
                     </div>
                     <div class="task-meta">
@@ -1785,7 +1903,7 @@ function createTasksHTML(tasks) {
                                 <i class="fas fa-folder" style="color: #6366f1;"></i>
                                 <span style="font-size: 0.75rem; color: var(--gray-600);">${task.task_link.split('\\').pop()}</span>
                             </span>
-                            <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}');" title="Copy Task Folder Path">
+                            <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${safeTaskName}');" title="Copy Task Folder Path">
                                 <i class="fas fa-copy"></i>
                             </button>
                         ` : ''}
@@ -1795,7 +1913,14 @@ function createTasksHTML(tasks) {
                         <span class="task-notes-content">${task.notes ? task.notes.replace(/\n/g, '<br>') : '<em style="color: var(--gray-400);">Double-click to add notes...</em>'}</span>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    ${hoursDisplay}
+                    <button class="btn btn-xs ${timerBtnClass}"
+                            id="timer-btn-${task.task_id}"
+                            onclick="event.stopPropagation(); handleTimerClick(${task.task_id}, '${task.project_id}', '${safeTaskName}', '${projectName}')"
+                            title="${timerBtnTitle}">
+                        <i class="fas ${timerBtnIcon}"></i>${timerElapsed}
+                    </button>
                     <div class="task-status-wrapper">
                         <span class="task-status-badge ${taskStatusClass}" onclick="toggleStatusDropdown(event, ${task.task_id})" title="Click to change status">
                             <i class="fas fa-circle"></i>
@@ -1916,7 +2041,437 @@ document.addEventListener('click', function(event) {
         });
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIME TRACKER — core logic
+// ═══════════════════════════════════════════════════════════════════════════
+const TIME_API = '../../Models/php/time_tracking_api.php';
+
+// Check for an active timer on page load and restore UI
+async function checkActiveTimer() {
+    try {
+        const fd = new FormData();
+        fd.append('action', 'get_active_timer');
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (data.success && data.entry) {
+            const e = data.entry;
+            timerState.isRunning = true;
+            timerState.entryId   = e.entry_id;
+            timerState.taskId    = parseInt(e.task_id);
+            timerState.projectId = e.project_id;
+            timerState.taskName  = e.task_name;
+            timerState.startTime = new Date(e.start_time).getTime();
+            startTimerTick();
+            showTimerBanner(e.task_name, e.project_name);
+        }
+    } catch (err) {
+        console.error('checkActiveTimer error:', err);
+    }
+}
+
+// Handle play/stop click on a task button
+function handleTimerClick(taskId, projectId, taskName, projectName) {
+    if (timerState.isRunning && timerState.taskId === taskId) {
+        stopActiveTimer();
+    } else {
+        startTimer(taskId, projectId, taskName, projectName);
+    }
+}
+
+// Start a timer for a task
+async function startTimer(taskId, projectId, taskName, projectName) {
+    try {
+        const fd = new FormData();
+        fd.append('action',       'start_timer');
+        fd.append('task_id',      taskId);
+        fd.append('project_id',   projectId);
+        fd.append('task_name',    taskName);
+        fd.append('project_name', projectName);
+
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (!data.success) {
+            showToast(data.message || 'Could not start timer', 'error');
+            return;
+        }
+
+        timerState.isRunning = true;
+        timerState.entryId   = data.entry_id;
+        timerState.taskId    = taskId;
+        timerState.projectId = projectId;
+        timerState.taskName  = taskName;
+        timerState.startTime = new Date(data.start_time).getTime();
+
+        startTimerTick();
+        showTimerBanner(taskName, projectName);
+        refreshTimerButtons();
+        showToast(`Timer started: ${taskName}`, 'success');
+    } catch (err) {
+        console.error('startTimer error:', err);
+        showToast('Network error starting timer', 'error');
+    }
+}
+
+// Stop the currently active timer
+async function stopActiveTimer() {
+    if (!timerState.isRunning) return;
+    const entryId = timerState.entryId;
+    const taskId  = timerState.taskId;
+
+    // Optimistically reset state
+    clearInterval(timerState.intervalId);
+    timerState.isRunning = false;
+    timerState.intervalId = null;
+    hideTimerBanner();
+    refreshTimerButtons();
+
+    try {
+        const fd = new FormData();
+        fd.append('action',   'stop_timer');
+        fd.append('entry_id', entryId);
+
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (data.success) {
+            const dur = formatDurationShort(data.duration_seconds);
+            showToast(`Timer stopped — logged ${dur}`, 'success');
+
+            // Update actual hours display in any visible task row
+            const hoursEl = document.getElementById(`actual-hours-${taskId}`);
+            if (hoursEl) {
+                hoursEl.textContent = parseFloat(data.actual_hours).toFixed(1) + 'h';
+            }
+        } else {
+            showToast(data.message || 'Could not stop timer', 'error');
+        }
+    } catch (err) {
+        console.error('stopActiveTimer error:', err);
+        showToast('Network error stopping timer', 'error');
+    } finally {
+        timerState.entryId   = null;
+        timerState.taskId    = null;
+        timerState.projectId = null;
+        timerState.taskName  = null;
+        timerState.startTime = null;
+    }
+}
+
+// Start the 1-second interval tick
+function startTimerTick() {
+    if (timerState.intervalId) clearInterval(timerState.intervalId);
+    updateTimerDisplay(); // immediate update
+    timerState.intervalId = setInterval(updateTimerDisplay, 1000);
+}
+
+// Update banner clock + active task button
+function updateTimerDisplay() {
+    if (!timerState.startTime) return;
+    const elapsed = Math.floor((Date.now() - timerState.startTime) / 1000);
+    const formatted = formatDurationClock(elapsed);
+
+    const display = document.getElementById('activeTimerDisplay');
+    if (display) display.textContent = formatted;
+
+    // Update elapsed on the task button if it's visible
+    const btnElapsed = document.getElementById(`timer-btn-elapsed-${timerState.taskId}`);
+    if (btnElapsed) btnElapsed.textContent = ' ' + formatted;
+}
+
+// Show the banner with task + project info
+function showTimerBanner(taskName, projectName) {
+    const banner = document.getElementById('activeTimerBanner');
+    const label  = document.getElementById('activeTimerLabel');
+    if (banner) {
+        label.textContent = `${taskName}${projectName ? '  ·  ' + projectName : ''}`;
+        banner.style.display = 'flex';
+    }
+}
+
+function hideTimerBanner() {
+    const banner = document.getElementById('activeTimerBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+// Re-render all visible timer buttons to reflect current timerState
+function refreshTimerButtons() {
+    document.querySelectorAll('[id^="timer-btn-"]').forEach(btn => {
+        const taskId = parseInt(btn.id.replace('timer-btn-', ''));
+        const isActive = timerState.isRunning && timerState.taskId === taskId;
+        btn.className = 'btn btn-xs ' + (isActive ? 'timer-play-btn timer-active' : 'timer-play-btn');
+        btn.title = isActive ? 'Stop timer' : 'Start timer';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = 'fas ' + (isActive ? 'fa-stop' : 'fa-play');
+
+        // Add/remove elapsed span
+        let elSpan = btn.querySelector('.timer-btn-elapsed');
+        if (isActive && !elSpan) {
+            elSpan = document.createElement('span');
+            elSpan.className = 'timer-btn-elapsed';
+            elSpan.id = `timer-btn-elapsed-${taskId}`;
+            btn.appendChild(elSpan);
+        } else if (!isActive && elSpan) {
+            elSpan.remove();
+        }
+    });
+}
+
+// Format seconds as H:MM:SS (live clock)
+function formatDurationClock(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// Format seconds as "Xh Ym" (short label)
+function formatDurationShort(seconds) {
+    if (!seconds) return '0m';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+}
+
+// Format decimal hours for timesheet cells
+function formatDecimalHours(seconds) {
+    if (!seconds || seconds <= 0) return null;
+    return roundToHalf(seconds / 3600);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIMESHEET — modal and rendering
+// ═══════════════════════════════════════════════════════════════════════════
+
+let timesheetCurrentWeekStart = null;
+
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=Sun
+    const diff = day === 0 ? -6 : 1 - day; // shift so Mon = day 0
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function openTimesheetModal() {
+    timesheetCurrentWeekStart = getWeekStart(new Date());
+    document.getElementById('timesheetModal').style.display = 'block';
+    loadTimesheet();
+}
+
+function closeTimesheetModal() {
+    document.getElementById('timesheetModal').style.display = 'none';
+}
+
+function navigateWeek(direction) {
+    timesheetCurrentWeekStart.setDate(timesheetCurrentWeekStart.getDate() + direction * 7);
+    loadTimesheet();
+}
+
+async function loadTimesheet() {
+    const weekStartStr = timesheetCurrentWeekStart.toISOString().split('T')[0];
+    const weekEnd = new Date(timesheetCurrentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    // Update week label
+    const opts = { month: 'short', day: 'numeric', year: 'numeric' };
+    document.getElementById('timesheetWeekLabel').textContent =
+        `${timesheetCurrentWeekStart.toLocaleDateString('en-US', opts)}  –  ${weekEnd.toLocaleDateString('en-US', opts)}`;
+
+    document.getElementById('timesheetContent').innerHTML =
+        '<p style="text-align:center;padding:2rem;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+
+    try {
+        const fd = new FormData();
+        fd.append('action',     'get_timesheet');
+        fd.append('week_start', weekStartStr);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (!data.success) {
+            document.getElementById('timesheetContent').innerHTML =
+                `<p style="color:var(--danger-color);text-align:center;">${data.message || 'Error loading timesheet'}</p>`;
+            return;
+        }
+
+        renderTimesheetTable(data.entries, timesheetCurrentWeekStart);
+    } catch (err) {
+        console.error('loadTimesheet error:', err);
+        document.getElementById('timesheetContent').innerHTML =
+            '<p style="color:var(--danger-color);text-align:center;">Network error loading timesheet</p>';
+    }
+}
+
+function renderTimesheetTable(entries, weekStart) {
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Build date objects for each day column
+    const dates = days.map((_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        return d;
+    });
+
+    // Group entries by task
+    const taskMap = {}; // task_id → { meta, days: {dateStr → seconds} }
+    entries.forEach(e => {
+        if (!taskMap[e.task_id]) {
+            taskMap[e.task_id] = {
+                task_id:      e.task_id,
+                task_name:    e.task_name,
+                project_id:   e.project_id,
+                project_name: e.project_name,
+                phase_number: e.phase_number || '',
+                task_type:    e.task_type || e.task_name,
+                days: {}
+            };
+        }
+        taskMap[e.task_id].days[e.entry_date] = parseInt(e.total_seconds) || 0;
+    });
+
+    const tasks = Object.values(taskMap);
+
+    if (tasks.length === 0) {
+        document.getElementById('timesheetContent').innerHTML =
+            `<div style="text-align:center;padding:3rem;color:var(--gray-400);">
+                <i class="fas fa-clock" style="font-size:2.5rem;margin-bottom:1rem;opacity:0.4;display:block;"></i>
+                No time entries for this week.
+             </div>`;
+        return;
+    }
+
+    // Daily totals
+    const dailyTotals = dates.map((d, _) => {
+        const ds = d.toISOString().split('T')[0];
+        return tasks.reduce((sum, t) => sum + (t.days[ds] || 0), 0);
+    });
+    const grandTotal = dailyTotals.reduce((a, b) => a + b, 0);
+
+    // Build header
+    let headerHtml = `<tr>
+        <th>Project</th>
+        <th>Phase</th>
+        <th>Task</th>`;
+    dates.forEach((d, i) => {
+        const isToday = d.getTime() === today.getTime();
+        headerHtml += `<th class="${isToday ? 'today-header' : ''}">${days[i]}<br><small style="font-weight:400;font-size:0.7rem;">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small></th>`;
+    });
+    headerHtml += `<th>Total</th></tr>`;
+
+    // Build body rows
+    let bodyHtml = '';
+    tasks.forEach(t => {
+        let rowTotal = 0;
+        let rowHtml = `<tr>
+            <td>
+                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${t.project_id}</span>
+                ${t.project_name ? `<br><span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${t.project_name}</span>` : ''}
+            </td>
+            <td>${t.phase_number || '—'}</td>
+            <td>
+                <span style="font-weight:600;color:var(--gray-800);">${t.task_name}</span>
+                ${t.task_type ? `<br><span style="font-size:0.7rem;color:var(--gray-500);">${t.task_type}</span>` : ''}
+            </td>`;
+        dates.forEach(d => {
+            const ds = d.toISOString().split('T')[0];
+            const isToday = d.getTime() === today.getTime();
+            const secs = t.days[ds] || 0;
+            rowTotal += secs;
+            const display = secs > 0 ? roundToHalf(secs / 3600) : null;
+            rowHtml += `<td class="${isToday ? 'today-cell' : ''}">${display !== null ? display : '<span class="timesheet-empty-cell">—</span>'}</td>`;
+        });
+        const rowTotalHours = roundToHalf(rowTotal / 3600);
+        rowHtml += `<td style="font-weight:600;">${rowTotalHours > 0 ? rowTotalHours : '—'}</td></tr>`;
+        bodyHtml += rowHtml;
+    });
+
+    // Total row
+    let totalRowHtml = '<tr class="timesheet-total-row"><td colspan="3">Daily Total</td>';
+    dailyTotals.forEach((secs, i) => {
+        const d = dates[i];
+        const isToday = d.getTime() === today.getTime();
+        const h = roundToHalf(secs / 3600);
+        totalRowHtml += `<td class="${isToday ? 'today-cell' : ''}">${h > 0 ? h : '—'}</td>`;
+    });
+    const grandH = roundToHalf(grandTotal / 3600);
+    totalRowHtml += `<td>${grandH > 0 ? grandH : '—'}</td></tr>`;
+
+    const tableHtml = `
+        <div class="timesheet-table-wrapper">
+            <table class="timesheet-table">
+                <thead>${headerHtml}</thead>
+                <tbody>${bodyHtml}${totalRowHtml}</tbody>
+            </table>
+        </div>
+        <div class="timesheet-footer">
+            <span class="timesheet-grand-total">
+                <i class="fas fa-clock"></i> Week Total: <strong>${grandH}h</strong>
+            </span>
+            <button class="btn-vantagepoint" onclick="copyTimesheetForVantagepoint()" title="Copy tab-separated for Deltek Vantagepoint">
+                <i class="fas fa-copy"></i> Copy for Vantagepoint
+            </button>
+        </div>`;
+
+    document.getElementById('timesheetContent').innerHTML = tableHtml;
+
+    // Stash data for clipboard copy
+    window._timesheetData = { tasks, dates, days, dailyTotals, grandTotal };
+}
+
+function copyTimesheetForVantagepoint() {
+    const d = window._timesheetData;
+    if (!d) return;
+
+    const header = ['Project', 'Project Name', 'Phase', 'Task', 'Labor Code', ...d.days, 'Total'].join('\t');
+    const rows = d.tasks.map(t => {
+        let rowTotal = 0;
+        const dayCells = d.dates.map(date => {
+            const ds = date.toISOString().split('T')[0];
+            const secs = t.days[ds] || 0;
+            rowTotal += secs;
+            return secs > 0 ? roundToHalf(secs / 3600) : '';
+        });
+        const totalH = roundToHalf(rowTotal / 3600);
+        return [t.project_id, t.project_name || '', t.phase_number || '', t.task_name, t.task_type || '', ...dayCells, totalH > 0 ? totalH : ''].join('\t');
+    });
+
+    const totalRow = ['Daily Total', '', '', '', '', ...d.dailyTotals.map(s => s > 0 ? roundToHalf(s / 3600) : ''), roundToHalf(d.grandTotal / 3600)].join('\t');
+    const tsv = [header, ...rows, totalRow].join('\n');
+
+    navigator.clipboard.writeText(tsv).then(() => {
+        showToast('Timesheet copied to clipboard — paste into Vantagepoint!', 'success');
+    }).catch(() => {
+        showToast('Could not copy to clipboard', 'error');
+    });
+}
     </script>
+
+    <!-- Timesheet Modal -->
+    <div id="timesheetModal" class="modal">
+        <div class="modal-content timesheet-modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-clock" style="color:var(--primary-color);margin-right:0.5rem;"></i> Weekly Timesheet</h2>
+                <button class="close-button" onclick="closeTimesheetModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="timesheet-week-nav">
+                    <button onclick="navigateWeek(-1)"><i class="fas fa-chevron-left"></i> Prev</button>
+                    <span id="timesheetWeekLabel">Week of ...</span>
+                    <button onclick="navigateWeek(1)">Next <i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div id="timesheetContent">
+                    <!-- rendered table injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Checklist Modal -->
     <div class="checklist-modal" id="checklistModal">
@@ -2290,13 +2845,16 @@ document.addEventListener('click', function(event) {
         }, 2000);
     });
 
-    // Close checklist modals on outside click
+    // Close checklist / timesheet modals on outside click
     document.addEventListener('click', function(e) {
         if (e.target.id === 'checklistModal') {
             closeChecklistModal();
         }
         if (e.target.id === 'templatePickerModal') {
             closeTemplatePicker();
+        }
+        if (e.target.id === 'timesheetModal') {
+            closeTimesheetModal();
         }
     });
     </script>

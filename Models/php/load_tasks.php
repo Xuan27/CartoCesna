@@ -16,7 +16,7 @@ try {
         }
         
         // PDO uses named parameters (:project_id) or question marks
-        $stmt = $conn->prepare("SELECT task_id, project_id, phase_number, task_name, task_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, modified_by, estimated_hours, actual_hours, notes, folder_overrides, point_ranges, created_date, modified_date FROM tasks WHERE project_id = :project_id ORDER BY FIELD(task_status, 'In Progress', 'Not Started', 'On Hold', 'Completed', 'Cancelled'), due_date ASC, task_id ASC");
+        $stmt = $conn->prepare("SELECT task_id, project_id, phase_number, task_name, task_type, coordinate_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, modified_by, estimated_hours, actual_hours, notes, folder_overrides, point_ranges, created_date, modified_date FROM tasks WHERE project_id = :project_id ORDER BY FIELD(task_status, 'In Progress', 'Not Started', 'On Hold', 'Completed', 'Cancelled'), due_date ASC, task_id ASC");
         
         // PDO binding - use bindParam or bindValue, or pass array to execute()
         $stmt->execute(['project_id' => $project_id]);

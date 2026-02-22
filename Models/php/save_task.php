@@ -19,13 +19,14 @@ try {
             }
         }
 
-        $stmt = $conn->prepare("INSERT INTO tasks (project_id, phase_number, task_name, task_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, estimated_hours, actual_hours, notes, folder_overrides) VALUES (:project_id, :phase_number, :task_name, :task_type, :task_status, :task_priority, :task_link, :start_date, :due_date, :completion_date, :assigned_to, :created_by, :estimated_hours, :actual_hours, :notes, :folder_overrides)");
+        $stmt = $conn->prepare("INSERT INTO tasks (project_id, phase_number, task_name, task_type, coordinate_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, estimated_hours, actual_hours, notes, folder_overrides) VALUES (:project_id, :phase_number, :task_name, :task_type, :coordinate_type, :task_status, :task_priority, :task_link, :start_date, :due_date, :completion_date, :assigned_to, :created_by, :estimated_hours, :actual_hours, :notes, :folder_overrides)");
 
         $stmt->execute([
             'project_id' => $_POST['projectId'] ?? '',
             'phase_number' => $_POST['phaseNumber'] ?? null,
             'task_name' => $_POST['taskName'] ?? '',
             'task_type' => $_POST['taskType'] ?? '',
+            'coordinate_type' => !empty($_POST['coordinateType']) ? $_POST['coordinateType'] : null,
             'task_status' => $_POST['taskStatus'] ?? 'Not Started',
             'task_priority' => $_POST['taskPriority'] ?? 'Medium',
             'task_link' => $_POST['taskLink'] ?? null,
@@ -57,13 +58,14 @@ try {
             }
         }
 
-        $stmt = $conn->prepare("UPDATE tasks SET phase_number = :phase_number, task_name = :task_name, task_type = :task_type, task_status = :task_status, task_priority = :task_priority, task_link = :task_link, start_date = :start_date, due_date = :due_date, completion_date = :completion_date, assigned_to = :assigned_to, modified_by = :modified_by, estimated_hours = :estimated_hours, actual_hours = :actual_hours, notes = :notes, folder_overrides = :folder_overrides WHERE task_id = :task_id");
+        $stmt = $conn->prepare("UPDATE tasks SET phase_number = :phase_number, task_name = :task_name, task_type = :task_type, coordinate_type = :coordinate_type, task_status = :task_status, task_priority = :task_priority, task_link = :task_link, start_date = :start_date, due_date = :due_date, completion_date = :completion_date, assigned_to = :assigned_to, modified_by = :modified_by, estimated_hours = :estimated_hours, actual_hours = :actual_hours, notes = :notes, folder_overrides = :folder_overrides WHERE task_id = :task_id");
 
         $stmt->execute([
             'task_id' => $_POST['taskId'] ?? '',
             'phase_number' => $_POST['phaseNumber'] ?? null,
             'task_name' => $_POST['taskName'] ?? '',
             'task_type' => $_POST['taskType'] ?? '',
+            'coordinate_type' => !empty($_POST['coordinateType']) ? $_POST['coordinateType'] : null,
             'task_status' => $_POST['taskStatus'] ?? 'Not Started',
             'task_priority' => $_POST['taskPriority'] ?? 'Medium',
             'task_link' => $_POST['taskLink'] ?? null,

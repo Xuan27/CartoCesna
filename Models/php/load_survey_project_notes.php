@@ -47,6 +47,7 @@ try {
                     'modifiedDate' => $project['modified_date'],
                     'modifiedBy' => $project['modified_by'],
                     'location' => $project['location'],
+                    'plus_code' => $project['plus_code'],
                     'scale_factor' => $project['scale_factor']
                 ];
             }, $projects);
@@ -92,6 +93,7 @@ try {
                 'researchFolderLink' => 'research_folder_link',
                 'modifiedBy' => 'modified_by',
                 'location' => 'location',
+                'plus_code' => 'plus_code',
                 'scale_factor' => 'scale_factor'
             ];
 
@@ -143,6 +145,7 @@ try {
                         'modifiedDate' => $updatedProject['modified_date'],
                         'modifiedBy' => $updatedProject['modified_by'],
                         'location' => $updatedProject['location'],
+                        'plus_code' => $updatedProject['plus_code'],
                         'scale_factor' => $updatedProject['scale_factor']
                     ];
 

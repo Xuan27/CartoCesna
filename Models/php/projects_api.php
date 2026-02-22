@@ -289,6 +289,7 @@ function getProjects($conn, $userType, $userId) {
     }
 
     // Parse JSON fields and get thumbnails
+    $appUrl = rtrim(Env::get('APP_URL', ''), '/');
     foreach (['personal', 'professional'] as $type) {
         foreach ($projects[$type] as &$project) {
             // Handle technologies (professional) or technologies_used (personal)
@@ -300,6 +301,11 @@ function getProjects($conn, $userType, $userId) {
             }
             if (isset($project['tags']) && is_string($project['tags'])) {
                 $project['tags'] = json_decode($project['tags'], true) ?? [];
+            }
+
+            // Build absolute URL from APP_URL for relative project_url paths
+            if (!empty($project['project_url']) && !str_starts_with($project['project_url'], 'http')) {
+                $project['project_url'] = $appUrl . '/' . ltrim($project['project_url'], '/');
             }
 
             // Get thumbnail from project folder
@@ -341,8 +347,17 @@ function getProject($conn, $userType, $userId, $projectId) {
     if (isset($project['technologies']) && is_string($project['technologies'])) {
         $project['technologies'] = json_decode($project['technologies'], true) ?? [];
     }
+    if (isset($project['technologies_used']) && is_string($project['technologies_used'])) {
+        $project['technologies_used'] = json_decode($project['technologies_used'], true) ?? [];
+    }
     if (isset($project['tags']) && is_string($project['tags'])) {
         $project['tags'] = json_decode($project['tags'], true) ?? [];
+    }
+
+    // Build absolute URL from APP_URL for relative project_url paths
+    if (!empty($project['project_url']) && !str_starts_with($project['project_url'], 'http')) {
+        $appUrl = rtrim(Env::get('APP_URL', ''), '/');
+        $project['project_url'] = $appUrl . '/' . ltrim($project['project_url'], '/');
     }
 
     echo json_encode(['success' => true, 'project' => $project]);
