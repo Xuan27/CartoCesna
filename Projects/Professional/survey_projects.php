@@ -661,11 +661,8 @@ function loadProjects() {
         });
     })
     .then(data => {
-        console.log('Parsed data:', data);
-        
         if (data.success) {
             allProjects = data.projects || [];
-            console.log('Projects loaded successfully:', allProjects.length, 'projects');
             searchProjects(); // Update display
             showToast('Projects loaded successfully!', 'success');
         } else {
@@ -2062,17 +2059,14 @@ async function checkActiveTimer() {
         fd.append('action', 'get_active_timer');
         const resp = await fetch(TIME_API, { method: 'POST', body: fd });
         const data = await resp.json();
-        console.log('[Timer] checkActiveTimer response:', JSON.stringify(data));
         if (data.success && data.entry) {
             const e = data.entry;
-            const parsed = parseApiTime(e.start_time);
-            console.log('[Timer] raw start_time:', e.start_time, '| parsed ms:', parsed, '| Date.now():', Date.now(), '| diff seconds:', Math.floor((Date.now() - parsed) / 1000));
             timerState.isRunning = true;
             timerState.entryId   = e.entry_id;
             timerState.taskId    = parseInt(e.task_id);
             timerState.projectId = e.project_id;
             timerState.taskName  = e.task_name;
-            timerState.startTime = parsed;
+            timerState.startTime = parseApiTime(e.start_time);
             startTimerTick();
             showTimerBanner(e.task_name, e.project_name);
         }
@@ -2108,15 +2102,12 @@ async function startTimer(taskId, projectId, taskName, projectName) {
             return;
         }
 
-        const parsed = parseApiTime(data.start_time);
-        console.log('[Timer] startTimer response:', JSON.stringify(data), '| parsed ms:', parsed, '| Date.now():', Date.now(), '| diff seconds:', Math.floor((Date.now() - parsed) / 1000));
-
         timerState.isRunning = true;
         timerState.entryId   = data.entry_id;
         timerState.taskId    = taskId;
         timerState.projectId = projectId;
         timerState.taskName  = taskName;
-        timerState.startTime = parsed;
+        timerState.startTime = Date.now();
 
         startTimerTick();
         showTimerBanner(taskName, projectName);
