@@ -2047,6 +2047,14 @@ document.addEventListener('click', function(event) {
 // ═══════════════════════════════════════════════════════════════════════════
 const TIME_API = '../../Models/php/time_tracking_api.php';
 
+// Parse start_time from API — handles both Unix timestamp (integer) and
+// MySQL datetime string (which Hostinger returns as UTC but without 'Z').
+function parseApiTime(t) {
+    if (!t) return null;
+    if (typeof t === 'number' || /^\d{9,}$/.test(String(t))) return Number(t) * 1000;
+    return new Date(String(t).replace(' ', 'T') + 'Z').getTime();
+}
+
 // Check for an active timer on page load and restore UI
 async function checkActiveTimer() {
     try {
@@ -2061,7 +2069,7 @@ async function checkActiveTimer() {
             timerState.taskId    = parseInt(e.task_id);
             timerState.projectId = e.project_id;
             timerState.taskName  = e.task_name;
-            timerState.startTime = e.start_time * 1000;
+            timerState.startTime = parseApiTime(e.start_time);
             startTimerTick();
             showTimerBanner(e.task_name, e.project_name);
         }
@@ -2102,7 +2110,7 @@ async function startTimer(taskId, projectId, taskName, projectName) {
         timerState.taskId    = taskId;
         timerState.projectId = projectId;
         timerState.taskName  = taskName;
-        timerState.startTime = data.start_time * 1000;
+        timerState.startTime = parseApiTime(data.start_time);
 
         startTimerTick();
         showTimerBanner(taskName, projectName);
