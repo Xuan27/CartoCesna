@@ -537,7 +537,11 @@ try {
         'size2' => $fileSize,
     ]);
 
-    $tourUrl = '/CartoCesna/uploads/scans/' . $scanId . '/index.html';
+    $_doc_root = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
+    $_app_root = str_replace('\\', '/', dirname(__DIR__, 2)); // Models/php -> CartoCesna root
+    $_base_url = '/' . ltrim(substr($_app_root, strlen($_doc_root)), '/');
+    $_base_url = rtrim($_base_url, '/') . '/';
+    $tourUrl = $_base_url . 'uploads/scans/' . $scanId . '/index.html';
 
     echo json_encode([
         'success'   => true,

@@ -197,10 +197,11 @@ try {
                 scan_date = :date, raw_data_path = :path, notes = :notes
             WHERE scan_id = :id
         ");
+        $newStatus = $input['status'] ?? 'draft';
         $stmt->execute([
             'name'     => $name,
             'pid'      => $input['property_id'] ?? null,
-            'status'   => $input['status'] ?? 'draft',
+            'status'   => $newStatus,
             'scanner'  => $input['scanner_type'] ?? null,
             'software' => $input['software_used'] ?? null,
             'format'   => $input['file_format'] ?? null,
@@ -209,7 +210,34 @@ try {
             'notes'    => $input['notes'] ?? null,
             'id'       => $scanId
         ]);
-        echo json_encode(['success' => true, 'message' => 'Scan updated']);
+
+        // If status set to published, ensure an embed token exists
+        $embedToken = null;
+        if ($newStatus === 'published') {
+            $chk = $conn->prepare("SELECT embed_token FROM tour_configurations WHERE scan_id = :id");
+            $chk->execute(['id' => $scanId]);
+            $existing = $chk->fetch();
+            if ($existing && $existing['embed_token']) {
+                $embedToken = $existing['embed_token'];
+            } else {
+                $embedToken = bin2hex(random_bytes(32));
+                $ins = $conn->prepare("
+                    INSERT INTO tour_configurations (scan_id, embed_token, published_date)
+                    VALUES (:sid, :token, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        embed_token = IF(embed_token IS NULL, :token2, embed_token),
+                        published_date = NOW()
+                ");
+                $ins->execute(['sid' => $scanId, 'token' => $embedToken, 'token2' => $embedToken]);
+                // Re-fetch in case the existing token was kept by ON DUPLICATE KEY
+                $chk2 = $conn->prepare("SELECT embed_token FROM tour_configurations WHERE scan_id = :id");
+                $chk2->execute(['id' => $scanId]);
+                $row = $chk2->fetch();
+                $embedToken = $row['embed_token'] ?? $embedToken;
+            }
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Scan updated', 'embed_token' => $embedToken]);
 
     } elseif ($action === 'delete_scan') {
         $scanId = $input['scan_id'] ?? null;

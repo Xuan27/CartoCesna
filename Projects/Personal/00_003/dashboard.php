@@ -5,6 +5,12 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
     header('Location: ../../../login.php');
     exit;
 }
+// Compute base URL dynamically so it works on any deployment path
+$_app_root  = dirname(__DIR__, 3); // CartoCesna root (3 levels up from this file)
+$_doc_root  = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
+$_app_root  = str_replace('\\', '/', $_app_root);
+$_base_url  = '/' . ltrim(substr($_app_root, strlen($_doc_root)), '/');
+$_base_url  = rtrim($_base_url, '/') . '/';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -405,7 +411,8 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
     </div>
 
     <script>
-        const API_URL = '../../../Models/php/scan_tours_api.php';
+        const API_URL  = '../../../Models/php/scan_tours_api.php';
+        const BASE_URL = '<?= htmlspecialchars($_base_url, ENT_QUOTES) ?>';
         let allProperties = [];
         let allScans = [];
         let draggedSceneId = null;
@@ -826,10 +833,14 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
                 const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await res.json();
                 if (data.success) {
-                    showToast(id ? 'Scan updated' : 'Scan added', 'success');
                     closeModal('scanModal');
                     loadScans();
                     loadAllScansForDropdowns();
+                    if (data.embed_token) {
+                        showToast(`Published! Token: ${data.embed_token}`, 'success');
+                    } else {
+                        showToast(id ? 'Scan updated' : 'Scan added', 'success');
+                    }
                 } else {
                     showToast(data.message || 'Error saving scan', 'error');
                 }
@@ -1147,7 +1158,7 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
         }
 
         function copyEmbedToken(token) {
-            const url = window.location.origin + '/CartoCesna/tour_viewer.php?token=' + token;
+            const url = window.location.origin + BASE_URL + 'tour_viewer.php?token=' + token;
             navigator.clipboard.writeText(url).then(() => {
                 showToast('Tour URL copied to clipboard!', 'success');
             }).catch(() => {
@@ -1219,7 +1230,7 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
         }
 
         function openTour(scanId) {
-            window.open(`/CartoCesna/uploads/scans/${scanId}/index.html`, '_blank');
+            window.open(BASE_URL + `uploads/scans/${scanId}/index.html`, '_blank');
         }
 
         fileInput.addEventListener('change', async function () {

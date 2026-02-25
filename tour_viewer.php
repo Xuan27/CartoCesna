@@ -10,6 +10,12 @@
 
 require_once __DIR__ . '/Private/db_config.php';
 
+// Compute base URL dynamically so it works on any deployment path
+$_doc_root = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
+$_app_root = str_replace('\\', '/', __DIR__);
+$base_url  = '/' . ltrim(substr($_app_root, strlen($_doc_root)), '/');
+$base_url  = rtrim($base_url, '/') . '/';
+
 $token = isset($_GET['token']) ? trim($_GET['token']) : '';
 
 // Basic token format validation (hex string, 32–64 chars)
@@ -43,7 +49,7 @@ if (strtolower($row['status']) !== 'published') {
 
 $scan_id   = (int) $row['scan_id'];
 $scan_name = htmlspecialchars($row['scan_name']);
-$viewer    = "/CartoCesna/uploads/scans/{$scan_id}/index.html";
+$viewer    = $base_url . "uploads/scans/{$scan_id}/index.html";
 
 // Verify the viewer file actually exists on disk
 $viewer_path = __DIR__ . "/uploads/scans/{$scan_id}/index.html";
@@ -106,7 +112,7 @@ function showError(string $message): never {
         <div class="icon">🏠</div>
         <h1>Tour Unavailable</h1>
         <p><?= $message ?></p>
-        <a href="/CartoCesna/">Back to CartoCesna</a>
+        <a href="<?= htmlspecialchars($base_url) ?>">Back to CartoCesna</a>
     </div>
 </body>
 </html>
