@@ -1,34 +1,55 @@
 <?php
 
 require_once '../../Private/db_config.php';
+require_once __DIR__ . '/olc_helper.php';
 
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $db = new Database();
     $pdo = $db->getConnection();
-    
+
     if ($_POST['action'] === 'add_project') {
         try {
-            $sql = "INSERT INTO survey_projects (project_id, project_name, project_folder_link, survey_folder_link, drawing_folder_link, field_folder_link, contract_link, qaQc_folder_link, research_folder_link, created_by, project_status, location, plus_code, scale_factor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
+            // Expand plus code to full OLC and decode lat/lon before inserting
+            $plusCode  = trim($_POST['plus_code'] ?? '');
+            $latitude  = null;
+            $longitude = null;
+            if ($plusCode !== '') {
+                $olcResult = olcProcessRaw($pdo, $plusCode);
+                if ($olcResult) {
+                    $plusCode  = $olcResult['full_code'];
+                    $latitude  = $olcResult['lat'];
+                    $longitude = $olcResult['lon'];
+                }
+            }
+
+            $sql = "INSERT INTO survey_projects (
+                        project_id, project_name, project_folder_link, survey_folder_link,
+                        drawing_folder_link, field_folder_link, contract_link, qaQc_folder_link,
+                        research_folder_link, created_by, project_status, location,
+                        plus_code, scale_factor, latitude, longitude
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             $stmt = $pdo->prepare($sql);
             $result = $stmt->execute([
                 $_POST['projectId'],
                 $_POST['projectName'],
-                $_POST['projectFolderLink'],
-                $_POST['surveyFolderLink'],
-                $_POST['drawingFolderLink'],
-                $_POST['fieldFolderLink'],
-                $_POST['contractLink'],
-                $_POST['qaQcFolderLink'],
-                $_POST['researchFolderLink'],
-                $_POST['createdBy'],
-                $_POST['projectStatus'],
-                $_POST['location'],
-                $_POST['plus_code'] ?? null,
-                $_POST['scale_factor']
+                $_POST['projectFolderLink']   ?? null,
+                $_POST['surveyFolderLink']    ?? null,
+                $_POST['drawingFolderLink']   ?? null,
+                $_POST['fieldFolderLink']     ?? null,
+                $_POST['contractLink']        ?? null,
+                $_POST['qaQcFolderLink']      ?? null,
+                $_POST['researchFolderLink']  ?? null,
+                $_POST['createdBy']           ?? null,
+                $_POST['projectStatus']       ?? 'Active',
+                $_POST['location']            ?? null,
+                $plusCode ?: null,
+                $_POST['scale_factor']        ?? null,
+                $latitude,
+                $longitude,
             ]);
-            
+
             if ($result) {
                 echo json_encode(['success' => true, 'message' => 'Project added successfully!']);
             }

@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'])) {
 
 try {
     require_once '../../Private/db_config.php';
+    require_once __DIR__ . '/olc_helper.php';
     $db = new Database();
     $pdo = $db->getConnection();
 
@@ -49,7 +50,9 @@ try {
                     'location' => $project['location'],
                     'plus_code' => $project['plus_code'],
                     'scale_factor' => $project['scale_factor'],
-                    'needs_monuments' => (int)$project['needs_monuments']
+                    'needs_monuments' => (int)$project['needs_monuments'],
+                    'latitude'  => $project['latitude']  !== null ? (float)$project['latitude']  : null,
+                    'longitude' => $project['longitude'] !== null ? (float)$project['longitude'] : null
                 ];
             }, $projects);
 
@@ -123,6 +126,19 @@ try {
             $result = $stmt->execute($params);
 
             if ($result && $stmt->rowCount() > 0) {
+                // Expand plus code to full OLC and store lat/lon if plus_code changed
+                if (!empty($_POST['plus_code'])) {
+                    $decoded = olcProcessRaw($pdo, $_POST['plus_code']);
+                    if ($decoded) {
+                        $pdo->prepare("UPDATE survey_projects SET plus_code = :code, latitude = :lat, longitude = :lon WHERE project_id = :id")
+                            ->execute([':code' => $decoded['full_code'], ':lat' => $decoded['lat'], ':lon' => $decoded['lon'], ':id' => $projectId]);
+                    }
+                } elseif (isset($_POST['plus_code']) && $_POST['plus_code'] === '') {
+                    // plus_code cleared — clear coordinates too
+                    $pdo->prepare("UPDATE survey_projects SET latitude = NULL, longitude = NULL WHERE project_id = :id")
+                        ->execute([':id' => $projectId]);
+                }
+
                 // Fetch the updated project
                 $selectSql = "SELECT * FROM survey_projects WHERE project_id = :project_id";
                 $selectStmt = $pdo->prepare($selectSql);
@@ -149,7 +165,9 @@ try {
                         'location' => $updatedProject['location'],
                         'plus_code' => $updatedProject['plus_code'],
                         'scale_factor' => $updatedProject['scale_factor'],
-                        'needs_monuments' => (int)$updatedProject['needs_monuments']
+                        'needs_monuments' => (int)$updatedProject['needs_monuments'],
+                        'latitude'  => $updatedProject['latitude']  !== null ? (float)$updatedProject['latitude']  : null,
+                        'longitude' => $updatedProject['longitude'] !== null ? (float)$updatedProject['longitude'] : null,
                     ];
 
                     sendJsonResponse([

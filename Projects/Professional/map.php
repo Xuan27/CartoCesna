@@ -7,8 +7,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <!-- Leaflet -->
-    <link  rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- MarkerCluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -290,10 +294,33 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 // ── State ──────────────────────────────────────────────────────────────────
-let allProjects  = [];
-let markers      = {};   // projectId → L.circleMarker
-let panelOpen    = false;
-const markerGroup = L.featureGroup().addTo(map);
+let allProjects = [];
+let markers     = {};    // projectId → marker
+let panelOpen   = false;
+
+// MarkerCluster group — handles grouping + performance for large datasets
+const clusterGroup = L.markerClusterGroup({
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    iconCreateFunction(cluster) {
+        const count = cluster.getChildCount();
+        const size  = count < 10 ? 36 : count < 100 ? 44 : 52;
+        return L.divIcon({
+            html: `<div style="width:${size}px;height:${size}px;border-radius:50%;
+                        background:var(--primary-color);color:white;
+                        display:flex;align-items:center;justify-content:center;
+                        font-weight:700;font-size:${size < 44 ? 13 : 15}px;
+                        border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                        ${count}
+                   </div>`,
+            className: '',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+        });
+    }
+}).addTo(map);
 
 // ── Init ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -312,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProjects();
 });
 
-// ── Load projects (server decodes plus codes) ──────────────────────────────
+// ── Load projects — coordinates come pre-decoded from server ───────────────
 async function loadProjects() {
     showLoading('Loading projects…');
     try {
@@ -330,13 +357,13 @@ async function loadProjects() {
     showLoading(null);
 }
 
-// ── Plot markers ───────────────────────────────────────────────────────────
+// ── Plot markers (no geocoding — lat/lon already stored in DB) ─────────────
 function plotProjects(projects) {
-    projects.forEach(p => {
-        if (p.lat !== null && p.lon !== null) addMarker(p);
-    });
-    if (markerGroup.getLayers().length) {
-        map.fitBounds(markerGroup.getBounds().pad(0.25));
+    clusterGroup.clearLayers();
+    markers = {};
+    projects.forEach(p => { if (p.lat !== null && p.lon !== null) addMarker(p); });
+    if (clusterGroup.getLayers().length) {
+        map.fitBounds(clusterGroup.getBounds().pad(0.25));
     }
 }
 
@@ -348,7 +375,7 @@ function addMarker(p) {
     });
     marker.bindPopup(buildPopup(p), { maxWidth: 280 });
     marker.on('click', () => highlightPanelItem(p.projectId));
-    marker.addTo(markerGroup);
+    clusterGroup.addLayer(marker);
     markers[p.projectId] = marker;
 }
 
@@ -428,8 +455,11 @@ function filterPanel(query) {
 function focusProject(projectId) {
     const marker = markers[projectId];
     if (!marker) return;
-    map.flyTo(marker.getLatLng(), 16, { duration: 1 });
-    marker.openPopup();
+    map.flyTo(marker.getLatLng(), 16, { duration: 1, animate: true });
+    // Wait for fly animation then open popup (cluster may need to be expanded first)
+    setTimeout(() => {
+        clusterGroup.zoomToShowLayer(marker, () => marker.openPopup());
+    }, 900);
     highlightPanelItem(projectId);
 }
 
