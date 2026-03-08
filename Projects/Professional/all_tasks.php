@@ -40,6 +40,14 @@
                     <i class="fas fa-clipboard-check"></i>
                     Checklists
                 </a>
+                <a href="./map.php" class="nav-item">
+                    <i class="fas fa-map"></i>
+                    Map
+                </a>
+                <a href="./monuments.php" class="nav-item">
+                    <i class="fas fa-map-pin"></i>
+                    Monuments
+                </a>
                 <a href="./tools.php" class="nav-item">
                     <i class="fas fa-tools"></i>
                     Tools
@@ -174,6 +182,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="taskDetailsTitle">Task Details</h2>
+                <a id="viewInDashboardLink" href="#" class="btn btn-secondary" style="font-size:0.85rem; padding:0.35rem 0.75rem; display:flex; align-items:center; gap:0.4rem;">
+                    <i class="fas fa-external-link-alt"></i> View in Dashboard
+                </a>
                 <button class="close-button" onclick="closeTaskDetailsModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -395,16 +406,16 @@
             const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
             const priorityClass = `priority-${task.task_priority.toLowerCase()}`;
 
-            const dueDate = task.due_date ? 
-                new Date(task.due_date).toLocaleDateString('en-US', {
+            const dueDate = task.due_date ?
+                new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                 }) : 'No due date';
 
             // Check if task is overdue
-            const isOverdue = task.due_date && 
-                new Date(task.due_date) < new Date() && 
+            const isOverdue = task.due_date &&
+                new Date(task.due_date + 'T00:00:00') < new Date() &&
                 task.task_status !== 'Completed';
 
             row.innerHTML = `
@@ -485,7 +496,7 @@
 
             const formatDate = (dateStr) => {
                 if (!dateStr) return 'Not set';
-                return new Date(dateStr).toLocaleDateString('en-US', {
+                return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -567,6 +578,7 @@
 
             document.getElementById('taskDetailsTitle').textContent = task.task_name;
             document.getElementById('taskDetailsContent').innerHTML = content;
+            document.getElementById('viewInDashboardLink').href = `survey_projects.php?project=${task.project_id}&task=${task.task_id}`;
             document.getElementById('taskDetailsModal').style.display = 'block';
         }
 

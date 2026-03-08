@@ -90,7 +90,12 @@ body {
     font-weight: 500;
 }
 
-.nav-item:hover, .nav-item.active {
+.nav-item:hover {
+    background-color: #eff6ff;
+    color: var(--primary-color);
+}
+
+.nav-item.active {
     background-color: var(--primary-color);
     color: var(--white);
 }
@@ -633,7 +638,8 @@ body {
         }
 
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: #eff6ff;
+            color: var(--primary-color);
             padding-left: 30px;
         }
 
@@ -1579,6 +1585,153 @@ body {
     color: var(--gray-400);
     margin-top: 0.15rem;
 }
+
+/* N/A button on standard checklist items */
+.btn-na {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    background: white;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--gray-400);
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: 500;
+}
+.btn-na:hover { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-400); }
+.btn-na.active { background: var(--gray-200); color: var(--gray-700); border-color: var(--gray-500); }
+
+.na-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    padding: 0 0.3rem;
+    background: var(--gray-200);
+    border-radius: 3px;
+    color: var(--gray-500);
+    margin-left: 0.3rem;
+    font-weight: 500;
+}
+
+/* Conditional checklist item (viewer) */
+.checklist-conditional-item {
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    margin: 0.4rem 0;
+    overflow: hidden;
+}
+.checklist-conditional-item.answered {
+    border-color: var(--primary-color);
+}
+.conditional-question {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: #f8faff;
+}
+.conditional-buttons {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.btn-branch {
+    padding: 0.22rem 0.6rem;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 5px;
+    background: white;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+}
+.btn-branch.yes-btn:hover, .btn-branch.yes-btn.active {
+    background: #dcfce7; border-color: #16a34a; color: #15803d;
+}
+.btn-branch.no-btn:hover, .btn-branch.no-btn.active {
+    background: #fee2e2; border-color: #dc2626; color: #b91c1c;
+}
+.btn-branch.na-btn:hover, .btn-branch.na-btn.active {
+    background: var(--gray-100); border-color: var(--gray-500); color: var(--gray-600);
+}
+.branch-children {
+    padding: 0.3rem 1rem 0.3rem 2.25rem;
+    background: #fafafa;
+    border-top: 1px solid var(--gray-100);
+}
+.checklist-child-item {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Conditional item editor (checklists.php template builder) */
+.conditional-item-row {
+    border: 1.5px solid #bfdbfe !important;
+    background: #f0f9ff !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    padding: 0 !important;
+}
+.conditional-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+}
+.conditional-badge {
+    font-size: 0.74rem;
+    color: var(--primary-color);
+    white-space: nowrap;
+    font-weight: 600;
+    background: #dbeafe;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}
+.conditional-branches-editor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #bfdbfe;
+}
+.branch-editor {
+    padding: 0.6rem 0.75rem;
+}
+.yes-branch-editor { background: #f0fdf4; border-right: 1px solid #bfdbfe; }
+.no-branch-editor  { background: #fff5f5; }
+.branch-editor-label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.4rem;
+}
+.branch-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+}
+.branch-item-text {
+    flex: 1;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-size: 0.83rem;
+}
+.branch-item-text:focus { outline: none; border-color: var(--primary-color); }
+.add-branch-item-btn {
+    width: 100%;
+    padding: 0.28rem;
+    border: 1px dashed var(--gray-300);
+    border-radius: 4px;
+    background: transparent;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--gray-400);
+    margin-top: 0.25rem;
+    transition: all 0.15s;
+}
+.add-branch-item-btn:hover { background: rgba(0,0,0,0.03); color: var(--gray-600); }
 
 /* Template card (checklists.php management page) */
 .template-card {

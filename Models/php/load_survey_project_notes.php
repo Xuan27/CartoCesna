@@ -48,7 +48,8 @@ try {
                     'modifiedBy' => $project['modified_by'],
                     'location' => $project['location'],
                     'plus_code' => $project['plus_code'],
-                    'scale_factor' => $project['scale_factor']
+                    'scale_factor' => $project['scale_factor'],
+                    'needs_monuments' => (int)$project['needs_monuments']
                 ];
             }, $projects);
 
@@ -94,7 +95,8 @@ try {
                 'modifiedBy' => 'modified_by',
                 'location' => 'location',
                 'plus_code' => 'plus_code',
-                'scale_factor' => 'scale_factor'
+                'scale_factor' => 'scale_factor',
+                'needs_monuments' => 'needs_monuments'
             ];
 
             // Check which fields are being updated
@@ -146,7 +148,8 @@ try {
                         'modifiedBy' => $updatedProject['modified_by'],
                         'location' => $updatedProject['location'],
                         'plus_code' => $updatedProject['plus_code'],
-                        'scale_factor' => $updatedProject['scale_factor']
+                        'scale_factor' => $updatedProject['scale_factor'],
+                        'needs_monuments' => (int)$updatedProject['needs_monuments']
                     ];
 
                     sendJsonResponse([

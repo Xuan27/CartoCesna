@@ -52,6 +52,14 @@
                     <i class="fas fa-clipboard-check"></i>
                     Checklists
                 </a>
+                <a href="./map.php" class="nav-item">
+                    <i class="fas fa-map"></i>
+                    Map
+                </a>
+                <a href="./monuments.php" class="nav-item">
+                    <i class="fas fa-map-pin"></i>
+                    Monuments
+                </a>
                 <a href="./tools.php" class="nav-item">
                     <i class="fas fa-tools"></i>
                     Tools
@@ -140,9 +148,14 @@
                         <div class="template-items-list" id="templateItemsList">
                             <!-- Items added dynamically -->
                         </div>
-                        <button type="button" class="add-item-btn" onclick="addItemRow()">
-                            <i class="fas fa-plus"></i> Add Item
-                        </button>
+                        <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                            <button type="button" class="add-item-btn" style="flex:1;" onclick="addItemRow()">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                            <button type="button" class="add-item-btn" style="flex:1; border-color:#bfdbfe; color:var(--primary-color);" onclick="addConditionalRow()">
+                                <i class="fas fa-code-branch"></i> Add Conditional
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-actions" style="margin-top: 1rem; padding-top: 1rem;">
@@ -291,20 +304,38 @@
                 document.getElementById('templateName').value = t.template_name;
                 document.getElementById('templateDescription').value = t.description || '';
 
-                // Set task type checkboxes
                 document.querySelectorAll('#taskTypeCheckboxes input').forEach(cb => {
                     cb.checked = (t.task_types || []).includes(cb.value);
                 });
 
-                // Populate items
                 const itemsList = document.getElementById('templateItemsList');
                 itemsList.innerHTML = '';
+
+                // Build child map: parent_item_id -> {yes: [], no: []}
+                const childMap = {};
                 (t.items || []).forEach(item => {
-                    addItemRow(item.item_id, item.item_text, item.category);
+                    if (item.parent_item_id) {
+                        if (!childMap[item.parent_item_id]) childMap[item.parent_item_id] = { yes: [], no: [] };
+                        childMap[item.parent_item_id][item.branch || 'yes'].push(item);
+                    }
                 });
 
-                if (!t.items || t.items.length === 0) {
+                // Render root items only
+                const rootItems = (t.items || []).filter(item => !item.parent_item_id);
+                if (rootItems.length === 0) {
                     addItemRow();
+                } else {
+                    rootItems.forEach(item => {
+                        if (item.item_type === 'conditional') {
+                            addConditionalRow(
+                                item.item_id, item.item_text, item.category,
+                                childMap[item.item_id]?.yes || [],
+                                childMap[item.item_id]?.no  || []
+                            );
+                        } else {
+                            addItemRow(item.item_id, item.item_text, item.category);
+                        }
+                    });
                 }
 
                 document.getElementById('templateModal').classList.add('active');
@@ -314,12 +345,13 @@
             }
         }
 
-        // Add an item row to the modal
+        // Add a standard item row
         function addItemRow(itemId = '', text = '', category = '') {
             const list = document.getElementById('templateItemsList');
             const row = document.createElement('div');
             row.className = 'template-item-row';
             row.dataset.itemId = itemId || '';
+            row.dataset.itemType = 'standard';
             row.innerHTML = `
                 <span class="drag-handle"><i class="fas fa-grip-vertical"></i></span>
                 <input type="text" class="item-text-input" placeholder="Checklist item text..." value="${escapeHtml(text)}">
@@ -329,6 +361,67 @@
                 </button>
             `;
             list.appendChild(row);
+        }
+
+        // Add a conditional item row (with yes/no branches)
+        function addConditionalRow(itemId = '', text = '', category = '', yesChildren = [], noChildren = []) {
+            const list = document.getElementById('templateItemsList');
+            const tempId = 'cond_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const row = document.createElement('div');
+            row.className = 'template-item-row conditional-item-row';
+            row.dataset.itemId  = itemId || '';
+            row.dataset.itemType = 'conditional';
+            row.dataset.tempId  = tempId;
+            row.innerHTML = `
+                <div class="conditional-header">
+                    <span class="drag-handle"><i class="fas fa-grip-vertical"></i></span>
+                    <span class="conditional-badge"><i class="fas fa-code-branch"></i> Conditional</span>
+                    <input type="text" class="item-text-input" placeholder="Question (e.g., Are there buildings?)" value="${escapeHtml(text)}">
+                    <input type="text" class="category-input" placeholder="Category" value="${escapeHtml(category)}">
+                    <button type="button" class="remove-item-btn" onclick="this.closest('.conditional-item-row').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="conditional-branches-editor">
+                    <div class="branch-editor yes-branch-editor">
+                        <div class="branch-editor-label"><i class="fas fa-check" style="color:#16a34a;"></i> YES branch</div>
+                        <div class="branch-items-list" data-branch="yes"></div>
+                        <button type="button" class="add-branch-item-btn" onclick="addBranchItem(this)">
+                            <i class="fas fa-plus"></i> Add Yes item
+                        </button>
+                    </div>
+                    <div class="branch-editor no-branch-editor">
+                        <div class="branch-editor-label"><i class="fas fa-times" style="color:#dc2626;"></i> NO branch</div>
+                        <div class="branch-items-list" data-branch="no"></div>
+                        <button type="button" class="add-branch-item-btn" onclick="addBranchItem(this)">
+                            <i class="fas fa-plus"></i> Add No item
+                        </button>
+                    </div>
+                </div>
+            `;
+            list.appendChild(row);
+
+            // Populate existing children
+            yesChildren.forEach(c => addBranchItemToList(row.querySelector('.branch-items-list[data-branch="yes"]'), c.item_id, c.item_text));
+            noChildren.forEach(c  => addBranchItemToList(row.querySelector('.branch-items-list[data-branch="no"]'),  c.item_id, c.item_text));
+        }
+
+        function addBranchItem(btn) {
+            const container = btn.closest('.branch-editor').querySelector('.branch-items-list');
+            addBranchItemToList(container, '', '');
+        }
+
+        function addBranchItemToList(container, itemId = '', text = '') {
+            const row = document.createElement('div');
+            row.className = 'branch-item-row';
+            row.dataset.itemId = itemId || '';
+            row.innerHTML = `
+                <input type="text" class="branch-item-text" placeholder="Sub-item text..." value="${escapeHtml(text)}">
+                <button type="button" class="remove-item-btn" onclick="this.closest('.branch-item-row').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(row);
         }
 
         // Save template (create or update)
@@ -342,22 +435,66 @@
                 return;
             }
 
-            // Collect task types
             const taskTypes = [];
-            document.querySelectorAll('#taskTypeCheckboxes input:checked').forEach(cb => {
-                taskTypes.push(cb.value);
-            });
+            document.querySelectorAll('#taskTypeCheckboxes input:checked').forEach(cb => taskTypes.push(cb.value));
 
-            // Collect items
             const items = [];
-            document.querySelectorAll('#templateItemsList .template-item-row').forEach((row, i) => {
+            let sortOrder = 0;
+
+            document.querySelectorAll('#templateItemsList > .template-item-row').forEach(row => {
+                const itemType = row.dataset.itemType || 'standard';
                 const text = row.querySelector('.item-text-input').value.trim();
-                if (text) {
-                    items.push({
-                        item_id: row.dataset.itemId || null,
-                        item_text: text,
-                        category: row.querySelector('.category-input').value.trim() || null,
-                        sort_order: i
+                if (!text) return;
+
+                const tempId = row.dataset.tempId || ('tmp_' + sortOrder + '_' + Math.random().toString(36).slice(2, 7));
+                const existingId = row.dataset.itemId || null;
+
+                items.push({
+                    item_id:       existingId,
+                    temp_id:       tempId,
+                    item_type:     itemType,
+                    item_text:     text,
+                    category:      row.querySelector('.category-input').value.trim() || null,
+                    sort_order:    sortOrder++,
+                    parent_item_id:  null,
+                    parent_temp_id:  null,
+                    branch:          null
+                });
+
+                if (itemType === 'conditional') {
+                    let childSort = 0;
+                    // YES branch children
+                    row.querySelectorAll('.branch-items-list[data-branch="yes"] .branch-item-row').forEach(childRow => {
+                        const childText = childRow.querySelector('.branch-item-text').value.trim();
+                        if (!childText) return;
+                        items.push({
+                            item_id:       childRow.dataset.itemId || null,
+                            temp_id:       null,
+                            item_type:     'standard',
+                            item_text:     childText,
+                            category:      null,
+                            sort_order:    childSort++,
+                            parent_item_id:  existingId ? parseInt(existingId) : null,
+                            parent_temp_id:  existingId ? null : tempId,
+                            branch:          'yes'
+                        });
+                    });
+                    childSort = 0;
+                    // NO branch children
+                    row.querySelectorAll('.branch-items-list[data-branch="no"] .branch-item-row').forEach(childRow => {
+                        const childText = childRow.querySelector('.branch-item-text').value.trim();
+                        if (!childText) return;
+                        items.push({
+                            item_id:       childRow.dataset.itemId || null,
+                            temp_id:       null,
+                            item_type:     'standard',
+                            item_text:     childText,
+                            category:      null,
+                            sort_order:    childSort++,
+                            parent_item_id:  existingId ? parseInt(existingId) : null,
+                            parent_temp_id:  existingId ? null : tempId,
+                            branch:          'no'
+                        });
                     });
                 }
             });
@@ -365,14 +502,11 @@
             const payload = {
                 action: templateId ? 'update_template' : 'add_template',
                 template_name: name,
-                description: description,
-                task_types: taskTypes,
-                items: items
+                description:   description,
+                task_types:    taskTypes,
+                items:         items
             };
-
-            if (templateId) {
-                payload.template_id = templateId;
-            }
+            if (templateId) payload.template_id = templateId;
 
             try {
                 const response = await fetch(API_URL, {

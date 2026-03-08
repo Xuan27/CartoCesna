@@ -40,17 +40,25 @@
                     <i class="fas fa-clipboard-check"></i>
                     Checklists
                 </a>
+                <a href="./map.php" class="nav-item">
+                    <i class="fas fa-map"></i>
+                    Map
+                </a>
+                <a href="./monuments.php" class="nav-item">
+                    <i class="fas fa-map-pin"></i>
+                    Monuments
+                </a>
                 <a href="./tools.php" class="nav-item">
                     <i class="fas fa-tools"></i>
                     Tools
                 </a>
                 <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
                     <i class="fas fa-clock"></i>
-                    <span class="nav-text">Timesheet</span>
+                    Timesheet
                 </a>
                 <a href="#" class="nav-item" data-tooltip="Settings">
                     <i class="fas fa-cog"></i>
-                    <span class="nav-text">Settings</span>
+                    Settings
                 </a>
             </nav>
         </div>
@@ -258,6 +266,18 @@
                             <label class="form-label" for="scale_factor">Scale Factor</label>
                             <input type="text" class="form-input" id="scale_factor" name="scale_factor"
                                    placeholder="1.0000000">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; user-select:none;">
+                                <input type="checkbox" id="needs_monuments" name="needs_monuments"
+                                       style="width:18px; height:18px; accent-color:var(--primary-color); cursor:pointer; flex-shrink:0;">
+                                <span>
+                                    <strong style="font-size:0.9rem;">Needs Monument Setting</strong>
+                                    <span style="display:block; font-size:0.78rem; color:var(--gray-500); margin-top:1px;">
+                                        Check if this project requires physical survey monuments to be set in the field.
+                                    </span>
+                                </span>
+                            </label>
                         </div>
                     </div>
 
@@ -665,6 +685,7 @@ function loadProjects() {
             allProjects = data.projects || [];
             searchProjects(); // Update display
             showToast('Projects loaded successfully!', 'success');
+            handleDeepLink();
         } else {
             throw new Error(data.message || 'Unknown error occurred');
         }
@@ -677,6 +698,28 @@ function loadProjects() {
         searchProjects();
         showToast('Using sample data - check console for connection issues', 'warning');
     });
+}
+
+// Handle deep-link from All Tasks page (?project=X&task=Y)
+function handleDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('project');
+    if (!projectId) return;
+
+    const project = allProjects.find(p => p.projectId === projectId);
+    if (!project) return;
+
+    // Show only this project
+    filteredProjects = [project];
+    currentPage = 1;
+    updateProjectsDisplay();
+
+    // Expand the row and scroll to it
+    const projectRow = document.querySelector(`tr.project-row[data-project-id="${projectId}"]`);
+    if (projectRow) {
+        projectRow.click();
+        projectRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // Loads the different tasks per project
@@ -738,7 +781,7 @@ function createTasksHTML(tasks) {
     return tasks.map(task => {
         const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
         const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
-        const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        const dueDate = task.due_date ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
         const uncPath = "westwoodps.local\\\\Global Projects";
         
         return `
@@ -909,7 +952,7 @@ function createProjectRow(project) {
     row.dataset.projectId = project.projectId;
     
     // Format date
-    const createdDate = new Date(project.createdDate).toLocaleDateString('en-US', {
+    const createdDate = new Date(project.createdDate + 'T00:00:00').toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -929,7 +972,10 @@ function createProjectRow(project) {
                 <i class="fas fa-chevron-right expand-icon"></i>
                 <div>
                     <div class="project-id">${project.projectId}</div>
-                    <div class="project-name">${project.projectName}</div>
+                    <div style="display:flex;align-items:center;gap:0.4rem;">
+                        <div class="project-name">${project.projectName}</div>
+                        ${project.needs_monuments ? `<span title="Needs monument setting" style="font-size:0.7rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:0.1rem 0.4rem;font-weight:600;white-space:nowrap;"><i class="fas fa-map-pin"></i> Monuments</span>` : ''}
+                    </div>
                 </div>
             </div>
         </td>
@@ -1236,11 +1282,14 @@ function editProject(projectId) {
     // Populate form
     Object.keys(project).forEach(key => {
         const element = document.getElementById(key);
-        if (element) {
+        if (!element) return;
+        if (element.type === 'checkbox') {
+            element.checked = !!parseInt(project[key]);
+        } else {
             element.value = project[key] || '';
         }
     });
-    
+
     // Show the modal
     document.getElementById('projectModal').style.display = 'block';
     
@@ -1270,6 +1319,8 @@ function saveProjectChanges() {
         'drawingFolderLink', 'contractLink', 'qaQcFolderLink', 'researchFolderLink',
         'fieldFolderLink', 'notes', 'modifiedBy', 'location', 'plus_code', 'scale_factor'
     ];
+    // Checkbox fields (value is 0 or 1, not read via .value)
+    formData.append('needs_monuments', document.getElementById('needs_monuments').checked ? '1' : '0');
 
     // Add form data
     fieldIds.forEach(fieldId => {
@@ -1838,7 +1889,7 @@ function createTasksHTML(tasks) {
     return tasks.map(task => {
         const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
         const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
-        const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
+        const dueDate = task.due_date ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
         const uncPath = "westwoodps.local\\\\Global Projects";
         const safeTaskName = (task.task_name || '').replace(/'/g, "\\'");
 
@@ -2644,15 +2695,26 @@ function copyTimesheetForVantagepoint() {
 
     // Render checklist items in modal
     function renderChecklistItems(checklist) {
-        const { items, total, completed, template_name } = checklist;
-        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const { items } = checklist;
 
+        // Build lookup maps
+        const childrenOf = {};
+        items.forEach(item => {
+            if (item.parent_item_id) {
+                if (!childrenOf[item.parent_item_id]) childrenOf[item.parent_item_id] = [];
+                childrenOf[item.parent_item_id].push(item);
+            }
+        });
+
+        // Compute accurate progress considering conditional visibility
+        const { total, completed } = computeChecklistProgress(items, childrenOf);
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
         document.getElementById('checklistProgressText').textContent = `${completed} / ${total} completed (${pct}%)`;
         document.getElementById('checklistProgressFill').style.width = `${pct}%`;
 
-        // Group by category
+        // Group root items by category
         const grouped = {};
-        items.forEach(item => {
+        items.filter(i => !i.parent_item_id).forEach(item => {
             const cat = item.category || 'General';
             if (!grouped[cat]) grouped[cat] = [];
             grouped[cat].push(item);
@@ -2662,70 +2724,138 @@ function copyTimesheetForVantagepoint() {
         for (const [category, catItems] of Object.entries(grouped)) {
             html += `<div class="checklist-category-header">${escapeHtmlChecklist(category)}</div>`;
             catItems.forEach(item => {
-                const checked = parseInt(item.is_completed) ? 'checked' : '';
-                const completedClass = parseInt(item.is_completed) ? 'completed' : '';
-                const meta = parseInt(item.is_completed) && item.completed_by
-                    ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)} - ${new Date(item.completed_date).toLocaleDateString()}</div>`
-                    : '';
-                html += `
-                    <label class="checklist-item ${completedClass}">
-                        <input type="checkbox" ${checked}
-                               onchange="toggleChecklistItem(${currentChecklistTaskId}, ${item.item_id}, this)">
-                        <div>
-                            <div class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}</div>
-                            ${meta}
-                        </div>
-                    </label>
-                `;
+                html += item.item_type === 'conditional'
+                    ? renderConditionalChecklistItem(item, childrenOf[item.item_id] || [])
+                    : renderStandardChecklistItem(item);
             });
         }
 
         document.getElementById('checklistModalBody').innerHTML = html;
     }
 
-    // Toggle a checklist item
-    async function toggleChecklistItem(taskId, itemId, checkbox) {
+    function computeChecklistProgress(items, childrenOf) {
+        let total = 0, completed = 0;
+        const done = s => ['completed', 'yes', 'no', 'na'].includes(s);
+        items.filter(i => !i.parent_item_id).forEach(item => {
+            total++;
+            if (done(item.item_status)) completed++;
+            // Count visible branch children for conditionals
+            if (item.item_type === 'conditional' && (item.item_status === 'yes' || item.item_status === 'no')) {
+                (childrenOf[item.item_id] || []).filter(c => c.branch === item.item_status).forEach(child => {
+                    total++;
+                    if (done(child.item_status)) completed++;
+                });
+            }
+        });
+        return { total, completed };
+    }
+
+    function renderStandardChecklistItem(item, isChild = false) {
+        const status = item.item_status || 'unchecked';
+        const isCompleted = status === 'completed';
+        const isNa = status === 'na';
+        const doneClass = (isCompleted || isNa) ? 'completed' : '';
+        const childClass = isChild ? 'checklist-child-item' : '';
+        const naLabel = isNa ? ` <span class="na-badge">N/A</span>` : '';
+        const meta = isCompleted && item.completed_by
+            ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)} - ${new Date(item.completed_date + 'T00:00:00').toLocaleDateString()}</div>`
+            : '';
+        const newStatusOnCheck = isCompleted ? 'unchecked' : 'completed';
+        const newStatusOnNa   = isNa ? 'unchecked' : 'na';
+        return `
+            <label class="checklist-item ${doneClass} ${childClass}">
+                <input type="checkbox" ${isCompleted ? 'checked' : ''}
+                       onchange="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newStatusOnCheck}')">
+                <div style="flex:1;">
+                    <div class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}${naLabel}</div>
+                    ${meta}
+                </div>
+                <button class="btn-na ${isNa ? 'active' : ''}" title="Not Applicable"
+                        onclick="event.preventDefault();event.stopPropagation();setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newStatusOnNa}')">N/A</button>
+            </label>`;
+    }
+
+    function renderConditionalChecklistItem(item, children) {
+        const status = item.item_status || 'unchecked';
+        const yesActive = status === 'yes' ? 'active' : '';
+        const noActive  = status === 'no'  ? 'active' : '';
+        const naActive  = status === 'na'  ? 'active' : '';
+        const answeredClass = status !== 'unchecked' ? 'answered' : '';
+        // Toggle: clicking same button deselects
+        const newYes = status === 'yes' ? 'unchecked' : 'yes';
+        const newNo  = status === 'no'  ? 'unchecked' : 'no';
+        const newNa  = status === 'na'  ? 'unchecked' : 'na';
+
+        const yesChildren = children.filter(c => c.branch === 'yes');
+        const noChildren  = children.filter(c => c.branch === 'no');
+        let branchHtml = '';
+        if (status === 'yes' && yesChildren.length > 0) {
+            branchHtml = `<div class="branch-children">${yesChildren.map(c => renderStandardChecklistItem(c, true)).join('')}</div>`;
+        } else if (status === 'no' && noChildren.length > 0) {
+            branchHtml = `<div class="branch-children">${noChildren.map(c => renderStandardChecklistItem(c, true)).join('')}</div>`;
+        }
+
+        return `
+            <div class="checklist-conditional-item ${answeredClass}">
+                <div class="conditional-question">
+                    <i class="fas fa-code-branch" style="color:var(--primary-color);flex-shrink:0;"></i>
+                    <span class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}</span>
+                    <div class="conditional-buttons">
+                        <button class="btn-branch yes-btn ${yesActive}"
+                                onclick="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newYes}')">
+                            <i class="fas fa-check"></i> Yes
+                        </button>
+                        <button class="btn-branch no-btn ${noActive}"
+                                onclick="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newNo}')">
+                            <i class="fas fa-times"></i> No
+                        </button>
+                        <button class="btn-branch na-btn ${naActive}"
+                                onclick="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newNa}')">
+                            N/A
+                        </button>
+                    </div>
+                </div>
+                ${branchHtml}
+            </div>`;
+    }
+
+    // Set a checklist item to a specific status and re-render
+    async function setChecklistItemStatus(taskId, itemId, status) {
         try {
-            const response = await fetch(CHECKLIST_API, {
+            const res = await fetch(CHECKLIST_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'toggle_item',
-                    task_id: taskId,
-                    item_id: itemId,
-                    completed_by: 'User'
-                })
+                body: JSON.stringify({ action: 'set_item_status', task_id: taskId, item_id: itemId, status })
             });
-            const data = await response.json();
-
+            const data = await res.json();
             if (data.success) {
-                // Update progress bar
-                const pct = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
-                document.getElementById('checklistProgressText').textContent = `${data.completed} / ${data.total} completed (${pct}%)`;
-                document.getElementById('checklistProgressFill').style.width = `${pct}%`;
-
-                // Update item UI
-                const label = checkbox.closest('.checklist-item');
-                if (data.is_completed) {
-                    label.classList.add('completed');
-                } else {
-                    label.classList.remove('completed');
-                }
-
-                // Update cached summary
-                checklistSummaries[taskId] = {
-                    total: data.total,
-                    completed: data.completed,
-                    template_id: checklistSummaries[taskId]?.template_id
-                };
+                await refreshChecklistView(taskId);
             } else {
-                checkbox.checked = !checkbox.checked;
-                showToast(data.message || 'Error toggling item', 'error');
+                showToast(data.message || 'Error updating item', 'error');
             }
-        } catch (error) {
-            checkbox.checked = !checkbox.checked;
-            console.error('Error:', error);
+        } catch (err) {
+            console.error('Error:', err);
         }
+    }
+
+    async function refreshChecklistView(taskId) {
+        const res = await fetch(`${CHECKLIST_API}?action=get_task_checklist&task_id=${taskId}`);
+        const data = await res.json();
+        if (data.success && data.checklist) {
+            renderChecklistItems(data.checklist);
+            // Update cached summary
+            const items = data.checklist.items;
+            const childrenOf = {};
+            items.forEach(i => { if (i.parent_item_id) { if (!childrenOf[i.parent_item_id]) childrenOf[i.parent_item_id] = []; childrenOf[i.parent_item_id].push(i); } });
+            const { total, completed } = computeChecklistProgress(items, childrenOf);
+            checklistSummaries[taskId] = { total, completed, template_id: data.checklist.template_id };
+        }
+    }
+
+    // Legacy toggle (kept for any external callers)
+    async function toggleChecklistItem(taskId, itemId, checkbox) {
+        const newStatus = checkbox.checked ? 'completed' : 'unchecked';
+        await setChecklistItemStatus(taskId, itemId, newStatus);
     }
 
     function closeChecklistModal() {

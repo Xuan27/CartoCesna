@@ -656,6 +656,14 @@
                     <i class="fas fa-clipboard-check"></i>
                     Checklists
                 </a>
+                <a href="./map.php" class="nav-item">
+                    <i class="fas fa-map"></i>
+                    Map
+                </a>
+                <a href="./monuments.php" class="nav-item">
+                    <i class="fas fa-map-pin"></i>
+                    Monuments
+                </a>
                 <a href="./tools.php" class="nav-item active">
                     <i class="fas fa-tools"></i>
                     Tools
