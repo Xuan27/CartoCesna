@@ -302,8 +302,35 @@ function buildCard(p) {
                    class="btn btn-sm btn-secondary" style="flex:1;justify-content:center;">
                     <i class="fas fa-external-link-alt"></i> Open in Dashboard
                 </a>
+                <button class="btn btn-sm" onclick="markMonumentsSet('${escHtml(p.projectId)}')"
+                        style="background:#16a34a;color:white;flex:1;"
+                        title="Mark monuments as set — removes this project from the list">
+                    <i class="fas fa-check"></i> Monuments Set
+                </button>
             </div>
         </div>`;
+}
+
+async function markMonumentsSet(projectId) {
+    if (!confirm('Mark monuments as set for this project? It will be removed from this list.')) return;
+
+    const fd = new FormData();
+    fd.append('action', 'update_project');
+    fd.append('projectId', projectId);
+    fd.append('needs_monuments', '0');
+
+    try {
+        const res  = await fetch('../../Models/php/load_survey_project_notes.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Update failed');
+
+        // Remove from local list and re-render
+        allMonumentProjects = allMonumentProjects.filter(p => p.projectId !== projectId);
+        renderCards(allMonumentProjects);
+        showToast('Monuments marked as set', 'success');
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
 
 function filterCards(query) {
