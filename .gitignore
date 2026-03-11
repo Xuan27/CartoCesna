@@ -4,6 +4,7 @@ launch.json
 template.php
 db_config.php
 Projects/Professional/00_002/data.json
+Projects/Professional/00_003/data.json
 
 # Environment files (contain secrets)
 .env
