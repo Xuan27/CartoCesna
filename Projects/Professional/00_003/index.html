@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Case Law — TSSE Study Notes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-bg: #eff6ff;
+            --success: #15803d;
+            --success-bg: #f0fdf4;
+            --warning: #b45309;
+            --warning-bg: #fffbeb;
+            --danger: #dc2626;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --white: #fff;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .page-header {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1.25rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .page-header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            flex: 1;
+        }
+        .page-header h1 span {
+            color: var(--primary);
+        }
+        .header-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: .8rem;
+            color: var(--gray-500);
+        }
+        .header-stats strong { color: var(--gray-800); }
+
+        /* ── Toolbar ── */
+        .toolbar {
+            padding: 1rem 2rem;
+            display: flex;
+            gap: .75rem;
+            flex-wrap: wrap;
+            align-items: center;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: .5rem .75rem .5rem 2.2rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: .875rem;
+            outline: none;
+            transition: border-color .15s;
+        }
+        .search-box input:focus { border-color: var(--primary-light); }
+        .search-box .icon {
+            position: absolute;
+            left: .65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: .9rem;
+        }
+        .filter-group {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: .35rem .85rem;
+            border-radius: 20px;
+            border: 1px solid var(--gray-300);
+            background: var(--white);
+            font-size: .8rem;
+            cursor: pointer;
+            color: var(--gray-600);
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .filter-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+
+        .btn {
+            padding: .5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-size: .875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-primary:hover { background: #1d3a8a; }
+        .btn-outline { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-300); }
+        .btn-outline:hover { background: var(--gray-50); }
+        .btn-sm { padding: .3rem .7rem; font-size: .8rem; }
+        .btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+        .btn-danger:hover { background: #fecaca; }
+
+        /* ── Main grid ── */
+        .main {
+            padding: 1.5rem 2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray-400);
+        }
+        .empty-state .big-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .empty-state h3 { font-size: 1.1rem; color: var(--gray-600); margin-bottom: .5rem; }
+
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.25rem;
+        }
+
+        /* ── Topic colors ── */
+        .topic-senior       { --t-color: #1e40af; --t-bg: #eff6ff; }
+        .topic-dignity      { --t-color: #7c3aed; --t-bg: #f5f3ff; }
+        .topic-riparian     { --t-color: #0369a1; --t-bg: #f0f9ff; }
+        .topic-excess       { --t-color: #b45309; --t-bg: #fffbeb; }
+        .topic-authority    { --t-color: #15803d; --t-bg: #f0fdf4; }
+        .topic-adverse      { --t-color: #be185d; --t-bg: #fdf2f8; }
+        .topic-acquiescence { --t-color: #0f766e; --t-bg: #f0fdfa; }
+        .topic-other        { --t-color: #475569; --t-bg: #f8fafc; }
+
+        /* ── Case card ── */
+        .case-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow .15s;
+        }
+        .case-card:hover { box-shadow: var(--shadow-md); }
+
+        .card-header {
+            padding: 1rem 1.1rem .75rem;
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: flex-start;
+            gap: .75rem;
+        }
+        .card-header-text { flex: 1; }
+        .case-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            font-style: italic;
+        }
+        .topic-badge {
+            display: inline-block;
+            margin-top: .3rem;
+            padding: .15rem .65rem;
+            border-radius: 12px;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .02em;
+            background: var(--t-bg);
+            color: var(--t-color);
+        }
+        .card-actions { display: flex; gap: .3rem; flex-shrink: 0; }
+
+        .card-body { padding: .85rem 1.1rem; flex: 1; }
+        .field { margin-bottom: .7rem; }
+        .field:last-child { margin-bottom: 0; }
+        .field-label {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--gray-400);
+            margin-bottom: .15rem;
+        }
+        .field-value {
+            font-size: .85rem;
+            color: var(--gray-700);
+        }
+
+        .exam-rule-box {
+            background: var(--primary-bg);
+            border-left: 3px solid var(--primary);
+            padding: .6rem .85rem;
+            border-radius: 0 6px 6px 0;
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: .7rem;
+        }
+
+        .card-footer {
+            padding: .6rem 1.1rem;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-100);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-date { font-size: .72rem; color: var(--gray-400); }
+
+        /* ── Flashcard mode ── */
+        .flashcard-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.85);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .flashcard-overlay.active { display: flex; }
+
+        .flashcard {
+            width: 560px;
+            max-width: 90vw;
+            min-height: 280px;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: transform .15s;
+        }
+        .flashcard:hover { transform: scale(1.01); }
+        .fc-side {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--gray-400);
+            margin-bottom: 1rem;
+        }
+        .fc-content { font-size: 1.2rem; font-weight: 600; color: var(--gray-800); }
+        .fc-hint { font-size: .8rem; color: var(--gray-400); margin-top: 1.5rem; }
+        .fc-answer { display: none; }
+        .fc-answer.visible { display: block; }
+
+        .fc-nav {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            color: var(--white);
+        }
+        .fc-counter { font-size: .9rem; opacity: .7; }
+        .fc-close {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.5rem;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: .7;
+        }
+        .fc-close:hover { opacity: 1; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.6);
+            z-index: 300;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--white);
+            border-radius: 14px;
+            box-shadow: var(--shadow-lg);
+            width: 680px;
+            max-width: 100%;
+            margin: auto;
+        }
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 700; }
+        .modal-close { font-size: 1.4rem; cursor: pointer; color: var(--gray-400); line-height: 1; }
+        .modal-close:hover { color: var(--gray-700); }
+
+        .modal-body { padding: 1.5rem; }
+
+        .form-group { margin-bottom: 1.1rem; }
+        .form-label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: .4rem;
+        }
+        .form-label .required { color: var(--danger); }
+        .form-hint { font-size: .72rem; color: var(--gray-400); margin-bottom: .3rem; }
+        .form-control {
+            width: 100%;
+            padding: .55rem .8rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 7px;
+            font-size: .875rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .15s;
+            color: var(--gray-900);
+            background: var(--white);
+        }
+        .form-control:focus { border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+        textarea.form-control { resize: vertical; min-height: 70px; }
+        select.form-control { cursor: pointer; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: .75rem;
+            justify-content: flex-end;
+        }
+
+        /* ── Method quick ref ── */
+        .method-bar {
+            display: flex;
+            gap: .5rem;
+            padding: .75rem 2rem;
+            background: #fefce8;
+            border-bottom: 1px solid #fef08a;
+            overflow-x: auto;
+            align-items: center;
+        }
+        .method-step {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .75rem;
+            color: #713f12;
+            white-space: nowrap;
+        }
+        .method-step .num {
+            width: 1.4rem;
+            height: 1.4rem;
+            background: #ca8a04;
+            color: var(--white);
+            border-radius: 50%;
+            font-size: .65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .method-sep { color: #d97706; font-size: .8rem; }
+
+        @media (max-width: 640px) {
+            .page-header { padding: 1rem; }
+            .toolbar { padding: .75rem 1rem; }
+            .main { padding: 1rem; }
+            .cases-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .method-bar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Page Header ── -->
+<header class="page-header">
+    <h1>Texas Case Law &#8212; <span>TSSE Study Notes</span></h1>
+    <div class="header-stats">
+        <span>Cases: <strong id="stat-total">0</strong></span>
+        <span>Topics: <strong id="stat-topics">0</strong></span>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="openFlashcards()">&#9654; Flashcard Mode</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Add Case</button>
+</header>
+
+<!-- ── Method Quick Ref ── -->
+<div class="method-bar">
+    <span style="font-size:.72rem;font-weight:700;color:#92400e;margin-right:.25rem;">5-STEP METHOD:</span>
+    <div class="method-step"><span class="num">1</span> Find plain-English summary</div>
+    <span class="method-sep">&#8250;</span>
+    <div class="method-step"><span class="num">2</span> Answer 4 questions (Facts / Issue / Decision / Why)</div>
+    <span class="method-sep">&#8250;</span>
+    <div class="method-step"><span class="num">3</span> Extract the Exam Rule (one sentence)</div>
+    <span class="method-sep">&#8250;</span>
+    <div class="method-step"><span class="num">4</span> Attach to a boundary situation</div>
+    <span class="method-sep">&#8250;</span>
+    <div class="method-step"><span class="num">5</span> Create a flashcard</div>
+</div>
+
+<!-- ── Toolbar ── -->
+<div class="toolbar">
+    <div class="search-box">
+        <span class="icon">&#128269;</span>
+        <input type="text" id="search-input" placeholder="Search cases, rules, topics&#8230;" oninput="renderCards()">
+    </div>
+    <div class="filter-group" id="filter-group">
+        <button class="filter-btn active" data-topic="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" data-topic="senior" onclick="setFilter('senior', this)">Senior/Junior Rights</button>
+        <button class="filter-btn" data-topic="dignity" onclick="setFilter('dignity', this)">Dignity of Calls</button>
+        <button class="filter-btn" data-topic="riparian" onclick="setFilter('riparian', this)">Riparian</button>
+        <button class="filter-btn" data-topic="excess" onclick="setFilter('excess', this)">Excess/Deficiency</button>
+        <button class="filter-btn" data-topic="authority" onclick="setFilter('authority', this)">Surveyor Authority</button>
+        <button class="filter-btn" data-topic="adverse" onclick="setFilter('adverse', this)">Adverse Possession</button>
+        <button class="filter-btn" data-topic="acquiescence" onclick="setFilter('acquiescence', this)">Acquiescence</button>
+        <button class="filter-btn" data-topic="other" onclick="setFilter('other', this)">Other</button>
+    </div>
+</div>
+
+<!-- ── Main Content ── -->
+<main class="main">
+    <div class="empty-state" id="empty-state">
+        <div class="big-icon">&#9878;</div>
+        <h3>No cases yet</h3>
+        <p>Click <strong>+ Add Case</strong> to add your first Texas case law entry.</p>
+    </div>
+    <div class="cases-grid" id="cases-grid"></div>
+</main>
+
+<!-- ── Add / Edit Modal ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modal-title">Add Case Law</h2>
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="edit-id">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="f-name">Case Name <span class="required">*</span></label>
+                    <div class="form-hint">e.g. Stafford v. King</div>
+                    <input type="text" class="form-control" id="f-name" placeholder="Plaintiff v. Defendant">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="f-topic">Topic <span class="required">*</span></label>
+                    <select class="form-control" id="f-topic">
+                        <option value="senior">Senior / Junior Rights</option>
+                        <option value="dignity">Dignity of Calls</option>
+                        <option value="riparian">Riparian Boundaries</option>
+                        <option value="excess">Excess / Deficiency</option>
+                        <option value="authority">Surveyor Authority</option>
+                        <option value="adverse">Adverse Possession</option>
+                        <option value="acquiescence">Acquiescence</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-facts">Facts <span class="required">*</span></label>
+                <div class="form-hint">1&#8211;2 sentences &#8212; What happened?</div>
+                <textarea class="form-control" id="f-facts" placeholder="Two surveys overlapped; both claimed the same land."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-issue">Issue <span class="required">*</span></label>
+                <div class="form-hint">What was the legal question?</div>
+                <input type="text" class="form-control" id="f-issue" placeholder="Which survey controls?">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-decision">Court Decision <span class="required">*</span></label>
+                <div class="form-hint">What did the court decide and why?</div>
+                <textarea class="form-control" id="f-decision" placeholder="The senior survey controls because Texas honors priority of location."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-rule">Exam Rule &#8212; One Sentence <span class="required">*</span></label>
+                <div class="form-hint">The single rule the exam expects you to know.</div>
+                <input type="text" class="form-control" id="f-rule" placeholder="In Texas, when two surveys overlap, the senior survey controls regardless of later errors.">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-apply">When to Apply</label>
+                <div class="form-hint">Boundary situations where this rule is triggered.</div>
+                <textarea class="form-control" id="f-apply" placeholder="Overlapping patents, conflicting calls, excess/deficiency disputes."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="f-notes">Additional Notes</label>
+                <textarea class="form-control" id="f-notes" style="min-height:55px" placeholder="Any extra context, related cases, or exam tips."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCase()">Save Case</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Flashcard Overlay ── -->
+<div class="flashcard-overlay" id="fc-overlay">
+    <span class="fc-close" onclick="closeFlashcards()">&times;</span>
+    <div class="flashcard" id="fc-card" onclick="flipCard()">
+        <div class="fc-side" id="fc-side">Front</div>
+        <div class="fc-content" id="fc-front"></div>
+        <div class="fc-answer" id="fc-back"></div>
+        <div class="fc-hint" id="fc-hint">Click to reveal the Exam Rule</div>
+    </div>
+    <div class="fc-nav">
+        <button class="btn btn-outline btn-sm" onclick="prevCard()">&#8592; Prev</button>
+        <span class="fc-counter" id="fc-counter">1 / 1</span>
+        <button class="btn btn-outline btn-sm" onclick="nextCard()">Next &#8594;</button>
+    </div>
+</div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────
+const STORAGE_KEY = 'tsse_case_law_v1';
+
+function load() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+}
+function save(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ── Topic config ──────────────────────────────────────────
+const TOPICS = {
+    senior:       'Senior / Junior Rights',
+    dignity:      'Dignity of Calls',
+    riparian:     'Riparian Boundaries',
+    excess:       'Excess / Deficiency',
+    authority:    'Surveyor Authority',
+    adverse:      'Adverse Possession',
+    acquiescence: 'Acquiescence',
+    other:        'Other',
+};
+
+// ── State ─────────────────────────────────────────────────
+let activeFilter = 'all';
+let fcIndex = 0;
+let fcFlipped = false;
+
+// ── Render ────────────────────────────────────────────────
+function filtered() {
+    const cases = load();
+    const q = document.getElementById('search-input').value.toLowerCase().trim();
+    return cases.filter(c => {
+        const matchTopic = activeFilter === 'all' || c.topic === activeFilter;
+        if (!q) return matchTopic;
+        const haystack = [c.name, c.topic, c.facts, c.issue, c.decision, c.rule, c.apply, c.notes].join(' ').toLowerCase();
+        return matchTopic && haystack.includes(q);
+    });
+}
+
+function renderCards() {
+    const cases = filtered();
+    const grid = document.getElementById('cases-grid');
+    const empty = document.getElementById('empty-state');
+    const all = load();
+
+    document.getElementById('stat-total').textContent = all.length;
+    const uniqueTopics = new Set(all.map(c => c.topic)).size;
+    document.getElementById('stat-topics').textContent = uniqueTopics;
+
+    if (cases.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = cases.map(c => `
+        <div class="case-card topic-${c.topic}">
+            <div class="card-header">
+                <div class="card-header-text">
+                    <div class="case-name">${esc(c.name)}</div>
+                    <span class="topic-badge">${TOPICS[c.topic] || c.topic}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openModal('${c.id}')">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCase('${c.id}')">&#128465;</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="field">
+                    <div class="field-label">Facts</div>
+                    <div class="field-value">${esc(c.facts)}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Issue</div>
+                    <div class="field-value">${esc(c.issue)}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Court Decision</div>
+                    <div class="field-value">${esc(c.decision)}</div>
+                </div>
+                <div class="exam-rule-box">
+                    &#128204; ${esc(c.rule)}
+                </div>
+                ${c.apply ? `<div class="field" style="margin-top:.7rem">
+                    <div class="field-label">When to Apply</div>
+                    <div class="field-value">${esc(c.apply)}</div>
+                </div>` : ''}
+                ${c.notes ? `<div class="field">
+                    <div class="field-label">Notes</div>
+                    <div class="field-value" style="color:var(--gray-500);font-style:italic">${esc(c.notes)}</div>
+                </div>` : ''}
+            </div>
+            <div class="card-footer">
+                <span class="card-date">Added ${new Date(c.created).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function esc(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+// ── Filter ────────────────────────────────────────────────
+function setFilter(topic, btn) {
+    activeFilter = topic;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards();
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function openModal(id) {
+    document.getElementById('modal-overlay').classList.add('active');
+    const cases = load();
+    const c = id ? cases.find(x => x.id === id) : null;
+    document.getElementById('modal-title').textContent = c ? 'Edit Case Law' : 'Add Case Law';
+    document.getElementById('edit-id').value = c ? c.id : '';
+    document.getElementById('f-name').value     = c ? c.name     : '';
+    document.getElementById('f-topic').value    = c ? c.topic    : 'senior';
+    document.getElementById('f-facts').value    = c ? c.facts    : '';
+    document.getElementById('f-issue').value    = c ? c.issue    : '';
+    document.getElementById('f-decision').value = c ? c.decision : '';
+    document.getElementById('f-rule').value     = c ? c.rule     : '';
+    document.getElementById('f-apply').value    = c ? c.apply    : '';
+    document.getElementById('f-notes').value    = c ? c.notes    : '';
+    document.getElementById('f-name').focus();
+}
+
+function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function closeModalOnBg(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function saveCase() {
+    const name     = document.getElementById('f-name').value.trim();
+    const topic    = document.getElementById('f-topic').value;
+    const facts    = document.getElementById('f-facts').value.trim();
+    const issue    = document.getElementById('f-issue').value.trim();
+    const decision = document.getElementById('f-decision').value.trim();
+    const rule     = document.getElementById('f-rule').value.trim();
+    const apply    = document.getElementById('f-apply').value.trim();
+    const notes    = document.getElementById('f-notes').value.trim();
+
+    if (!name || !facts || !issue || !decision || !rule) {
+        alert('Please fill in all required fields (marked with *).');
+        return;
+    }
+
+    const cases = load();
+    const editId = document.getElementById('edit-id').value;
+
+    if (editId) {
+        const idx = cases.findIndex(c => c.id === editId);
+        if (idx !== -1) {
+            cases[idx] = { ...cases[idx], name, topic, facts, issue, decision, rule, apply, notes };
+        }
+    } else {
+        cases.unshift({
+            id: 'c_' + Date.now(),
+            name, topic, facts, issue, decision, rule, apply, notes,
+            created: new Date().toISOString()
+        });
+    }
+
+    save(cases);
+    closeModal();
+    renderCards();
+}
+
+function deleteCase(id) {
+    if (!confirm('Delete this case? This cannot be undone.')) return;
+    const cases = load().filter(c => c.id !== id);
+    save(cases);
+    renderCards();
+}
+
+// ── Flashcards ────────────────────────────────────────────
+function openFlashcards() {
+    const cases = filtered();
+    if (cases.length === 0) { alert('No cases to review. Add some cases first.'); return; }
+    fcIndex = 0;
+    showCard(cases);
+    document.getElementById('fc-overlay').classList.add('active');
+}
+
+function closeFlashcards() {
+    document.getElementById('fc-overlay').classList.remove('active');
+}
+
+function showCard(cases) {
+    const c = cases[fcIndex];
+    fcFlipped = false;
+    document.getElementById('fc-side').textContent = 'Front \u2014 Case Name';
+    document.getElementById('fc-front').textContent = c.name;
+    document.getElementById('fc-back').textContent = c.rule;
+    document.getElementById('fc-back').classList.remove('visible');
+    document.getElementById('fc-hint').textContent = 'Click to reveal the Exam Rule';
+    document.getElementById('fc-counter').textContent = (fcIndex + 1) + ' / ' + cases.length;
+}
+
+function flipCard() {
+    fcFlipped = !fcFlipped;
+    const back = document.getElementById('fc-back');
+    const hint = document.getElementById('fc-hint');
+    if (fcFlipped) {
+        document.getElementById('fc-side').textContent = 'Back \u2014 Exam Rule';
+        back.classList.add('visible');
+        hint.textContent = 'Click to flip back';
+    } else {
+        document.getElementById('fc-side').textContent = 'Front \u2014 Case Name';
+        back.classList.remove('visible');
+        hint.textContent = 'Click to reveal the Exam Rule';
+    }
+}
+
+function nextCard() {
+    const cases = filtered();
+    fcIndex = (fcIndex + 1) % cases.length;
+    showCard(cases);
+}
+
+function prevCard() {
+    const cases = filtered();
+    fcIndex = (fcIndex - 1 + cases.length) % cases.length;
+    showCard(cases);
+}
+
+document.addEventListener('keydown', e => {
+    if (document.getElementById('fc-overlay').classList.contains('active')) {
+        if (e.key === 'ArrowRight') nextCard();
+        if (e.key === 'ArrowLeft')  prevCard();
+        if (e.key === ' ')          { e.preventDefault(); flipCard(); }
+        if (e.key === 'Escape')     closeFlashcards();
+    } else {
+        if (e.key === 'Escape') closeModal();
+    }
+});
+
+// ── Init ──────────────────────────────────────────────────
+(function applyUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q) {
+        const input = document.getElementById('search-input');
+        input.value = q;
+    }
+})();
+renderCards();
+</script>
+</body>
+</html>
