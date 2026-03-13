@@ -931,7 +931,18 @@ body {
             background: var(--white);
             border: 1px solid var(--gray-200);
             border-radius: var(--border-radius);
+            border-left: 4px solid var(--gray-200);
         }
+
+        /* Left accent bar per task type */
+        .task-item[data-task-type="Easement"]              { border-left-color: #8b5cf6; }
+        .task-item[data-task-type="ALTA"]                  { border-left-color: #3b82f6; }
+        .task-item[data-task-type="Plat"]                  { border-left-color: #10b981; }
+        .task-item[data-task-type="Construction Staking"]  { border-left-color: #f59e0b; }
+        .task-item[data-task-type="Boundary Survey"]       { border-left-color: #ef4444; }
+        .task-item[data-task-type="Topographic Survey"]    { border-left-color: #0ea5e9; }
+        .task-item[data-task-type="As-Built Survey"]       { border-left-color: #f97316; }
+        .task-item[data-task-type="Other"]                 { border-left-color: #6b7280; }
 
         .task-info {
             flex: 1;
@@ -947,7 +958,8 @@ body {
         .task-type-badge {
             display: inline-flex;
             align-items: center;
-            padding: 0.125rem 0.5rem;
+            gap: 0.3rem;
+            padding: 0.2rem 0.55rem;
             border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -979,13 +991,14 @@ body {
             word-break: break-word;
         }
 
-        .task-type-easement { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-        .task-type-alta { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .task-type-plat { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .task-type-construction-staking { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-        .task-type-boundary-survey { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-        .task-type-topographic-survey { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
-        .task-type-other { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
+        .task-type-easement            { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+        .task-type-alta                { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .task-type-plat                { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .task-type-construction-staking{ background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .task-type-boundary-survey     { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .task-type-topographic-survey  { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; }
+        .task-type-as-built-survey     { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .task-type-other               { background: rgba(107, 114, 128, 0.1); color: #6b7280; }
 
         .task-name {
             font-weight: 500;

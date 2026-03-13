@@ -1,3 +1,7 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) session_start();
+$currentUsername = $_SESSION['username'] ?? 'User';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -606,6 +610,9 @@ document.getElementById('pointRangesModal').addEventListener('click', function(e
     }
 });
 
+// Logged-in user (from PHP session)
+const CURRENT_USER = <?php echo json_encode($currentUsername); ?>;
+
 // Initialize all variables at the top
 let allProjects = [];
 let filteredProjects = [];
@@ -762,6 +769,21 @@ function formatTaskTypeClass(taskType) {
     return taskType.toLowerCase().replace(/\s+/g, '-');
 }
 
+// Returns a FontAwesome icon class for each task type
+function getTaskTypeIcon(taskType) {
+    const icons = {
+        'Easement':             'fa-file-contract',
+        'ALTA':                 'fa-drafting-compass',
+        'Plat':                 'fa-map',
+        'Construction Staking': 'fa-hard-hat',
+        'Boundary Survey':      'fa-draw-polygon',
+        'Topographic Survey':   'fa-mountain',
+        'As-Built Survey':      'fa-ruler-combined',
+        'Other':                'fa-ellipsis-h',
+    };
+    return icons[taskType] || 'fa-tasks';
+}
+
 // Helper function to format task status for CSS class
 function formatTaskStatusClass(status) {
     return status.toLowerCase().replace(/\s+/g, '-');
@@ -785,10 +807,10 @@ function createTasksHTML(tasks) {
         const uncPath = "westwoodps.local\\\\Global Projects";
         
         return `
-            <div class="task-item">
+            <div class="task-item" data-task-type="${task.task_type}">
                 <div class="task-info">
                     <div class="task-header">
-                        <span class="task-type-badge ${taskTypeClass}">${task.task_type}</span>
+                        <span class="task-type-badge ${taskTypeClass}"><i class="fas ${getTaskTypeIcon(task.task_type)}"></i>${task.task_type}</span>
                         <span class="task-name">${task.task_name}</span>
                     </div>
                     <div class="task-meta">
@@ -1930,10 +1952,10 @@ function createTasksHTML(tasks) {
             </span>${timeLeftHtml}`;
 
         return `
-            <div class="task-item">
+            <div class="task-item" data-task-type="${task.task_type}">
                 <div class="task-info">
                     <div class="task-header">
-                        <span class="task-type-badge ${taskTypeClass}">${task.task_type}</span>
+                        <span class="task-type-badge ${taskTypeClass}"><i class="fas ${getTaskTypeIcon(task.task_type)}"></i>${task.task_type}</span>
                         ${task.coordinate_type ? `<span class="coordinate-type-badge coordinate-type-${task.coordinate_type.toLowerCase()}">${task.coordinate_type}</span>` : ''}
                         <span class="task-name">${task.task_name}</span>
                     </div>
@@ -2605,7 +2627,7 @@ function copyTimesheetForVantagepoint() {
             const btnClass = isComplete ? 'checklist-complete' : 'checklist-in-progress';
             return `
                 <button class="checklist-btn ${btnClass}"
-                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
+                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}', '${(task.assigned_to || '').replace(/'/g, "\\'")}')"
                         title="Checklist: ${summary.completed}/${summary.total}">
                     <i class="fas ${isComplete ? 'fa-check-circle' : 'fa-clipboard-check'}"></i>
                     ${summary.completed}/${summary.total}
@@ -2625,7 +2647,7 @@ function copyTimesheetForVantagepoint() {
             }
             return `
                 <button class="checklist-btn checklist-not-started"
-                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
+                        onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}', '${(task.assigned_to || '').replace(/'/g, "\\'")}')"
                         title="Open checklist">
                     <i class="fas fa-clipboard-check"></i> Checklist
                 </button>
@@ -2637,7 +2659,7 @@ function copyTimesheetForVantagepoint() {
     }
 
     // Show checklist modal
-    async function showChecklistModal(taskId, taskName) {
+    async function showChecklistModal(taskId, taskName, assignedTo) {
         currentChecklistTaskId = taskId;
         document.getElementById('checklistModalTitle').textContent = taskName || 'Checklist';
         document.getElementById('checklistModalBody').innerHTML = `
@@ -2757,8 +2779,11 @@ function copyTimesheetForVantagepoint() {
         const doneClass = (isCompleted || isNa) ? 'completed' : '';
         const childClass = isChild ? 'checklist-child-item' : '';
         const naLabel = isNa ? ` <span class="na-badge">N/A</span>` : '';
+        const completedDateStr = item.completed_date
+            ? new Date(item.completed_date.replace(' ', 'T')).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+            : '';
         const meta = isCompleted && item.completed_by
-            ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)} - ${new Date(item.completed_date + 'T00:00:00').toLocaleDateString()}</div>`
+            ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)}${completedDateStr ? ' - ' + completedDateStr : ''}</div>`
             : '';
         const newStatusOnCheck = isCompleted ? 'unchecked' : 'completed';
         const newStatusOnNa   = isNa ? 'unchecked' : 'na';
@@ -2825,7 +2850,7 @@ function copyTimesheetForVantagepoint() {
             const res = await fetch(CHECKLIST_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'set_item_status', task_id: taskId, item_id: itemId, status })
+                body: JSON.stringify({ action: 'set_item_status', task_id: taskId, item_id: itemId, status, completed_by: CURRENT_USER })
             });
             const data = await res.json();
             if (data.success) {

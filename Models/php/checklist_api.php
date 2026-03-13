@@ -438,9 +438,10 @@ try {
 
     } elseif ($action === 'set_item_status') {
         // New action: set a specific status ('unchecked','completed','yes','no','na')
-        $taskId  = $input['task_id'] ?? null;
-        $itemId  = $input['item_id'] ?? null;
-        $status  = $input['status'] ?? 'unchecked';
+        $taskId      = $input['task_id'] ?? null;
+        $itemId      = $input['item_id'] ?? null;
+        $status      = $input['status'] ?? 'unchecked';
+        $completedBy = trim($input['completed_by'] ?? '') ?: 'User';
         $validStatuses = ['unchecked', 'completed', 'yes', 'no', 'na'];
 
         if (!$taskId || !$itemId || !in_array($status, $validStatuses)) {
@@ -454,13 +455,14 @@ try {
             UPDATE task_checklist_progress
             SET item_status  = :status,
                 is_completed = :ic,
-                completed_by   = CASE WHEN :ic2 = 1 THEN 'User' ELSE NULL END,
+                completed_by   = CASE WHEN :ic2 = 1 THEN :by ELSE NULL END,
                 completed_date = CASE WHEN :ic3 = 1 THEN NOW() ELSE NULL END
             WHERE task_id = :tid AND item_id = :iid
         ");
         $stmt->execute([
             'status' => $status, 'ic' => $isCompleted,
-            'ic2' => $isCompleted, 'ic3' => $isCompleted,
+            'ic2' => $isCompleted, 'by' => $completedBy,
+            'ic3' => $isCompleted,
             'tid' => $taskId, 'iid' => $itemId
         ]);
 

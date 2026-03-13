@@ -159,6 +159,41 @@
             gap: 0.5rem;
         }
 
+        /* Permanent marker labels */
+        .marker-label {
+            background: white;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 5px;
+            padding: 2px 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+            pointer-events: none;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+        .marker-label-name {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            display: block;
+        }
+        .marker-label-id {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+            font-family: monospace;
+            display: block;
+        }
+        /* Hide labels when inside a cluster */
+        .leaflet-marker-icon .marker-label { display: none; }
+
+        /* Strip default Leaflet tooltip chrome from marker labels */
+        .marker-label-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .marker-label-tooltip::before { display: none !important; }
+
         /* Custom marker popup */
         .leaflet-popup-content-wrapper { border-radius: 10px; }
         .map-popup { min-width: 220px; }
@@ -374,7 +409,17 @@ function addMarker(p) {
         color: 'white', weight: 2, fillOpacity: 0.9,
     });
     marker.bindPopup(buildPopup(p), { maxWidth: 280 });
-    marker.on('click', () => highlightPanelItem(p.projectId));
+    marker.bindTooltip(
+        `<div class="marker-label">
+            <span class="marker-label-name">${esc(p.projectName)}</span>
+            <span class="marker-label-id">${esc(p.projectId)}</span>
+         </div>`,
+        { permanent: true, direction: 'right', offset: [10, 0], className: 'marker-label-tooltip' }
+    );
+    marker.on('click', () => {
+        map.flyTo([p.lat, p.lon], Math.max(map.getZoom(), 14), { duration: 0.6, animate: true });
+        highlightPanelItem(p.projectId);
+    });
     clusterGroup.addLayer(marker);
     markers[p.projectId] = marker;
 }
