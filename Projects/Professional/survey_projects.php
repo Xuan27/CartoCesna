@@ -2512,6 +2512,70 @@ async function loadTimesheet() {
     }
 }
 
+// ── Timesheet helpers ─────────────────────────────────────────────────────────
+
+// HTML-escape for safe embedding in attributes and text
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Copy text to clipboard with toast feedback
+function tsClipboard(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Could not copy to clipboard', 'error');
+    });
+}
+
+// Replace phase cell content with an inline editor
+function tsEditPhase(td) {
+    const taskId = td.dataset.taskId;
+    const current = td.dataset.phase || '';
+    td.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+            <input type="text" id="phase-input-${taskId}" value="${esc(current)}"
+                style="width:70px;font-size:0.82rem;padding:2px 5px;border:1px solid var(--primary-color);border-radius:4px;outline:none;"
+                onkeydown="if(event.key==='Enter')tsSavePhase(this.parentElement.parentElement);if(event.key==='Escape')tsCancelPhase(this.parentElement.parentElement);">
+            <button onclick="tsSavePhase(this.closest('td'))" title="Save" style="background:none;border:none;cursor:pointer;color:var(--success-color);font-size:0.8rem;padding:0 2px;"><i class="fas fa-check"></i></button>
+            <button onclick="tsCancelPhase(this.closest('td'))" title="Cancel" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;padding:0 2px;"><i class="fas fa-times"></i></button>
+        </div>`;
+    td.querySelector('input').focus();
+}
+
+async function tsSavePhase(td) {
+    const taskId = td.dataset.taskId;
+    const input  = td.querySelector('input');
+    if (!input) return;
+    const newPhase = input.value.trim();
+
+    try {
+        const fd = new FormData();
+        fd.append('action',       'update_phase_number');
+        fd.append('task_id',      taskId);
+        fd.append('phase_number', newPhase);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data.success) { showToast(data.message || 'Could not save phase', 'error'); return; }
+        td.dataset.phase = newPhase;
+        showToast('Phase number saved', 'success');
+    } catch (err) {
+        showToast('Network error saving phase', 'error');
+        return;
+    }
+    tsCancelPhase(td); // restore view with updated value
+}
+
+function tsCancelPhase(td) {
+    const phase = td.dataset.phase || '';
+    td.innerHTML = `
+        <span class="ts-phase-view" onclick="tsEditPhase(this.parentElement)" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+            <span class="ts-phase-text">${esc(phase) || '—'}</span>
+            <i class="fas fa-edit" style="font-size:0.65rem;color:var(--gray-400);opacity:0.6;"></i>
+        </span>`;
+}
+
 function renderTimesheetTable(entries, weekStart) {
     const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const today = new Date();
@@ -2577,16 +2641,38 @@ function renderTimesheetTable(entries, weekStart) {
     let bodyHtml = '';
     tasks.forEach(t => {
         let rowTotal = 0;
-        let rowHtml = `<tr>
-            <td>
-                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${t.project_id}</span>
-                ${t.project_name ? `<br><span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${t.project_name}</span>` : ''}
-            </td>
-            <td>${t.phase_number || '—'}</td>
-            <td>
-                <span style="font-weight:600;color:var(--gray-800);">${t.task_name}</span>
-                ${t.task_type ? `<br><span style="font-size:0.7rem;color:var(--gray-500);">${t.task_type}</span>` : ''}
-            </td>`;
+        const safePhase   = esc(t.phase_number);
+        const allNotes    = Object.values(t.notes).filter(Boolean).join(' | ');
+        const safeNotes   = esc(allNotes);
+        const canEditPhase = t.task_id > 0;
+
+        // Project cell: project ID with copy button
+        const projectCell = `<td>
+            <div style="display:flex;align-items:center;gap:0.3rem;">
+                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${esc(t.project_id)}</span>
+                <button onclick="tsClipboard('${esc(t.project_id)}')" title="Copy project number" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+            </div>
+            ${t.project_name ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${esc(t.project_name)}</span>` : ''}
+        </td>`;
+
+        // Phase cell: editable for real tasks
+        const phaseCell = canEditPhase
+            ? `<td class="ts-phase-cell" data-task-id="${t.task_id}" data-phase="${safePhase}">
+                <span class="ts-phase-view" onclick="tsEditPhase(this.parentElement)" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+                    <span class="ts-phase-text">${safePhase || '—'}</span>
+                    <i class="fas fa-edit" style="font-size:0.65rem;color:var(--gray-400);opacity:0.6;"></i>
+                </span>
+               </td>`
+            : `<td>—</td>`;
+
+        // Task cell
+        const taskCell = `<td>
+            <span style="font-weight:600;color:var(--gray-800);">${esc(t.task_name)}</span>
+            ${t.task_type && t.task_type !== t.task_name ? `<br><span style="font-size:0.7rem;color:var(--gray-500);">${esc(t.task_type)}</span>` : ''}
+        </td>`;
+
+        let rowHtml = `<tr>${projectCell}${phaseCell}${taskCell}`;
+
         dates.forEach(d => {
             const ds = d.toISOString().split('T')[0];
             const isToday = d.getTime() === today.getTime();
@@ -2595,10 +2681,19 @@ function renderTimesheetTable(entries, weekStart) {
             const display = secs > 0 ? roundToHalf(secs / 3600) : null;
             rowHtml += `<td class="${isToday ? 'today-cell' : ''}">${display !== null ? display : '<span class="timesheet-empty-cell">—</span>'}</td>`;
         });
+
         const rowTotalHours = roundToHalf(rowTotal / 3600);
-        const allNotes = Object.values(t.notes).filter(Boolean).join(' | ');
         rowHtml += `<td style="font-weight:600;">${rowTotalHours > 0 ? rowTotalHours : '—'}</td>`;
-        rowHtml += `<td style="font-size:0.78rem;color:var(--gray-500);max-width:200px;">${allNotes ? `<span title="${allNotes.replace(/"/g,'&quot;')}">${allNotes}</span>` : '<span class="timesheet-empty-cell">—</span>'}</td></tr>`;
+
+        // Notes cell: text + copy button
+        const notesCell = allNotes
+            ? `<td style="font-size:0.78rem;color:var(--gray-600);max-width:200px;" data-notes="${safeNotes}">
+                <span style="vertical-align:middle;">${safeNotes}</span>
+                <button onclick="tsClipboard(this.closest('td').dataset.notes)" title="Copy notes" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;vertical-align:middle;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+               </td>`
+            : `<td><span class="timesheet-empty-cell">—</span></td>`;
+
+        rowHtml += notesCell + '</tr>';
         bodyHtml += rowHtml;
     });
 

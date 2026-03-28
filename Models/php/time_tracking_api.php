@@ -215,6 +215,22 @@ try {
         ]);
     }
 
+    // ── update_phase_number ───────────────────────────────────────────────────
+    elseif ($action === 'update_phase_number') {
+
+        $taskId      = (int)($_POST['task_id']      ?? 0);
+        $phaseNumber = trim($_POST['phase_number'] ?? '');
+
+        if (!$taskId) {
+            sendJsonResponse(['success' => false, 'message' => 'task_id is required']);
+        }
+
+        $stmt = $pdo->prepare("UPDATE tasks SET phase_number = :phase WHERE task_id = :id");
+        $stmt->execute([':phase' => $phaseNumber ?: null, ':id' => $taskId]);
+
+        sendJsonResponse(['success' => true]);
+    }
+
     // ── delete_entry ──────────────────────────────────────────────────────────
     elseif ($action === 'delete_entry') {
 
