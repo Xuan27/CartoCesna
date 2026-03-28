@@ -973,8 +973,8 @@ function createProjectRow(project) {
     row.className = 'project-row';
     row.dataset.projectId = project.projectId;
     
-    // Format date
-    const createdDate = new Date(project.createdDate + 'T00:00:00').toLocaleDateString('en-US', {
+    // Format date (strip any time component before parsing to avoid invalid date strings)
+    const createdDate = new Date(project.createdDate.split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
