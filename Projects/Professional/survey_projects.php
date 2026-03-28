@@ -72,8 +72,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <div id="activeTimerBanner" class="active-timer-banner" style="display:none;">
         <i class="fas fa-circle timer-pulse"></i>
         <span class="timer-label-text" id="activeTimerLabel">Recording...</span>
+        <span id="timerStartTimeDisplay" onclick="editTimerStartTime()" title="Click to edit start time" style="cursor:pointer;font-size:0.78rem;color:rgba(255,255,255,0.7);margin:0 0.25rem;white-space:nowrap;"><i class="fas fa-edit" style="font-size:0.68rem;margin-right:2px;"></i><span id="timerStartTimeText">--:--</span></span>
         <span id="activeTimerDisplay" class="timer-count">0:00:00</span>
-        <button onclick="stopActiveTimer()" class="btn timer-stop-btn">
+        <button onclick="openStopTimerModal()" class="btn timer-stop-btn">
             <i class="fas fa-stop"></i> Stop
         </button>
     </div>
@@ -92,6 +93,19 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 </div>
             </div>
             <div class="top-bar-right">
+                <div style="position:relative;display:inline-block;">
+                    <button id="logTimeBtnToggle" class="btn btn-secondary" onclick="toggleLogTimeDropdown()">
+                        <i class="fas fa-clock"></i> Log Time <i class="fas fa-caret-down" style="margin-left:2px;font-size:0.75rem;"></i>
+                    </button>
+                    <div id="logTimeDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:168px;z-index:200;overflow:hidden;">
+                        <button onclick="startCategoryTimer('Admin Time','ADMIN')" style="width:100%;padding:0.6rem 1rem;border:none;background:none;text-align:left;cursor:pointer;font-size:0.875rem;color:#374151;display:flex;align-items:center;gap:0.5rem;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+                            <i class="fas fa-briefcase" style="color:#6366f1;width:14px;"></i> Admin Time
+                        </button>
+                        <button onclick="startCategoryTimer('Training Time','TRAINING')" style="width:100%;padding:0.6rem 1rem;border:none;background:none;text-align:left;cursor:pointer;font-size:0.875rem;color:#374151;display:flex;align-items:center;gap:0.5rem;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+                            <i class="fas fa-graduation-cap" style="color:#10b981;width:14px;"></i> Training Time
+                        </button>
+                    </div>
+                </div>
                 <button class="btn btn-secondary" onclick="exportData()">
                     <i class="fas fa-download"></i> Export
                 </button>
@@ -622,13 +636,14 @@ let currentEditingProject = null;
 
 // ── Timer state ──────────────────────────────────────────────────────────────
 let timerState = {
-    isRunning: false,
-    entryId:   null,
-    taskId:    null,
-    projectId: null,
-    taskName:  null,
-    intervalId: null,
-    startTime:  null,
+    isRunning:   false,
+    entryId:     null,
+    taskId:      null,
+    projectId:   null,
+    taskName:    null,
+    projectName: null,
+    intervalId:  null,
+    startTime:   null,
 };
 
 // DOM element references (will be set after DOM loads)
@@ -973,8 +988,8 @@ function createProjectRow(project) {
     row.className = 'project-row';
     row.dataset.projectId = project.projectId;
     
-    // Format date
-    const createdDate = new Date(project.createdDate + 'T00:00:00').toLocaleDateString('en-US', {
+    // Format date (strip any time component before parsing to avoid invalid date strings)
+    const createdDate = new Date(project.createdDate.split(' ')[0] + 'T00:00:00').toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
@@ -2134,12 +2149,13 @@ async function checkActiveTimer() {
         const data = await resp.json();
         if (data.success && data.entry) {
             const e = data.entry;
-            timerState.isRunning = true;
-            timerState.entryId   = e.entry_id;
-            timerState.taskId    = parseInt(e.task_id);
-            timerState.projectId = e.project_id;
-            timerState.taskName  = e.task_name;
-            timerState.startTime = parseApiTime(e.start_time);
+            timerState.isRunning   = true;
+            timerState.entryId     = e.entry_id;
+            timerState.taskId      = parseInt(e.task_id);
+            timerState.projectId   = e.project_id;
+            timerState.taskName    = e.task_name;
+            timerState.projectName = e.project_name;
+            timerState.startTime   = parseApiTime(e.start_time);
             startTimerTick();
             showTimerBanner(e.task_name, e.project_name);
         }
@@ -2175,12 +2191,13 @@ async function startTimer(taskId, projectId, taskName, projectName) {
             return;
         }
 
-        timerState.isRunning = true;
-        timerState.entryId   = data.entry_id;
-        timerState.taskId    = taskId;
-        timerState.projectId = projectId;
-        timerState.taskName  = taskName;
-        timerState.startTime = Date.now();
+        timerState.isRunning   = true;
+        timerState.entryId     = data.entry_id;
+        timerState.taskId      = taskId;
+        timerState.projectId   = projectId;
+        timerState.taskName    = taskName;
+        timerState.projectName = projectName;
+        timerState.startTime   = parseApiTime(data.start_time) || Date.now();
 
         startTimerTick();
         showTimerBanner(taskName, projectName);
@@ -2192,15 +2209,38 @@ async function startTimer(taskId, projectId, taskName, projectName) {
     }
 }
 
-// Stop the currently active timer
-async function stopActiveTimer() {
+// Open stop-timer modal (timer keeps running until confirmed)
+function stopActiveTimer() {
+    openStopTimerModal();
+}
+
+function openStopTimerModal() {
+    if (!timerState.isRunning) return;
+    document.getElementById('stopTimerModal').style.display = 'block';
+    setTimeout(() => document.getElementById('stopTimerNotes').focus(), 80);
+}
+
+function cancelStopTimer() {
+    document.getElementById('stopTimerModal').style.display = 'none';
+    document.getElementById('stopTimerNotes').value = '';
+}
+
+async function confirmStopTimer() {
+    const notes = document.getElementById('stopTimerNotes').value.trim();
+    document.getElementById('stopTimerModal').style.display = 'none';
+    document.getElementById('stopTimerNotes').value = '';
+    await _doStopTimer(notes);
+}
+
+// Perform the actual stop API call with optional notes
+async function _doStopTimer(notes) {
     if (!timerState.isRunning) return;
     const entryId = timerState.entryId;
     const taskId  = timerState.taskId;
 
     // Optimistically reset state
     clearInterval(timerState.intervalId);
-    timerState.isRunning = false;
+    timerState.isRunning  = false;
     timerState.intervalId = null;
     hideTimerBanner();
     refreshTimerButtons();
@@ -2209,6 +2249,7 @@ async function stopActiveTimer() {
         const fd = new FormData();
         fd.append('action',   'stop_timer');
         fd.append('entry_id', entryId);
+        if (notes) fd.append('notes', notes);
 
         const resp = await fetch(TIME_API, { method: 'POST', body: fd });
         const data = await resp.json();
@@ -2218,23 +2259,110 @@ async function stopActiveTimer() {
             showToast(`Timer stopped — logged ${dur}`, 'success');
 
             // Update actual hours display in any visible task row
-            const hoursEl = document.getElementById(`actual-hours-${taskId}`);
-            if (hoursEl) {
-                hoursEl.textContent = parseFloat(data.actual_hours).toFixed(1) + 'h';
+            if (taskId) {
+                const hoursEl = document.getElementById(`actual-hours-${taskId}`);
+                if (hoursEl) {
+                    hoursEl.textContent = parseFloat(data.actual_hours).toFixed(1) + 'h';
+                }
             }
         } else {
             showToast(data.message || 'Could not stop timer', 'error');
         }
     } catch (err) {
-        console.error('stopActiveTimer error:', err);
+        console.error('_doStopTimer error:', err);
         showToast('Network error stopping timer', 'error');
     } finally {
-        timerState.entryId   = null;
-        timerState.taskId    = null;
-        timerState.projectId = null;
-        timerState.taskName  = null;
-        timerState.startTime = null;
+        timerState.entryId      = null;
+        timerState.taskId       = null;
+        timerState.projectId    = null;
+        timerState.taskName     = null;
+        timerState.projectName  = null;
+        timerState.startTime    = null;
     }
+}
+
+// ── Admin / Training category timer ──────────────────────────────────────────
+
+function toggleLogTimeDropdown() {
+    const dd = document.getElementById('logTimeDropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close Log Time dropdown on outside click
+document.addEventListener('click', e => {
+    const dd  = document.getElementById('logTimeDropdown');
+    const btn = document.getElementById('logTimeBtnToggle');
+    if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+        dd.style.display = 'none';
+    }
+});
+
+async function startCategoryTimer(categoryName, categoryId) {
+    document.getElementById('logTimeDropdown').style.display = 'none';
+    await startTimer(0, categoryId, categoryName, '');
+}
+
+// ── Edit start time (inline in banner) ───────────────────────────────────────
+
+function updateStartTimeDisplay() {
+    const el = document.getElementById('timerStartTimeText');
+    if (!el || !timerState.startTime) return;
+    const d = new Date(timerState.startTime);
+    el.textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function editTimerStartTime() {
+    if (!timerState.startTime) return;
+    const d = new Date(timerState.startTime);
+    const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const display = document.getElementById('timerStartTimeDisplay');
+    display.onclick = null; // disable outer click while editing
+    display.innerHTML = `<input type="time" id="startTimeEditInput" value="${timeStr}"
+        style="width:92px;font-size:0.78rem;padding:1px 4px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;background:rgba(0,0,0,0.35);color:#fff;vertical-align:middle;">
+        <button onclick="saveTimerStartTime()" style="background:none;border:none;color:#fff;cursor:pointer;padding:0 3px;font-size:0.78rem;" title="Save"><i class="fas fa-check"></i></button>
+        <button onclick="cancelEditStartTime()" style="background:none;border:none;color:rgba(255,255,255,0.65);cursor:pointer;padding:0 3px;font-size:0.78rem;" title="Cancel"><i class="fas fa-times"></i></button>`;
+}
+
+function cancelEditStartTime() {
+    const display = document.getElementById('timerStartTimeDisplay');
+    if (!display) return;
+    display.innerHTML = `<i class="fas fa-edit" style="font-size:0.68rem;margin-right:2px;"></i><span id="timerStartTimeText"></span>`;
+    display.onclick = editTimerStartTime;
+    updateStartTimeDisplay();
+}
+
+async function saveTimerStartTime() {
+    const input = document.getElementById('startTimeEditInput');
+    if (!input || !input.value) { cancelEditStartTime(); return; }
+
+    const [hours, minutes] = input.value.split(':').map(Number);
+    const newStart = new Date();
+    newStart.setHours(hours, minutes, 0, 0);
+
+    // If the resulting time is in the future, assume it's from the previous day
+    if (newStart.getTime() > Date.now()) {
+        newStart.setDate(newStart.getDate() - 1);
+    }
+
+    try {
+        const fd = new FormData();
+        fd.append('action',     'update_entry_time');
+        fd.append('entry_id',   timerState.entryId);
+        fd.append('start_time', Math.floor(newStart.getTime() / 1000));
+
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (data.success) {
+            timerState.startTime = newStart.getTime();
+            showToast('Start time updated', 'success');
+        } else {
+            showToast(data.message || 'Could not update start time', 'error');
+        }
+    } catch (err) {
+        showToast('Network error updating start time', 'error');
+    }
+    cancelEditStartTime();
 }
 
 // Start the 1-second interval tick
@@ -2266,6 +2394,7 @@ function showTimerBanner(taskName, projectName) {
         label.textContent = `${taskName}${projectName ? '  ·  ' + projectName : ''}`;
         banner.style.display = 'flex';
     }
+    updateStartTimeDisplay();
 }
 
 function hideTimerBanner() {
@@ -2383,6 +2512,70 @@ async function loadTimesheet() {
     }
 }
 
+// ── Timesheet helpers ─────────────────────────────────────────────────────────
+
+// HTML-escape for safe embedding in attributes and text
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Copy text to clipboard with toast feedback
+function tsClipboard(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard', 'success');
+    }).catch(() => {
+        showToast('Could not copy to clipboard', 'error');
+    });
+}
+
+// Replace phase cell content with an inline editor
+function tsEditPhase(td) {
+    const taskId = td.dataset.taskId;
+    const current = td.dataset.phase || '';
+    td.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+            <input type="text" id="phase-input-${taskId}" value="${esc(current)}"
+                style="width:70px;font-size:0.82rem;padding:2px 5px;border:1px solid var(--primary-color);border-radius:4px;outline:none;"
+                onkeydown="if(event.key==='Enter')tsSavePhase(this.parentElement.parentElement);if(event.key==='Escape')tsCancelPhase(this.parentElement.parentElement);">
+            <button onclick="tsSavePhase(this.closest('td'))" title="Save" style="background:none;border:none;cursor:pointer;color:var(--success-color);font-size:0.8rem;padding:0 2px;"><i class="fas fa-check"></i></button>
+            <button onclick="tsCancelPhase(this.closest('td'))" title="Cancel" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;padding:0 2px;"><i class="fas fa-times"></i></button>
+        </div>`;
+    td.querySelector('input').focus();
+}
+
+async function tsSavePhase(td) {
+    const taskId = td.dataset.taskId;
+    const input  = td.querySelector('input');
+    if (!input) return;
+    const newPhase = input.value.trim();
+
+    try {
+        const fd = new FormData();
+        fd.append('action',       'update_phase_number');
+        fd.append('task_id',      taskId);
+        fd.append('phase_number', newPhase);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data.success) { showToast(data.message || 'Could not save phase', 'error'); return; }
+        td.dataset.phase = newPhase;
+        showToast('Phase number saved', 'success');
+    } catch (err) {
+        showToast('Network error saving phase', 'error');
+        return;
+    }
+    tsCancelPhase(td); // restore view with updated value
+}
+
+function tsCancelPhase(td) {
+    const phase = td.dataset.phase || '';
+    td.innerHTML = `
+        <span class="ts-phase-view" onclick="tsEditPhase(this.parentElement)" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+            <span class="ts-phase-text">${esc(phase) || '—'}</span>
+            <i class="fas fa-edit" style="font-size:0.65rem;color:var(--gray-400);opacity:0.6;"></i>
+        </span>`;
+}
+
 function renderTimesheetTable(entries, weekStart) {
     const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const today = new Date();
@@ -2395,21 +2588,24 @@ function renderTimesheetTable(entries, weekStart) {
         return d;
     });
 
-    // Group entries by task
-    const taskMap = {}; // task_id → { meta, days: {dateStr → seconds} }
+    // Group entries by task (composite key handles admin/training where task_id=0)
+    const taskMap = {};
     entries.forEach(e => {
-        if (!taskMap[e.task_id]) {
-            taskMap[e.task_id] = {
+        const key = `${e.task_id}_${e.task_name}`;
+        if (!taskMap[key]) {
+            taskMap[key] = {
                 task_id:      e.task_id,
                 task_name:    e.task_name,
                 project_id:   e.project_id,
                 project_name: e.project_name,
                 phase_number: e.phase_number || '',
                 task_type:    e.task_type || e.task_name,
-                days: {}
+                days:  {},
+                notes: {}
             };
         }
-        taskMap[e.task_id].days[e.entry_date] = parseInt(e.total_seconds) || 0;
+        taskMap[key].days[e.entry_date] = parseInt(e.total_seconds) || 0;
+        if (e.notes) taskMap[key].notes[e.entry_date] = e.notes;
     });
 
     const tasks = Object.values(taskMap);
@@ -2439,22 +2635,44 @@ function renderTimesheetTable(entries, weekStart) {
         const isToday = d.getTime() === today.getTime();
         headerHtml += `<th class="${isToday ? 'today-header' : ''}">${days[i]}<br><small style="font-weight:400;font-size:0.7rem;">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</small></th>`;
     });
-    headerHtml += `<th>Total</th></tr>`;
+    headerHtml += `<th>Total</th><th>Notes</th></tr>`;
 
     // Build body rows
     let bodyHtml = '';
     tasks.forEach(t => {
         let rowTotal = 0;
-        let rowHtml = `<tr>
-            <td>
-                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${t.project_id}</span>
-                ${t.project_name ? `<br><span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${t.project_name}</span>` : ''}
-            </td>
-            <td>${t.phase_number || '—'}</td>
-            <td>
-                <span style="font-weight:600;color:var(--gray-800);">${t.task_name}</span>
-                ${t.task_type ? `<br><span style="font-size:0.7rem;color:var(--gray-500);">${t.task_type}</span>` : ''}
-            </td>`;
+        const safePhase   = esc(t.phase_number);
+        const allNotes    = Object.values(t.notes).filter(Boolean).join(' | ');
+        const safeNotes   = esc(allNotes);
+        const canEditPhase = t.task_id > 0;
+
+        // Project cell: project ID with copy button
+        const projectCell = `<td>
+            <div style="display:flex;align-items:center;gap:0.3rem;">
+                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${esc(t.project_id)}</span>
+                <button onclick="tsClipboard('${esc(t.project_id)}')" title="Copy project number" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+            </div>
+            ${t.project_name ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${esc(t.project_name)}</span>` : ''}
+        </td>`;
+
+        // Phase cell: editable for real tasks
+        const phaseCell = canEditPhase
+            ? `<td class="ts-phase-cell" data-task-id="${t.task_id}" data-phase="${safePhase}">
+                <span class="ts-phase-view" onclick="tsEditPhase(this.parentElement)" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+                    <span class="ts-phase-text">${safePhase || '—'}</span>
+                    <i class="fas fa-edit" style="font-size:0.65rem;color:var(--gray-400);opacity:0.6;"></i>
+                </span>
+               </td>`
+            : `<td>—</td>`;
+
+        // Task cell
+        const taskCell = `<td>
+            <span style="font-weight:600;color:var(--gray-800);">${esc(t.task_name)}</span>
+            ${t.task_type && t.task_type !== t.task_name ? `<br><span style="font-size:0.7rem;color:var(--gray-500);">${esc(t.task_type)}</span>` : ''}
+        </td>`;
+
+        let rowHtml = `<tr>${projectCell}${phaseCell}${taskCell}`;
+
         dates.forEach(d => {
             const ds = d.toISOString().split('T')[0];
             const isToday = d.getTime() === today.getTime();
@@ -2463,8 +2681,19 @@ function renderTimesheetTable(entries, weekStart) {
             const display = secs > 0 ? roundToHalf(secs / 3600) : null;
             rowHtml += `<td class="${isToday ? 'today-cell' : ''}">${display !== null ? display : '<span class="timesheet-empty-cell">—</span>'}</td>`;
         });
+
         const rowTotalHours = roundToHalf(rowTotal / 3600);
-        rowHtml += `<td style="font-weight:600;">${rowTotalHours > 0 ? rowTotalHours : '—'}</td></tr>`;
+        rowHtml += `<td style="font-weight:600;">${rowTotalHours > 0 ? rowTotalHours : '—'}</td>`;
+
+        // Notes cell: text + copy button
+        const notesCell = allNotes
+            ? `<td style="font-size:0.78rem;color:var(--gray-600);max-width:200px;" data-notes="${safeNotes}">
+                <span style="vertical-align:middle;">${safeNotes}</span>
+                <button onclick="tsClipboard(this.closest('td').dataset.notes)" title="Copy notes" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;vertical-align:middle;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+               </td>`
+            : `<td><span class="timesheet-empty-cell">—</span></td>`;
+
+        rowHtml += notesCell + '</tr>';
         bodyHtml += rowHtml;
     });
 
@@ -2477,7 +2706,7 @@ function renderTimesheetTable(entries, weekStart) {
         totalRowHtml += `<td class="${isToday ? 'today-cell' : ''}">${h > 0 ? h : '—'}</td>`;
     });
     const grandH = roundToHalf(grandTotal / 3600);
-    totalRowHtml += `<td>${grandH > 0 ? grandH : '—'}</td></tr>`;
+    totalRowHtml += `<td>${grandH > 0 ? grandH : '—'}</td><td></td></tr>`;
 
     const tableHtml = `
         <div class="timesheet-table-wrapper">
@@ -2528,6 +2757,26 @@ function copyTimesheetForVantagepoint() {
     });
 }
     </script>
+
+    <!-- Stop Timer Modal -->
+    <div id="stopTimerModal" class="modal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-stop-circle" style="color:var(--danger-color);margin-right:0.5rem;"></i> Stop Timer</h2>
+                <button class="close-button" onclick="cancelStopTimer()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="color:var(--gray-600);margin-bottom:0.75rem;font-size:0.9rem;">Add optional notes for this time entry:</p>
+                <textarea id="stopTimerNotes" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.875rem;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="e.g. Completed boundary research, reviewed deeds..."></textarea>
+            </div>
+            <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #f1f5f9;">
+                <button class="btn btn-secondary" onclick="cancelStopTimer()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmStopTimer()" style="background:var(--danger-color);border-color:var(--danger-color);">
+                    <i class="fas fa-stop"></i> Stop &amp; Log
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Timesheet Modal -->
     <div id="timesheetModal" class="modal">
