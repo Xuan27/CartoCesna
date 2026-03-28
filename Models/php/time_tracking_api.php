@@ -23,16 +23,22 @@ try {
 
     $action = $_POST['action'];
 
+    // ── schema migration (idempotent) ─────────────────────────────────────────
+    try {
+        $pdo->exec("ALTER TABLE time_entries ADD COLUMN IF NOT EXISTS notes TEXT NULL");
+    } catch (Exception $e) { /* column already exists or unsupported syntax — ignore */ }
+
     // ── start_timer ──────────────────────────────────────────────────────────
     if ($action === 'start_timer') {
 
-        $projectId  = trim($_POST['project_id']   ?? '');
-        $taskId     = (int)($_POST['task_id']      ?? 0);
-        $taskName   = trim($_POST['task_name']     ?? '');
+        $projectId   = trim($_POST['project_id']   ?? '');
+        $taskId      = (int)($_POST['task_id']      ?? 0);
+        $taskName    = trim($_POST['task_name']     ?? '');
         $projectName = trim($_POST['project_name'] ?? '');
 
-        if (!$projectId || !$taskId) {
-            sendJsonResponse(['success' => false, 'message' => 'project_id and task_id are required']);
+        // task_id=0 is allowed for admin/training (non-task) entries
+        if (!$projectId) {
+            sendJsonResponse(['success' => false, 'message' => 'project_id is required']);
         }
 
         // Auto-stop any currently running timer
@@ -72,6 +78,7 @@ try {
     elseif ($action === 'stop_timer') {
 
         $entryId = (int)($_POST['entry_id'] ?? 0);
+        $notes   = trim($_POST['notes'] ?? '');
         if (!$entryId) {
             sendJsonResponse(['success' => false, 'message' => 'entry_id is required']);
         }
@@ -79,10 +86,11 @@ try {
         $stmt = $pdo->prepare(
             "UPDATE time_entries
              SET end_time = NOW(),
-                 duration_seconds = GREATEST(0, TIMESTAMPDIFF(SECOND, start_time, NOW()))
+                 duration_seconds = GREATEST(0, TIMESTAMPDIFF(SECOND, start_time, NOW())),
+                 notes = :notes
              WHERE entry_id = :entry_id AND end_time IS NULL"
         );
-        $stmt->execute([':entry_id' => $entryId]);
+        $stmt->execute([':entry_id' => $entryId, ':notes' => $notes ?: null]);
 
         $getStmt = $pdo->prepare(
             "SELECT task_id, end_time, duration_seconds FROM time_entries WHERE entry_id = :id"
@@ -94,22 +102,25 @@ try {
             sendJsonResponse(['success' => false, 'message' => 'Entry not found or already stopped']);
         }
 
-        $taskId = (int)$entry['task_id'];
+        $taskId     = (int)$entry['task_id'];
+        $totalHours = 0;
 
-        // Sum all completed durations for this task and update actual_hours
-        $sumStmt = $pdo->prepare(
-            "SELECT COALESCE(SUM(duration_seconds), 0) AS total_seconds
-             FROM time_entries
-             WHERE task_id = :task_id AND duration_seconds IS NOT NULL"
-        );
-        $sumStmt->execute([':task_id' => $taskId]);
-        $sum = $sumStmt->fetch(PDO::FETCH_ASSOC);
-        $totalHours = round($sum['total_seconds'] / 3600, 2);
+        // Only update actual_hours for real tasks (task_id > 0)
+        if ($taskId > 0) {
+            $sumStmt = $pdo->prepare(
+                "SELECT COALESCE(SUM(duration_seconds), 0) AS total_seconds
+                 FROM time_entries
+                 WHERE task_id = :task_id AND duration_seconds IS NOT NULL"
+            );
+            $sumStmt->execute([':task_id' => $taskId]);
+            $sum        = $sumStmt->fetch(PDO::FETCH_ASSOC);
+            $totalHours = round($sum['total_seconds'] / 3600, 2);
 
-        $updateStmt = $pdo->prepare(
-            "UPDATE tasks SET actual_hours = :hours WHERE task_id = :task_id"
-        );
-        $updateStmt->execute([':hours' => $totalHours, ':task_id' => $taskId]);
+            $updateStmt = $pdo->prepare(
+                "UPDATE tasks SET actual_hours = :hours WHERE task_id = :task_id"
+            );
+            $updateStmt->execute([':hours' => $totalHours, ':task_id' => $taskId]);
+        }
 
         sendJsonResponse([
             'success'          => true,
@@ -137,6 +148,26 @@ try {
         ]);
     }
 
+    // ── update_entry_time ─────────────────────────────────────────────────────
+    elseif ($action === 'update_entry_time') {
+
+        $entryId       = (int)($_POST['entry_id']   ?? 0);
+        $startUnixTime = (int)($_POST['start_time'] ?? 0);
+
+        if (!$entryId || !$startUnixTime) {
+            sendJsonResponse(['success' => false, 'message' => 'entry_id and start_time are required']);
+        }
+
+        $stmt = $pdo->prepare(
+            "UPDATE time_entries
+             SET start_time = FROM_UNIXTIME(:start_time)
+             WHERE entry_id = :entry_id AND end_time IS NULL"
+        );
+        $stmt->execute([':entry_id' => $entryId, ':start_time' => $startUnixTime]);
+
+        sendJsonResponse(['success' => true]);
+    }
+
     // ── get_timesheet ─────────────────────────────────────────────────────────
     elseif ($action === 'get_timesheet') {
 
@@ -157,7 +188,8 @@ try {
                     t.phase_number,
                     t.task_type,
                     DATE(te.start_time)      AS entry_date,
-                    SUM(te.duration_seconds) AS total_seconds
+                    SUM(te.duration_seconds) AS total_seconds,
+                    GROUP_CONCAT(te.notes ORDER BY te.start_time SEPARATOR ' | ') AS notes
                 FROM time_entries te
                 LEFT JOIN tasks t ON te.task_id = t.task_id
                 WHERE DATE(te.start_time) BETWEEN :week_start AND :week_end
