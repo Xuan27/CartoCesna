@@ -3254,6 +3254,14 @@ function copyTimesheetForVantagepoint() {
         }, 2000);
     });
 
+    // Keep content-header sticky offset in sync with top-bar height
+    function syncTopBarHeight() {
+        const h = document.querySelector('.top-bar')?.offsetHeight || 73;
+        document.documentElement.style.setProperty('--top-bar-height', h + 'px');
+    }
+    syncTopBarHeight();
+    window.addEventListener('resize', syncTopBarHeight);
+
     // Close checklist / timesheet modals on outside click
     document.addEventListener('click', function(e) {
         if (e.target.id === 'checklistModal') {
