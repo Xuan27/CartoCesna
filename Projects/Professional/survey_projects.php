@@ -2214,21 +2214,53 @@ function stopActiveTimer() {
     openStopTimerModal();
 }
 
-function openStopTimerModal() {
+async function openStopTimerModal() {
     if (!timerState.isRunning) return;
     document.getElementById('stopTimerModal').style.display = 'block';
+
+    // Fetch recent notes and populate dropdown
+    try {
+        const fd = new FormData();
+        fd.append('action', 'get_recent_notes');
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (data.success && data.notes.length > 0) {
+            const select = document.getElementById('recentNotesSelect');
+            select.innerHTML = '<option value="">— Select a recent note —</option>';
+            data.notes.forEach(n => {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n.length > 70 ? n.slice(0, 70) + '…' : n;
+                select.appendChild(opt);
+            });
+            document.getElementById('recentNotesRow').style.display = 'block';
+        }
+    } catch (err) { /* silently skip — dropdown just won't show */ }
+
     setTimeout(() => document.getElementById('stopTimerNotes').focus(), 80);
+}
+
+function applyRecentNote() {
+    const select = document.getElementById('recentNotesSelect');
+    if (select.value) {
+        document.getElementById('stopTimerNotes').value = select.value;
+        select.value = '';
+    }
 }
 
 function cancelStopTimer() {
     document.getElementById('stopTimerModal').style.display = 'none';
     document.getElementById('stopTimerNotes').value = '';
+    document.getElementById('recentNotesRow').style.display = 'none';
+    document.getElementById('recentNotesSelect').innerHTML = '<option value="">— Select a recent note —</option>';
 }
 
 async function confirmStopTimer() {
     const notes = document.getElementById('stopTimerNotes').value.trim();
     document.getElementById('stopTimerModal').style.display = 'none';
     document.getElementById('stopTimerNotes').value = '';
+    document.getElementById('recentNotesRow').style.display = 'none';
+    document.getElementById('recentNotesSelect').innerHTML = '<option value="">— Select a recent note —</option>';
     await _doStopTimer(notes);
 }
 
@@ -2766,7 +2798,13 @@ function copyTimesheetForVantagepoint() {
                 <button class="close-button" onclick="cancelStopTimer()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <p style="color:var(--gray-600);margin-bottom:0.75rem;font-size:0.9rem;">Add optional notes for this time entry:</p>
+                <div id="recentNotesRow" style="display:none;margin-bottom:0.85rem;">
+                    <label style="font-size:0.8rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:0.3rem;">Recent notes</label>
+                    <select id="recentNotesSelect" onchange="applyRecentNote()" style="width:100%;padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.875rem;color:#374151;background:#fff;box-sizing:border-box;">
+                        <option value="">— Select a recent note —</option>
+                    </select>
+                </div>
+                <label style="font-size:0.8rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:0.3rem;">Note</label>
                 <textarea id="stopTimerNotes" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.875rem;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="e.g. Completed boundary research, reviewed deeds..."></textarea>
             </div>
             <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #f1f5f9;">
