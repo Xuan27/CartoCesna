@@ -1539,6 +1539,25 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+.checklist-change-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: white;
+    height: 32px;
+    padding: 0 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+.checklist-change-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
 .checklist-modal-body {
     padding: 1rem 1.5rem;
     overflow-y: auto;

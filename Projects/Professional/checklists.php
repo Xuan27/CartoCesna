@@ -17,6 +17,21 @@
             color: var(--gray-300);
             margin-bottom: 1rem;
         }
+        .template-item-row.dragging {
+            opacity: 0.35;
+            border: 2px dashed var(--primary-color) !important;
+        }
+        .template-item-row.drag-over {
+            border-color: var(--primary-color) !important;
+            background: #eff6ff !important;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+        }
+        .template-item-row .drag-handle {
+            cursor: grab;
+        }
+        .template-item-row .drag-handle:active {
+            cursor: grabbing;
+        }
     </style>
 </head>
 <body>
@@ -184,6 +199,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
             loadTemplates();
+            initDragAndDrop();
         });
 
         function setupSidebar() {
@@ -582,6 +598,80 @@
 
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Drag-and-drop reordering for top-level checklist items
+        function initDragAndDrop() {
+            const list = document.getElementById('templateItemsList');
+            let dragSrcRow = null;
+
+            // Only enable draggable when the user grabs the handle,
+            // so text inputs inside the row remain normally clickable.
+            list.addEventListener('mousedown', function(e) {
+                const handle = e.target.closest('.drag-handle');
+                if (handle) {
+                    const row = handle.closest('.template-item-row');
+                    if (row && row.parentElement === list) {
+                        row.draggable = true;
+                    }
+                }
+            });
+
+            list.addEventListener('mouseup', function() {
+                list.querySelectorAll(':scope > .template-item-row[draggable]').forEach(row => {
+                    row.draggable = false;
+                });
+            });
+
+            list.addEventListener('dragstart', function(e) {
+                const row = e.target.closest('.template-item-row');
+                if (!row || row.parentElement !== list) return;
+                dragSrcRow = row;
+                row.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', ''); // required for Firefox
+            });
+
+            list.addEventListener('dragend', function() {
+                if (dragSrcRow) {
+                    dragSrcRow.classList.remove('dragging');
+                    dragSrcRow.draggable = false;
+                    dragSrcRow = null;
+                }
+                list.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            });
+
+            list.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const row = e.target.closest('.template-item-row');
+                if (!row || row.parentElement !== list || row === dragSrcRow) return;
+                list.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                row.classList.add('drag-over');
+            });
+
+            list.addEventListener('dragleave', function(e) {
+                const row = e.target.closest('.template-item-row');
+                if (row && !row.contains(e.relatedTarget)) {
+                    row.classList.remove('drag-over');
+                }
+            });
+
+            list.addEventListener('drop', function(e) {
+                e.preventDefault();
+                const targetRow = e.target.closest('.template-item-row');
+                if (!targetRow || !dragSrcRow || targetRow === dragSrcRow) return;
+                if (targetRow.parentElement !== list || dragSrcRow.parentElement !== list) return;
+
+                const rect = targetRow.getBoundingClientRect();
+                if (e.clientY < rect.top + rect.height / 2) {
+                    list.insertBefore(dragSrcRow, targetRow);
+                } else {
+                    list.insertBefore(dragSrcRow, targetRow.nextSibling);
+                }
+
+                targetRow.classList.remove('drag-over');
+            });
         }
 
         // Close modal on outside click

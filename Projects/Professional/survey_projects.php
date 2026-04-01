@@ -2806,9 +2806,17 @@ function copyTimesheetForVantagepoint() {
             <div class="checklist-modal-header">
                 <div class="checklist-modal-header-top">
                     <h3><i class="fas fa-clipboard-check"></i> <span id="checklistModalTitle">Checklist</span></h3>
-                    <button class="checklist-modal-close" onclick="closeChecklistModal()">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <button id="changeChecklistBtn"
+                                class="checklist-change-btn"
+                                style="display:none"
+                                onclick="showTemplatePicker(currentChecklistTaskId, currentChecklistTaskName, null)">
+                            <i class="fas fa-exchange-alt"></i> Change
+                        </button>
+                        <button class="checklist-modal-close" onclick="closeChecklistModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <span class="progress-text" id="checklistProgressText">0 / 0 completed</span>
                 <div class="checklist-progress-bar">
@@ -2845,6 +2853,7 @@ function copyTimesheetForVantagepoint() {
     const CHECKLIST_API = '../../Models/php/checklist_api.php';
     let checklistSummaries = {};
     let currentChecklistTaskId = null;
+    let currentChecklistTaskName = null;
 
     // Load checklist summaries for a batch of task IDs
     async function loadChecklistSummaries(taskIds) {
@@ -2910,6 +2919,9 @@ function copyTimesheetForVantagepoint() {
     // Show checklist modal
     async function showChecklistModal(taskId, taskName, assignedTo) {
         currentChecklistTaskId = taskId;
+        currentChecklistTaskName = taskName || null;
+        const changeBtn = document.getElementById('changeChecklistBtn');
+        if (changeBtn) changeBtn.style.display = 'none';
         document.getElementById('checklistModalTitle').textContent = taskName || 'Checklist';
         document.getElementById('checklistModalBody').innerHTML = `
             <div style="text-align: center; padding: 2rem; color: var(--gray-400);">
@@ -2982,6 +2994,10 @@ function copyTimesheetForVantagepoint() {
         const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
         document.getElementById('checklistProgressText').textContent = `${completed} / ${total} completed (${pct}%)`;
         document.getElementById('checklistProgressFill').style.width = `${pct}%`;
+
+        // Show "Change" button only when nothing has been checked yet
+        const changeBtn = document.getElementById('changeChecklistBtn');
+        if (changeBtn) changeBtn.style.display = (completed === 0) ? '' : 'none';
 
         // Group root items by category
         const grouped = {};
@@ -3139,6 +3155,7 @@ function copyTimesheetForVantagepoint() {
             refreshChecklistButtons();
         }
         currentChecklistTaskId = null;
+        currentChecklistTaskName = null;
     }
 
     // Refresh checklist button displays after changes
