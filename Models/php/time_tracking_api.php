@@ -215,6 +215,22 @@ try {
         ]);
     }
 
+    // ── get_recent_notes ──────────────────────────────────────────────────────
+    elseif ($action === 'get_recent_notes') {
+
+        $stmt = $pdo->query(
+            "SELECT notes
+             FROM time_entries
+             WHERE notes IS NOT NULL AND notes != ''
+             GROUP BY notes
+             ORDER BY MAX(start_time) DESC
+             LIMIT 20"
+        );
+        $notes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        sendJsonResponse(['success' => true, 'notes' => $notes]);
+    }
+
     // ── update_phase_number ───────────────────────────────────────────────────
     elseif ($action === 'update_phase_number') {
 
