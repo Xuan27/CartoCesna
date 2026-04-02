@@ -218,14 +218,22 @@ try {
     // ── get_recent_notes ──────────────────────────────────────────────────────
     elseif ($action === 'get_recent_notes') {
 
-        $stmt = $pdo->query(
+        $taskId   = (int)($_POST['task_id']   ?? 0);
+        $taskName = trim($_POST['task_name'] ?? '');
+
+        // For real tasks filter by task_id; for admin/training (task_id=0)
+        // also require task_name so Admin and Training notes stay separate.
+        $stmt = $pdo->prepare(
             "SELECT notes
              FROM time_entries
              WHERE notes IS NOT NULL AND notes != ''
+               AND task_id = :task_id
+               AND (:task_id > 0 OR task_name = :task_name)
              GROUP BY notes
              ORDER BY MAX(start_time) DESC
              LIMIT 20"
         );
+        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName]);
         $notes = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         sendJsonResponse(['success' => true, 'notes' => $notes]);
