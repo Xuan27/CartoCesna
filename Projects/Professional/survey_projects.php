@@ -2221,7 +2221,9 @@ async function openStopTimerModal() {
     // Fetch recent notes and populate dropdown
     try {
         const fd = new FormData();
-        fd.append('action', 'get_recent_notes');
+        fd.append('action',    'get_recent_notes');
+        fd.append('task_id',   timerState.taskId   ?? 0);
+        fd.append('task_name', timerState.taskName ?? '');
         const resp = await fetch(TIME_API, { method: 'POST', body: fd });
         const data = await resp.json();
         if (data.success && data.notes.length > 0) {
