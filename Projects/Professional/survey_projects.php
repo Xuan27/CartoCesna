@@ -2676,7 +2676,11 @@ function renderTimesheetTable(entries, weekStart) {
     tasks.forEach(t => {
         let rowTotal = 0;
         const safePhase   = esc(t.phase_number);
-        const allNotes    = Object.values(t.notes).filter(Boolean).join(' | ');
+        const allNotes    = [...new Set(
+            Object.values(t.notes)
+                .filter(Boolean)
+                .flatMap(n => n.split(' | '))
+        )].join(' | ');
         const safeNotes   = esc(allNotes);
         const canEditPhase = t.task_id > 0;
 
