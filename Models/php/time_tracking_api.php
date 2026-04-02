@@ -228,12 +228,12 @@ try {
              FROM time_entries
              WHERE notes IS NOT NULL AND notes != ''
                AND task_id = :task_id
-               AND (:task_id > 0 OR task_name = :task_name)
+               AND (:task_id_gt > 0 OR task_name = :task_name)
              GROUP BY notes
              ORDER BY MAX(start_time) DESC
              LIMIT 20"
         );
-        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName]);
+        $stmt->execute([':task_id' => $taskId, ':task_id_gt' => $taskId, ':task_name' => $taskName]);
         $notes = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         sendJsonResponse(['success' => true, 'notes' => $notes]);
