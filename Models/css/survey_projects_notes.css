@@ -197,9 +197,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin: -2rem -2rem 1rem -2rem;
+    padding: 1rem 2rem;
     flex-wrap: wrap;
     gap: 1rem;
+    position: sticky;
+    top: var(--top-bar-height, 73px);
+    z-index: 99;
+    background: var(--gray-50);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .search-filters {
@@ -1132,6 +1138,8 @@ body {
     .content-header {
         flex-direction: column;
         align-items: stretch;
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 1rem;
     }
 
     .search-filters {
@@ -1529,6 +1537,25 @@ body {
 
 .checklist-modal-close:hover {
     background: rgba(255, 255, 255, 0.3);
+}
+
+.checklist-change-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: white;
+    height: 32px;
+    padding: 0 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+.checklist-change-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
 }
 
 .checklist-modal-body {

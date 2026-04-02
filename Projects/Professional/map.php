@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- Esri Leaflet -->
+    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -140,6 +142,105 @@
             transition: all 0.15s;
         }
         #togglePanelBtn:hover { background: var(--gray-50); border-color: var(--primary-color); color: var(--primary-color); }
+
+        /* Layer toggle button */
+        #toggleControlPtsBtn {
+            position: absolute;
+            top: 1rem;
+            right: 8.5rem;
+            z-index: 600;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 0.5rem 0.9rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            transition: all 0.15s;
+        }
+        #toggleControlPtsBtn:hover  { background: var(--gray-50); border-color: #f59e0b; color: #f59e0b; }
+        #toggleControlPtsBtn.active { background: #fffbeb; border-color: #f59e0b; color: #b45309; }
+
+        /* Control point popup */
+        .cp-popup { min-width: 200px; font-size: 0.82rem; }
+        .cp-popup-title { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); margin-bottom: 0.4rem; }
+        .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
+        .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: #f59e0b; }
+
+        /* ArcGIS login modal */
+        #arcgisLoginOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #arcgisLoginOverlay.open { display: flex; }
+        #arcgisLoginBox {
+            background: white;
+            border-radius: 12px;
+            padding: 1.75rem 2rem;
+            width: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        #arcgisLoginBox h3 {
+            margin: 0 0 0.25rem;
+            font-size: 1rem;
+            color: var(--gray-900);
+        }
+        #arcgisLoginBox p {
+            margin: 0 0 1.25rem;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+        #arcgisLoginBox label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.25rem;
+        }
+        #arcgisLoginBox input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        #arcgisLoginBox input:focus { outline: none; border-color: #f59e0b; }
+        #arcgisLoginError {
+            font-size: 0.8rem;
+            color: var(--danger-color);
+            margin-bottom: 0.75rem;
+            display: none;
+        }
+        .arcgis-login-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+        .arcgis-login-actions button {
+            padding: 0.45rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: var(--gray-700);
+        }
+        .arcgis-login-actions button.primary {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: white;
+        }
+        .arcgis-login-actions button.primary:hover { background: #d97706; }
+        .arcgis-login-actions button.primary:disabled { opacity: 0.6; cursor: default; }
 
         /* Loading overlay */
         #mapLoading {
@@ -283,6 +384,11 @@
         <i class="fas fa-list"></i> Projects
     </button>
 
+    <!-- Control points layer toggle -->
+    <button id="toggleControlPtsBtn" onclick="toggleControlPoints()" title="Toggle Survey Control Points">
+        <i class="fas fa-crosshairs"></i> Control Pts
+    </button>
+
     <!-- Loading indicator -->
     <div id="mapLoading">
         <i class="fas fa-spinner fa-spin"></i>
@@ -302,6 +408,25 @@
             <div style="padding:2rem; text-align:center; color:var(--gray-400);">
                 <i class="fas fa-spinner fa-spin" style="font-size:1.5rem; margin-bottom:0.5rem;"></i>
                 <p>Loading projects…</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ArcGIS Login Modal -->
+    <div id="arcgisLoginOverlay">
+        <div id="arcgisLoginBox">
+            <h3><i class="fas fa-crosshairs" style="color:#f59e0b;margin-right:6px;"></i>ArcGIS Sign In</h3>
+            <p>Sign in with your Westwood ArcGIS account to load survey control points.</p>
+            <label for="arcgisUsername">Username</label>
+            <input type="text" id="arcgisUsername" placeholder="ArcGIS username" autocomplete="username">
+            <label for="arcgisPassword">Password</label>
+            <input type="password" id="arcgisPassword" placeholder="ArcGIS password" autocomplete="current-password">
+            <div id="arcgisLoginError"></div>
+            <div class="arcgis-login-actions">
+                <button onclick="closeArcGISLogin()">Cancel</button>
+                <button class="primary" id="arcgisLoginBtn" onclick="submitArcGISLogin()">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
             </div>
         </div>
     </div>
@@ -327,6 +452,155 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// ── ArcGIS Survey Control Points layer ─────────────────────────────────────
+const CONTROL_PTS_QUERY = 'https://dservices.arcgis.com/FqQ2BQIKVGpUWqAa/arcgis/services/SurveyControl/WFSServer';
+const ARCGIS_TOKEN_API  = '../../Models/php/arcgis_token.php';
+let controlPtsLayer  = null;
+let controlPtsVisible = false;
+let arcgisToken      = null;
+
+// ── Login modal ─────────────────────────────────────────────────────────────
+function openArcGISLogin() {
+    document.getElementById('arcgisLoginOverlay').classList.add('open');
+    document.getElementById('arcgisLoginError').style.display = 'none';
+    document.getElementById('arcgisUsername').focus();
+}
+function closeArcGISLogin() {
+    document.getElementById('arcgisLoginOverlay').classList.remove('open');
+    document.getElementById('arcgisLoginBtn').disabled = false;
+    document.getElementById('arcgisLoginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+    // If user cancelled and layer wasn't loaded, reset button
+    if (!arcgisToken) {
+        document.getElementById('toggleControlPtsBtn').classList.remove('active');
+        controlPtsVisible = false;
+    }
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('arcgisLoginOverlay').classList.contains('open')) {
+        submitArcGISLogin();
+    }
+});
+
+async function submitArcGISLogin() {
+    const username = document.getElementById('arcgisUsername').value.trim();
+    const password = document.getElementById('arcgisPassword').value;
+    const errEl    = document.getElementById('arcgisLoginError');
+    const btn      = document.getElementById('arcgisLoginBtn');
+
+    if (!username || !password) {
+        errEl.textContent = 'Please enter username and password.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in…';
+    errEl.style.display = 'none';
+
+    try {
+        const res  = await fetch(ARCGIS_TOKEN_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+            errEl.textContent = data.message || 'Sign in failed.';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            return;
+        }
+
+        arcgisToken = data.token;
+        document.getElementById('arcgisPassword').value = '';
+        closeArcGISLogin();
+        loadControlPoints();
+
+    } catch (err) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+    }
+}
+
+// ── Toggle & load control points ────────────────────────────────────────────
+function toggleControlPoints() {
+    const btn = document.getElementById('toggleControlPtsBtn');
+    if (controlPtsVisible) {
+        if (controlPtsLayer) map.removeLayer(controlPtsLayer);
+        controlPtsVisible = false;
+        btn.classList.remove('active');
+        return;
+    }
+    controlPtsVisible = true;
+    btn.classList.add('active');
+
+    if (controlPtsLayer) { controlPtsLayer.addTo(map); return; }
+    if (!arcgisToken)    { openArcGISLogin(); return; }
+    loadControlPoints();
+}
+
+async function loadControlPoints() {
+    showLoading('Loading control points…');
+    try {
+        const url = `${CONTROL_PTS_QUERY}?service=WFS&version=2.0.0&request=GetFeature` +
+                    `&typeNames=SurveyControl&outputFormat=application%2Fjson&token=${arcgisToken}`;
+        const res  = await fetch(url);
+
+        if (res.status === 401 || res.status === 403) {
+            arcgisToken = null;
+            showLoading(null);
+            openArcGISLogin();
+            return;
+        }
+
+        const geojson = await res.json();
+
+        if (controlPtsLayer) map.removeLayer(controlPtsLayer);
+
+        controlPtsLayer = L.geoJSON(geojson, {
+            pointToLayer(feature, latlng) {
+                return L.circleMarker(latlng, {
+                    radius: 6,
+                    fillColor: '#f59e0b',
+                    color: '#92400e',
+                    weight: 1.5,
+                    fillOpacity: 0.9,
+                });
+            },
+            onEachFeature(feature, layer) {
+                layer.bindPopup(buildControlPopup(feature), { maxWidth: 300 });
+            }
+        }).addTo(map);
+
+    } catch (err) {
+        console.error('Control points error:', err);
+        showLoading(null);
+        document.getElementById('toggleControlPtsBtn').classList.remove('active');
+        controlPtsVisible = false;
+    }
+    showLoading(null);
+}
+
+function buildControlPopup(feature) {
+    const p    = feature.properties || {};
+    const skip = new Set(['FID', 'OBJECTID', 'Shape', 'GlobalID', 'SHAPE']);
+    let rows   = '';
+    for (const [key, val] of Object.entries(p)) {
+        if (skip.has(key) || val === null || val === '' || val === undefined) continue;
+        rows += `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><span><strong>${key}:</strong> ${esc(String(val))}</span></div>`;
+    }
+    const title = p.Name || p.NAME || p.PointName || p.POINT_NAME || p.StationName || p.STATION || 'Control Point';
+    return `<div class="cp-popup">
+        <div class="cp-popup-title"><i class="fas fa-crosshairs" style="color:#f59e0b;margin-right:4px;"></i>${esc(title)}</div>
+        ${rows || '<div class="cp-popup-row">No attributes available.</div>'}
+    </div>`;
+}
 
 // ── State ──────────────────────────────────────────────────────────────────
 let allProjects = [];
