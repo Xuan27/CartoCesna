@@ -1,6 +1,39 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
 $currentUsername = $_SESSION['username'] ?? 'User';
+
+// api_projects.php — read-only JSON feed of the logged-in user's projects.
+require_once __DIR__ . '/../../db.php';   // <-- same DB connection survey_projects.php uses
+session_start();
+
+header('Content-Type: application/json');
+
+// Same login guard your other pages use. Reject anyone not signed in.
+if (empty($_SESSION['user_id'])) {        // <-- match your real session key
+    http_response_code(401);
+    echo json_encode(['error' => 'not authenticated']);
+    exit;
+}
+
+// Map YOUR table columns -> the field names the app expects (left = app, right = your column).
+$sql = "SELECT
+          id                AS project_id,
+          project_name      AS name,
+          client,
+          type              AS task_type,
+          status,
+          city, county, state,
+          created_date      AS date_created,
+          due_date          AS date_due
+        FROM projects
+        WHERE user_id = ?               -- scope to the logged-in user
+        ORDER BY created_date DESC";
+
+$stmt = $pdo->prepare($sql);            // (or mysqli — match your codebase)
+$stmt->execute([$_SESSION['user_id']]);
+$projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo json_encode(['projects' => $projects], JSON_UNESCAPED_SLASHES);
 ?>
 <!DOCTYPE html>
 <html lang="en">
