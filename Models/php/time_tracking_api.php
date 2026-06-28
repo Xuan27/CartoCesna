@@ -255,6 +255,52 @@ try {
         sendJsonResponse(['success' => true]);
     }
 
+    // ── update_day_note ───────────────────────────────────────────────────────
+    elseif ($action === 'update_day_note') {
+
+        $taskId    = (int)($_POST['task_id']   ?? 0);
+        $taskName  = trim($_POST['task_name']  ?? '');
+        $entryDate = trim($_POST['entry_date'] ?? '');
+        $note      = trim($_POST['note']       ?? '');
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate)) {
+            sendJsonResponse(['success' => false, 'message' => 'Invalid entry_date']);
+        }
+
+        // Find the canonical entry (lowest entry_id) for this task+date
+        $stmt = $pdo->prepare(
+            "SELECT MIN(entry_id) AS first_id FROM time_entries
+             WHERE task_id = :task_id AND task_name = :task_name
+               AND DATE(start_time) = :entry_date
+               AND duration_seconds IS NOT NULL"
+        );
+        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':entry_date' => $entryDate]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || !$row['first_id']) {
+            sendJsonResponse(['success' => false, 'message' => 'No completed entries found for that day']);
+        }
+
+        $firstId = (int)$row['first_id'];
+
+        // Set note on the first entry; clear it from any others for that task+date
+        $stmt = $pdo->prepare(
+            "UPDATE time_entries
+             SET notes = CASE WHEN entry_id = :first_id THEN :note ELSE NULL END
+             WHERE task_id = :task_id AND task_name = :task_name
+               AND DATE(start_time) = :entry_date"
+        );
+        $stmt->execute([
+            ':first_id'   => $firstId,
+            ':note'       => $note ?: null,
+            ':task_id'    => $taskId,
+            ':task_name'  => $taskName,
+            ':entry_date' => $entryDate,
+        ]);
+
+        sendJsonResponse(['success' => true]);
+    }
+
     // ── delete_entry ──────────────────────────────────────────────────────────
     elseif ($action === 'delete_entry') {
 

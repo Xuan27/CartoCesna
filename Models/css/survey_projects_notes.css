@@ -2341,3 +2341,85 @@ td.today-cell {
     overflow-x: auto;
     border-radius: var(--border-radius);
 }
+
+/* Day cells with inline notes */
+.ts-day-cell {
+    min-width: 72px;
+    vertical-align: middle;
+}
+
+.ts-day-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.ts-day-hours {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--gray-800);
+}
+
+.ts-day-note {
+    font-size: 0.68rem;
+    color: var(--gray-500);
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 1px dashed var(--gray-300);
+    line-height: 1.3;
+}
+
+.ts-day-note:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.ts-day-note-empty {
+    opacity: 0;
+    font-size: 0.62rem;
+    color: var(--gray-300);
+    border-bottom-color: transparent;
+    cursor: pointer;
+}
+
+.ts-day-cell:hover .ts-day-note-empty {
+    opacity: 1;
+}
+
+/* Note edit mode */
+.ts-day-edit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.ts-note-input {
+    width: 86px;
+    font-size: 0.72rem;
+    padding: 2px 5px;
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    outline: none;
+    text-align: center;
+}
+
+.ts-note-actions {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.ts-note-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0 2px;
+}
+
+.ts-note-actions button:first-child { color: var(--success-color); }
+.ts-note-actions button:last-child  { color: var(--gray-400); }

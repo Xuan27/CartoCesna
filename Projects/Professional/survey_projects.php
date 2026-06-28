@@ -2610,6 +2610,67 @@ function tsCancelPhase(td) {
         </span>`;
 }
 
+// ── Day-note inline editing ────────────────────────────────────────────────
+
+function tsEditDayNote(td) {
+    const note  = td.dataset.note  || '';
+    const hours = td.dataset.hours || '';
+    td.innerHTML = `
+        <div class="ts-day-edit">
+            <span class="ts-day-hours">${esc(hours)}</span>
+            <input type="text" class="ts-note-input" value="${esc(note)}" placeholder="Add note..."
+                onkeydown="if(event.key==='Enter')tsSaveDayNote(this.closest('td'));if(event.key==='Escape')tsCancelDayNote(this.closest('td'));">
+            <div class="ts-note-actions">
+                <button onclick="tsSaveDayNote(this.closest('td'))" title="Save"><i class="fas fa-check"></i></button>
+                <button onclick="tsCancelDayNote(this.closest('td'))" title="Cancel"><i class="fas fa-times"></i></button>
+            </div>
+        </div>`;
+    const input = td.querySelector('input');
+    input.focus();
+    input.select();
+}
+
+async function tsSaveDayNote(td) {
+    const taskId    = td.dataset.taskId;
+    const taskName  = td.dataset.taskName;
+    const entryDate = td.dataset.entryDate;
+    const input = td.querySelector('input');
+    if (!input) return;
+    const newNote = input.value.trim();
+
+    try {
+        const fd = new FormData();
+        fd.append('action',     'update_day_note');
+        fd.append('task_id',    taskId);
+        fd.append('task_name',  taskName);
+        fd.append('entry_date', entryDate);
+        fd.append('note',       newNote);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data.success) { showToast(data.message || 'Could not save note', 'error'); return; }
+        td.dataset.note = newNote;
+        showToast('Note saved', 'success');
+    } catch (err) {
+        showToast('Network error saving note', 'error');
+        return;
+    }
+    tsCancelDayNote(td);
+}
+
+function tsCancelDayNote(td) {
+    const note  = td.dataset.note  || '';
+    const hours = td.dataset.hours || '';
+    const safeNote = esc(note);
+    td.innerHTML = `
+        <div class="ts-day-content">
+            <span class="ts-day-hours">${esc(hours)}</span>
+            ${note
+                ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>`
+                : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
+            }
+        </div>`;
+}
+
 function renderTimesheetTable(entries, weekStart) {
     const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const today = new Date();
@@ -2717,7 +2778,27 @@ function renderTimesheetTable(entries, weekStart) {
             const secs = t.days[ds] || 0;
             rowTotal += secs;
             const display = secs > 0 ? roundToHalf(secs / 3600) : null;
-            rowHtml += `<td class="${isToday ? 'today-cell' : ''}">${display !== null ? display : '<span class="timesheet-empty-cell">—</span>'}</td>`;
+            const dayNote = t.notes[ds] || '';
+            if (display !== null) {
+                const safeNote    = esc(dayNote);
+                const hoursDisplay = String(display);
+                rowHtml += `<td class="${isToday ? 'today-cell' : ''} ts-day-cell"
+                                data-task-id="${t.task_id}"
+                                data-task-name="${esc(t.task_name)}"
+                                data-entry-date="${ds}"
+                                data-note="${safeNote}"
+                                data-hours="${hoursDisplay}">
+                    <div class="ts-day-content">
+                        <span class="ts-day-hours">${hoursDisplay}</span>
+                        ${dayNote
+                            ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>`
+                            : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
+                        }
+                    </div>
+                </td>`;
+            } else {
+                rowHtml += `<td class="${isToday ? 'today-cell' : ''}"><span class="timesheet-empty-cell">—</span></td>`;
+            }
         });
 
         const rowTotalHours = roundToHalf(rowTotal / 3600);
