@@ -322,6 +322,21 @@
     </div>
 
     <script>
+        let csrfToken = '';
+
+        // Fetch CSRF token from server on page load
+        async function initCsrfToken() {
+            try {
+                const res = await fetch('../php/get_csrf_token.php', { credentials: 'include' });
+                const data = await res.json();
+                csrfToken = data.csrf_token || '';
+            } catch (e) {
+                console.error('Failed to fetch CSRF token', e);
+            }
+        }
+
+        initCsrfToken();
+
         // Password validation
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirmPassword');
@@ -408,15 +423,24 @@
                 firstName: document.getElementById('firstName').value.trim(),
                 lastName: document.getElementById('lastName').value.trim(),
                 role: document.getElementById('role').value,
-                password: password
+                password: password,
+                csrf_token: csrfToken
             };
 
             try {
+                // Refresh CSRF token if not already loaded
+                if (!csrfToken) {
+                    await initCsrfToken();
+                    formData.csrf_token = csrfToken;
+                }
+
                 // Send request to PHP backend
                 const response = await fetch('../php/create_user.php', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
                     body: JSON.stringify(formData)
                 });
