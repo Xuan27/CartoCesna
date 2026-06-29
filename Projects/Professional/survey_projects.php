@@ -2878,9 +2878,9 @@ function renderTimesheetTable(entries, weekStart) {
 
         // Notes cell: text + copy button
         const notesCell = allNotes
-            ? `<td style="font-size:0.78rem;color:var(--gray-600);max-width:200px;" data-notes="${safeNotes}">
-                <span style="vertical-align:middle;">${safeNotes}</span>
-                <button onclick="tsClipboard(this.closest('td').dataset.notes)" title="Copy notes" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;vertical-align:middle;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+            ? `<td style="font-size:0.78rem;color:var(--gray-600);max-width:180px;white-space:normal;word-break:break-word;overflow-wrap:break-word;vertical-align:top;" data-notes="${safeNotes}">
+                <span style="line-height:1.3;">${safeNotes}</span>
+                <button onclick="tsClipboard(this.closest('td').dataset.notes)" title="Copy notes" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;vertical-align:top;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
                </td>`
             : `<td><span class="timesheet-empty-cell">—</span></td>`;
 
