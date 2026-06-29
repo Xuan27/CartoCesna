@@ -2766,7 +2766,10 @@ function renderTimesheetTable(entries, weekStart) {
             };
         }
         taskMap[key].days[e.entry_date] = parseInt(e.total_seconds) || 0;
-        if (e.notes) taskMap[key].notes[e.entry_date] = e.notes;
+        if (e.notes) {
+            const unique = [...new Set(e.notes.split(' | ').filter(Boolean))];
+            taskMap[key].notes[e.entry_date] = unique.join(' | ');
+        }
     });
 
     const tasks = Object.values(taskMap);

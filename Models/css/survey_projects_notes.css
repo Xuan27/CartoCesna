@@ -2238,6 +2238,9 @@ body {
     color: var(--gray-700);
     border: 1px solid var(--gray-200);
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 .timesheet-table th:first-child,
@@ -2335,7 +2338,6 @@ td.today-cell {
 
 /* Scrollable table wrapper */
 .timesheet-table-wrapper {
-    overflow-x: auto;
     border-radius: var(--border-radius);
 }
 
@@ -2350,6 +2352,7 @@ td.today-cell {
 
 .timesheet-modal-content .modal-body {
     overflow-y: auto;
+    overflow-x: auto;
     flex: 1;
     min-height: 0;
 }
@@ -2433,15 +2436,15 @@ td.today-cell {
     background: none;
     border: none;
     cursor: pointer;
+    padding: 1px 3px;
     color: var(--gray-400);
-    font-size: 0.62rem;
-    padding: 0;
-    opacity: 0;
+    font-size: 0.7rem;
+    opacity: 0.6;
     transition: opacity 0.15s;
     flex-shrink: 0;
 }
 
-.ts-note-block:hover .ts-note-copy {
+.ts-note-copy:hover {
     opacity: 1;
 }
 
