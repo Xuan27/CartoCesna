@@ -604,6 +604,81 @@
             height: 16px;
         }
 
+        /* Dynamic range row inputs */
+        .pr-ranges-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .range-row .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .range-separator {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            padding: 0 0.1rem;
+        }
+
+        .remove-range-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.4rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .remove-range-btn:hover {
+            background: #c82333;
+        }
+
+        .add-range-btn {
+            margin-top: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            border: 1px dashed var(--gray-300);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .add-range-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .range-overlap-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 0.65rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .range-overlap-warning i {
+            margin-right: 0.35rem;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .toolbar-left, .toolbar-right {
@@ -686,7 +761,7 @@
                 </button>
                 <div>
                     <h2>Database Tools</h2>
-                    <p>Manage and edit survey projects and tasks data</p>
+                    <p>Manage and edit tasks data</p>
                 </div>
             </div>
             <div class="top-bar-right">
@@ -704,12 +779,7 @@
             <div class="tools-container">
                 <!-- Table Tabs -->
                 <div class="table-tabs">
-                    <button class="table-tab active" data-table="survey_projects" onclick="switchTable('survey_projects')">
-                        <i class="fas fa-project-diagram"></i>
-                        Survey Projects
-                        <span class="count-badge" id="projectsCount">0</span>
-                    </button>
-                    <button class="table-tab" data-table="tasks" onclick="switchTable('tasks')">
+                    <button class="table-tab active" data-table="tasks" onclick="switchTable('tasks')">
                         <i class="fas fa-tasks"></i>
                         Tasks
                         <span class="count-badge" id="tasksCount">0</span>
@@ -854,7 +924,7 @@
         const API_URL = '../../Models/php/tools_api.php';
 
         // State
-        let currentTable = 'survey_projects';
+        let currentTable = 'tasks';
         let allRecords = [];
         let filteredRecords = [];
         let selectedIds = new Set();
@@ -966,8 +1036,8 @@
 
         function updateCounts(counts) {
             if (counts) {
-                document.getElementById('projectsCount').textContent = counts.survey_projects || 0;
-                document.getElementById('tasksCount').textContent = counts.tasks || 0;
+                const tasksCountEl = document.getElementById('tasksCount');
+                if (tasksCountEl) tasksCountEl.textContent = counts.tasks || 0;
             }
         }
 
@@ -1666,6 +1736,7 @@
 
             return `
                 <div class="point-ranges-container" id="pointRangesContainer">
+                    <div id="pointRangesWarning" style="display: none;"></div>
                     <div id="pointRangesEntries">
                         ${entriesHtml || '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>'}
                     </div>
@@ -1677,6 +1748,11 @@
         }
 
         function buildPointRangeEntryHtml(entry = {}, index) {
+            const existingRanges = parseRangeString(entry.point_number_used || '');
+            const rangeRowsHtml = existingRanges.length > 0
+                ? existingRanges.map(r => buildRangeRowHtml(r.from, r.to)).join('')
+                : buildRangeRowHtml('', '');
+
             return `
                 <div class="point-range-entry" data-index="${index}">
                     <div class="point-range-header">
@@ -1688,11 +1764,16 @@
                     <div class="point-range-grid">
                         <div class="form-group">
                             <label>Job File Name</label>
-                            <input type="text" class="form-input pr-job-file" value="${escapeHtml(entry.job_file_name || '')}" placeholder="e.g., 01232026JM">
+                            <input type="text" class="form-input pr-job-file" value="${escapeHtml(entry.job_file_name || '')}" placeholder="e.g., 01232026JM" oninput="checkPointRangeOverlaps()">
                         </div>
                         <div class="form-group">
                             <label>Point Numbers Used</label>
-                            <input type="text" class="form-input pr-points-used" value="${escapeHtml(entry.point_number_used || '')}" placeholder="e.g., 1-10, 100-378, 5489-1000">
+                            <div class="pr-ranges-container">
+                                ${rangeRowsHtml}
+                            </div>
+                            <button type="button" class="add-range-btn" onclick="addRangeRow(this)">
+                                <i class="fas fa-plus"></i> Add Range
+                            </button>
                         </div>
                         <div class="form-group full-width">
                             <label>Status</label>
@@ -1720,12 +1801,123 @@
             `;
         }
 
+        function buildRangeRowHtml(from, to) {
+            return `
+                <div class="range-row">
+                    <input type="number" class="form-input pr-range-from" value="${from}" placeholder="From" min="1" oninput="checkPointRangeOverlaps()">
+                    <span class="range-separator">to</span>
+                    <input type="number" class="form-input pr-range-to" value="${to}" placeholder="To" min="1" oninput="checkPointRangeOverlaps()">
+                    <button type="button" class="remove-range-btn" onclick="removeRangeRow(this)" title="Remove range">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function parseRangeString(rangeStr) {
+            if (!rangeStr) return [];
+            const ranges = [];
+            for (const part of rangeStr.split(',')) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+                const dashMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+                const singleMatch = trimmed.match(/^(\d+)$/);
+                if (dashMatch) {
+                    ranges.push({ from: parseInt(dashMatch[1]), to: parseInt(dashMatch[2]) });
+                } else if (singleMatch) {
+                    const n = parseInt(singleMatch[1]);
+                    ranges.push({ from: n, to: n });
+                }
+            }
+            return ranges;
+        }
+
+        function addRangeRow(btn) {
+            const container = btn.previousElementSibling;
+            container.insertAdjacentHTML('beforeend', buildRangeRowHtml('', ''));
+            checkPointRangeOverlaps();
+        }
+
+        function removeRangeRow(btn) {
+            const row = btn.closest('.range-row');
+            const container = row.closest('.pr-ranges-container');
+            row.remove();
+            if (container.querySelectorAll('.range-row').length === 0) {
+                container.insertAdjacentHTML('beforeend', buildRangeRowHtml('', ''));
+            }
+            checkPointRangeOverlaps();
+        }
+
+        function serializeRangesFromEntry(entry) {
+            const rangesContainer = entry.querySelector('.pr-ranges-container');
+            if (!rangesContainer) return '';
+            const parts = [];
+            rangesContainer.querySelectorAll('.range-row').forEach(row => {
+                const from = row.querySelector('.pr-range-from')?.value;
+                const to = row.querySelector('.pr-range-to')?.value;
+                if (from && to) {
+                    parts.push(from === to ? from : `${from}-${to}`);
+                }
+            });
+            return parts.join(', ');
+        }
+
+        function checkPointRangeOverlaps() {
+            const entriesContainer = document.getElementById('pointRangesEntries');
+            const warningEl = document.getElementById('pointRangesWarning');
+            if (!entriesContainer || !warningEl) return;
+
+            const entries = entriesContainer.querySelectorAll('.point-range-entry');
+            const jobFileRanges = [];
+
+            entries.forEach((entry, idx) => {
+                const nameEl = entry.querySelector('.pr-job-file');
+                const label = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : `Job File #${idx + 1}`;
+                const ranges = [];
+                entry.querySelectorAll('.range-row').forEach(row => {
+                    const from = parseInt(row.querySelector('.pr-range-from')?.value);
+                    const to = parseInt(row.querySelector('.pr-range-to')?.value);
+                    if (!isNaN(from) && !isNaN(to) && from > 0 && to > 0) {
+                        ranges.push({ from: Math.min(from, to), to: Math.max(from, to) });
+                    }
+                });
+                jobFileRanges.push({ label, ranges });
+            });
+
+            const overlaps = [];
+            for (let i = 0; i < jobFileRanges.length; i++) {
+                for (let j = i + 1; j < jobFileRanges.length; j++) {
+                    const a = jobFileRanges[i];
+                    const b = jobFileRanges[j];
+                    a.ranges.forEach(r1 => {
+                        b.ranges.forEach(r2 => {
+                            const start = Math.max(r1.from, r2.from);
+                            const end = Math.min(r1.to, r2.to);
+                            if (start <= end) {
+                                const rangeStr = start === end ? String(start) : `${start}-${end}`;
+                                overlaps.push({ rangeStr, label1: a.label, label2: b.label });
+                            }
+                        });
+                    });
+                }
+            }
+
+            if (overlaps.length > 0) {
+                const msgs = overlaps
+                    .map(o => `Points <strong>${o.rangeStr}</strong> overlap between <em>${escapeHtml(o.label1)}</em> and <em>${escapeHtml(o.label2)}</em>`)
+                    .join('<br>');
+                warningEl.innerHTML = `<div class="range-overlap-warning"><i class="fas fa-exclamation-triangle"></i> <strong>Point range conflicts detected:</strong><br>${msgs}</div>`;
+                warningEl.style.display = 'block';
+            } else {
+                warningEl.style.display = 'none';
+            }
+        }
+
         function addPointRangeEntry() {
             const container = document.getElementById('pointRangesEntries');
             const entries = container.querySelectorAll('.point-range-entry');
             const newIndex = entries.length;
 
-            // Remove "no entries" message if present
             const noEntriesMsg = container.querySelector('p');
             if (noEntriesMsg) {
                 noEntriesMsg.remove();
@@ -1733,6 +1925,7 @@
 
             const newEntryHtml = buildPointRangeEntryHtml({}, newIndex);
             container.insertAdjacentHTML('beforeend', newEntryHtml);
+            checkPointRangeOverlaps();
         }
 
         function removePointRangeEntry(index) {
@@ -1741,7 +1934,6 @@
             if (entry) {
                 entry.remove();
 
-                // Reindex remaining entries
                 const entries = container.querySelectorAll('.point-range-entry');
                 entries.forEach((e, i) => {
                     e.dataset.index = i;
@@ -1749,10 +1941,11 @@
                     e.querySelector('.remove-entry-btn').setAttribute('onclick', `removePointRangeEntry(${i})`);
                 });
 
-                // Show "no entries" message if empty
                 if (entries.length === 0) {
                     container.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>';
                 }
+
+                checkPointRangeOverlaps();
             }
         }
 
@@ -1766,7 +1959,7 @@
             const data = {
                 entries: Array.from(entries).map(entry => ({
                     job_file_name: entry.querySelector('.pr-job-file')?.value || '',
-                    point_number_used: entry.querySelector('.pr-points-used')?.value || '',
+                    point_number_used: serializeRangesFromEntry(entry),
                     converted: entry.querySelector('.pr-converted')?.checked ? 'yes' : 'no',
                     imported: entry.querySelector('.pr-imported')?.checked ? 'yes' : 'no',
                     checked: entry.querySelector('.pr-checked')?.checked ? 'yes' : 'no',
