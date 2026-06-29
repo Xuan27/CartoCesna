@@ -255,6 +255,68 @@ try {
         sendJsonResponse(['success' => true]);
     }
 
+    // ── update_day_hours ──────────────────────────────────────────────────────
+    elseif ($action === 'update_day_hours') {
+
+        $taskId    = (int)($_POST['task_id']    ?? 0);
+        $taskName  = trim($_POST['task_name']   ?? '');
+        $entryDate = trim($_POST['entry_date']  ?? '');
+        $hours     = (float)($_POST['hours']    ?? -1);
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $entryDate) || $hours < 0) {
+            sendJsonResponse(['success' => false, 'message' => 'Invalid parameters']);
+        }
+
+        $newSeconds = (int)round($hours * 3600);
+
+        // Find the canonical entry for this task+date
+        $stmt = $pdo->prepare(
+            "SELECT MIN(entry_id) AS first_id FROM time_entries
+             WHERE task_id = :task_id AND task_name = :task_name
+               AND DATE(start_time) = :entry_date
+               AND duration_seconds IS NOT NULL"
+        );
+        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':entry_date' => $entryDate]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || !$row['first_id']) {
+            sendJsonResponse(['success' => false, 'message' => 'No entries found for that day']);
+        }
+
+        $firstId = (int)$row['first_id'];
+
+        // Set new seconds on the first entry; zero out any others for that task+date
+        $stmt = $pdo->prepare(
+            "UPDATE time_entries
+             SET duration_seconds = CASE WHEN entry_id = :first_id THEN :seconds ELSE 0 END
+             WHERE task_id = :task_id AND task_name = :task_name
+               AND DATE(start_time) = :entry_date"
+        );
+        $stmt->execute([
+            ':first_id'   => $firstId,
+            ':seconds'    => $newSeconds,
+            ':task_id'    => $taskId,
+            ':task_name'  => $taskName,
+            ':entry_date' => $entryDate,
+        ]);
+
+        // Keep tasks.actual_hours in sync for real tasks
+        if ($taskId > 0) {
+            $sumStmt = $pdo->prepare(
+                "SELECT COALESCE(SUM(duration_seconds), 0) AS total_seconds
+                 FROM time_entries WHERE task_id = :task_id AND duration_seconds IS NOT NULL"
+            );
+            $sumStmt->execute([':task_id' => $taskId]);
+            $sum = $sumStmt->fetch(PDO::FETCH_ASSOC);
+            $totalHours = round($sum['total_seconds'] / 3600, 2);
+
+            $pdo->prepare("UPDATE tasks SET actual_hours = :hours WHERE task_id = :task_id")
+                ->execute([':hours' => $totalHours, ':task_id' => $taskId]);
+        }
+
+        sendJsonResponse(['success' => true]);
+    }
+
     // ── update_day_note ───────────────────────────────────────────────────────
     elseif ($action === 'update_day_note') {
 

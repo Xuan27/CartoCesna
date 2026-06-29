@@ -2190,10 +2190,7 @@ body {
     white-space: nowrap;
 }
 
-/* ── Timesheet Modal ── */
-.timesheet-modal-content {
-    max-width: 960px !important;
-}
+/* ── Timesheet Modal ── (full rule block below near ts-day-cell) */
 
 .timesheet-week-nav {
     display: flex;
@@ -2342,48 +2339,120 @@ td.today-cell {
     border-radius: var(--border-radius);
 }
 
-/* Day cells with inline notes */
+/* Timesheet modal — sticky header, scrollable body */
+.timesheet-modal-content {
+    max-width: 960px !important;
+    max-height: 90vh;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.timesheet-modal-content .modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Day cells — split hours / note layout */
 .ts-day-cell {
-    min-width: 72px;
+    min-width: 86px;
     vertical-align: middle;
+    padding: 0 !important;
 }
 
 .ts-day-content {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
 }
 
-.ts-day-hours {
-    font-weight: 600;
-    font-size: 0.85rem;
+/* Hours section */
+.ts-hours-block {
+    font-weight: 700;
+    font-size: 0.88rem;
     color: var(--gray-800);
+    padding: 0.3rem 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    border-radius: 4px 4px 0 0;
+}
+
+.ts-hours-block:hover {
+    color: var(--primary-color);
+    background: rgba(37, 99, 235, 0.06);
+}
+
+/* Hours edit mode */
+.ts-hours-edit-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.25rem 0.35rem;
+}
+
+.ts-hours-input {
+    width: 62px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 2px 4px;
+    border: 1px solid var(--primary-color);
+    border-radius: 3px;
+    outline: none;
+    text-align: center;
+}
+
+/* Note section */
+.ts-note-block {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.4rem;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    min-height: 22px;
 }
 
 .ts-day-note {
     font-size: 0.68rem;
-    color: var(--gray-500);
-    max-width: 88px;
+    color: var(--gray-600);
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
-    border-bottom: 1px dashed var(--gray-300);
-    line-height: 1.3;
+    min-width: 0;
 }
 
 .ts-day-note:hover {
     color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+}
+
+.ts-note-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    font-size: 0.62rem;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.ts-note-block:hover .ts-note-copy {
+    opacity: 1;
 }
 
 .ts-day-note-empty {
+    flex: 1;
     opacity: 0;
     font-size: 0.62rem;
-    color: var(--gray-300);
-    border-bottom-color: transparent;
+    color: var(--gray-400);
+    font-style: italic;
     cursor: pointer;
+    text-align: center;
 }
 
 .ts-day-cell:hover .ts-day-note-empty {
@@ -2394,30 +2463,39 @@ td.today-cell {
 .ts-day-edit {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.2rem;
 }
 
 .ts-note-input {
-    width: 86px;
-    font-size: 0.72rem;
+    width: 100%;
+    font-size: 0.7rem;
     padding: 2px 5px;
     border: 1px solid var(--primary-color);
-    border-radius: 4px;
+    border-radius: 3px;
     outline: none;
-    text-align: center;
+    box-sizing: border-box;
+}
+
+.ts-note-edit-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.2rem;
+    padding: 0.25rem 0.35rem;
+    border-top: 1px solid var(--gray-200);
+    background: var(--gray-50);
 }
 
 .ts-note-actions {
     display: flex;
     gap: 0.3rem;
+    justify-content: flex-end;
 }
 
 .ts-note-actions button {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     padding: 0 2px;
 }
 

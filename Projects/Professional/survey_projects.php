@@ -2617,12 +2617,14 @@ function tsEditDayNote(td) {
     const hours = td.dataset.hours || '';
     td.innerHTML = `
         <div class="ts-day-edit">
-            <span class="ts-day-hours">${esc(hours)}</span>
-            <input type="text" class="ts-note-input" value="${esc(note)}" placeholder="Add note..."
-                onkeydown="if(event.key==='Enter')tsSaveDayNote(this.closest('td'));if(event.key==='Escape')tsCancelDayNote(this.closest('td'));">
-            <div class="ts-note-actions">
-                <button onclick="tsSaveDayNote(this.closest('td'))" title="Save"><i class="fas fa-check"></i></button>
-                <button onclick="tsCancelDayNote(this.closest('td'))" title="Cancel"><i class="fas fa-times"></i></button>
+            <div class="ts-hours-block">${esc(hours)}</div>
+            <div class="ts-note-edit-row">
+                <input type="text" class="ts-note-input" value="${esc(note)}" placeholder="Add note..."
+                    onkeydown="if(event.key==='Enter')tsSaveDayNote(this.closest('td'));if(event.key==='Escape')tsCancelDayNote(this.closest('td'));">
+                <div class="ts-note-actions">
+                    <button onclick="tsSaveDayNote(this.closest('td'))" title="Save"><i class="fas fa-check"></i></button>
+                    <button onclick="tsCancelDayNote(this.closest('td'))" title="Cancel"><i class="fas fa-times"></i></button>
+                </div>
             </div>
         </div>`;
     const input = td.querySelector('input');
@@ -2663,12 +2665,76 @@ function tsCancelDayNote(td) {
     const safeNote = esc(note);
     td.innerHTML = `
         <div class="ts-day-content">
-            <span class="ts-day-hours">${esc(hours)}</span>
-            ${note
-                ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>`
-                : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
-            }
+            <div class="ts-hours-block" ondblclick="tsEditDayHours(this.closest('td'))" title="Double-click to edit hours">${esc(hours)}</div>
+            <div class="ts-note-block">
+                ${note
+                    ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>
+                       <button class="ts-note-copy" onclick="tsClipboard(this.closest('td').dataset.note)" title="Copy note"><i class="fas fa-copy"></i></button>`
+                    : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
+                }
+            </div>
         </div>`;
+}
+
+// ── Day-hours inline editing ───────────────────────────────────────────────
+
+function tsEditDayHours(td) {
+    const hours = td.dataset.hours || '';
+    const note  = td.dataset.note  || '';
+    const safeNote = esc(note);
+    td.innerHTML = `
+        <div class="ts-day-content">
+            <div class="ts-hours-edit-row">
+                <input type="number" class="ts-hours-input" value="${esc(hours)}" min="0" step="0.5" placeholder="0"
+                    onkeydown="if(event.key==='Enter')tsSaveDayHours(this.closest('td'));if(event.key==='Escape')tsCancelDayNote(this.closest('td'));">
+                <div class="ts-note-actions">
+                    <button onclick="tsSaveDayHours(this.closest('td'))" title="Save"><i class="fas fa-check"></i></button>
+                    <button onclick="tsCancelDayNote(this.closest('td'))" title="Cancel"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            <div class="ts-note-block">
+                ${note
+                    ? `<span class="ts-day-note">${safeNote}</span>`
+                    : `<span class="ts-day-note ts-day-note-empty">+ note</span>`
+                }
+            </div>
+        </div>`;
+    const input = td.querySelector('.ts-hours-input');
+    input.focus();
+    input.select();
+}
+
+async function tsSaveDayHours(td) {
+    const taskId    = td.dataset.taskId;
+    const taskName  = td.dataset.taskName;
+    const entryDate = td.dataset.entryDate;
+    const input = td.querySelector('.ts-hours-input');
+    if (!input) return;
+    const newHours = parseFloat(input.value);
+
+    if (isNaN(newHours) || newHours < 0) {
+        showToast('Enter a valid number of hours', 'error');
+        return;
+    }
+
+    try {
+        const fd = new FormData();
+        fd.append('action',     'update_day_hours');
+        fd.append('task_id',    taskId);
+        fd.append('task_name',  taskName);
+        fd.append('entry_date', entryDate);
+        fd.append('hours',      newHours);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data.success) { showToast(data.message || 'Could not save hours', 'error'); return; }
+        td.dataset.hours = String(roundToHalf(newHours));
+        showToast('Hours updated', 'success');
+    } catch (err) {
+        showToast('Network error saving hours', 'error');
+        return;
+    }
+    // Reload so daily totals row stays accurate
+    loadTimesheet();
 }
 
 function renderTimesheetTable(entries, weekStart) {
@@ -2789,11 +2855,14 @@ function renderTimesheetTable(entries, weekStart) {
                                 data-note="${safeNote}"
                                 data-hours="${hoursDisplay}">
                     <div class="ts-day-content">
-                        <span class="ts-day-hours">${hoursDisplay}</span>
-                        ${dayNote
-                            ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>`
-                            : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
-                        }
+                        <div class="ts-hours-block" ondblclick="tsEditDayHours(this.closest('td'))" title="Double-click to edit hours">${hoursDisplay}</div>
+                        <div class="ts-note-block">
+                            ${dayNote
+                                ? `<span class="ts-day-note" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to edit">${safeNote}</span>
+                                   <button class="ts-note-copy" onclick="tsClipboard(this.closest('td').dataset.note)" title="Copy note"><i class="fas fa-copy"></i></button>`
+                                : `<span class="ts-day-note ts-day-note-empty" ondblclick="tsEditDayNote(this.closest('td'))" title="Double-click to add note">+ note</span>`
+                            }
+                        </div>
                     </div>
                 </td>`;
             } else {
