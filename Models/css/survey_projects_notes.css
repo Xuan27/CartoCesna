@@ -2226,21 +2226,29 @@ body {
 .timesheet-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
-    overflow-x: auto;
+    font-size: 0.78rem;
+    table-layout: fixed;
 }
+
+/* Column widths — must sum to ~100% so nothing overflows */
+.timesheet-table th:nth-child(1)                         { width: 13%; }   /* Project */
+.timesheet-table th:nth-child(2)                         { width: 5%;  }   /* Phase   */
+.timesheet-table th:nth-child(3)                         { width: 14%; }   /* Task    */
+.timesheet-table th:nth-child(n+4):nth-child(-n+10)      { width: 7%;  }   /* Mon–Sun */
+.timesheet-table th:nth-child(11)                        { width: 5%;  }   /* Total   */
+/* Notes col (12) gets the remaining ~14% automatically */
 
 .timesheet-table th {
     background: var(--gray-50);
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem 0.4rem;
     text-align: center;
     font-weight: 600;
     color: var(--gray-700);
     border: 1px solid var(--gray-200);
-    white-space: nowrap;
     position: sticky;
     top: 0;
     z-index: 2;
+    overflow: hidden;
 }
 
 .timesheet-table th:first-child,
@@ -2250,11 +2258,14 @@ body {
 }
 
 .timesheet-table td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.4rem;
     border: 1px solid var(--gray-200);
     text-align: center;
     color: var(--gray-700);
     vertical-align: middle;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .timesheet-table td:first-child,
@@ -2336,17 +2347,17 @@ td.today-cell {
     font-size: 0.9rem;
 }
 
-/* Scrollable table wrapper */
+/* Table wrapper — no horizontal scroll; table must fit the modal */
 .timesheet-table-wrapper {
     border-radius: var(--border-radius);
-    overflow-x: auto;
+    overflow: hidden;
     width: 100%;
 }
 
-/* Timesheet modal — sticky header, scrollable body */
+/* Timesheet modal — wide enough to hold all 7 day columns without scrolling */
 .timesheet-modal-content {
-    width: 95vw;
-    max-width: 960px;
+    width: min(1300px, 97vw);
+    max-width: min(1300px, 97vw);
     max-height: 90vh;
     overflow: hidden;
     display: flex;
@@ -2364,7 +2375,7 @@ td.today-cell {
 
 /* Day cells — split hours / note layout */
 .ts-day-cell {
-    min-width: 86px;
+    min-width: 0;
     vertical-align: middle;
     padding: 0 !important;
 }
@@ -2379,7 +2390,7 @@ td.today-cell {
     font-weight: 700;
     font-size: 0.88rem;
     color: var(--gray-800);
-    padding: 0.3rem 0.5rem;
+    padding: 0.25rem 0.3rem;
     text-align: center;
     cursor: pointer;
     transition: color 0.15s, background 0.15s;
