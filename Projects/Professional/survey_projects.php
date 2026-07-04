@@ -2610,6 +2610,68 @@ function tsCancelPhase(td) {
         </span>`;
 }
 
+// ── Project inline editing ─────────────────────────────────────────────────
+
+function tsEditProject(td) {
+    const current = td.dataset.projectId || '';
+    td.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+            <input type="text" value="${esc(current)}" placeholder="Project ID"
+                style="width:90px;font-size:0.82rem;padding:2px 5px;border:1px solid var(--primary-color);border-radius:4px;outline:none;font-family:monospace;"
+                onkeydown="if(event.key==='Enter')tsSaveProject(this.closest('td'));if(event.key==='Escape')tsCancelProject(this.closest('td'));">
+            <button onclick="tsSaveProject(this.closest('td'))" title="Save" style="background:none;border:none;cursor:pointer;color:var(--success-color);font-size:0.8rem;padding:0 2px;"><i class="fas fa-check"></i></button>
+            <button onclick="tsCancelProject(this.closest('td'))" title="Cancel" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.8rem;padding:0 2px;"><i class="fas fa-times"></i></button>
+        </div>`;
+    const inp = td.querySelector('input');
+    inp.focus();
+    inp.select();
+}
+
+async function tsSaveProject(td) {
+    const taskId      = td.dataset.taskId    || '0';
+    const taskName    = td.dataset.taskName  || '';
+    const weekStart   = td.dataset.weekStart || '';
+    const weekEnd     = td.dataset.weekEnd   || '';
+    const input       = td.querySelector('input');
+    if (!input) return;
+    const newProjectId = input.value.trim();
+    if (!newProjectId) { showToast('Project ID cannot be empty', 'error'); return; }
+
+    try {
+        const fd = new FormData();
+        fd.append('action',         'update_entry_project');
+        fd.append('task_id',        taskId);
+        fd.append('task_name',      taskName);
+        fd.append('week_start',     weekStart);
+        fd.append('week_end',       weekEnd);
+        fd.append('new_project_id', newProjectId);
+        const resp = await fetch(TIME_API, { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!data.success) { showToast(data.message || 'Could not update project', 'error'); return; }
+        td.dataset.projectId   = newProjectId;
+        td.dataset.projectName = data.project_name || '';
+        showToast('Project updated', 'success');
+    } catch (err) {
+        showToast('Network error updating project', 'error');
+        return;
+    }
+    tsCancelProject(td);
+}
+
+function tsCancelProject(td) {
+    const projectId   = td.dataset.projectId   || '';
+    const projectName = td.dataset.projectName || '';
+    td.innerHTML = `
+        <div class="ts-project-view" ondblclick="tsEditProject(this.parentElement)" title="Double-click to edit project">
+            <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${esc(projectId)}</span>
+            <button onclick="event.stopPropagation();tsClipboard('${esc(projectId)}')" title="Copy project number"
+                style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;"
+                onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+            <i class="fas fa-pencil-alt ts-project-edit-icon"></i>
+        </div>
+        ${projectName ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${esc(projectName)}</span>` : ''}`;
+}
+
 // ── Day-note inline editing ────────────────────────────────────────────────
 
 function tsEditDayNote(td) {
@@ -2748,6 +2810,8 @@ function renderTimesheetTable(entries, weekStart) {
         d.setDate(d.getDate() + i);
         return d;
     });
+    const weekStartStr = dates[0].toISOString().split('T')[0];
+    const weekEndStr   = dates[6].toISOString().split('T')[0];
 
     // Group entries by task (composite key handles admin/training where task_id=0)
     const taskMap = {};
@@ -2814,13 +2878,22 @@ function renderTimesheetTable(entries, weekStart) {
         const safeNotes   = esc(allNotes);
         const canEditPhase = t.task_id > 0;
 
-        // Project cell: project ID with copy button
-        const projectCell = `<td>
-            <div style="display:flex;align-items:center;gap:0.3rem;">
-                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${esc(t.project_id)}</span>
-                <button onclick="tsClipboard('${esc(t.project_id)}')" title="Copy project number" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+        // Project cell: project ID with copy + double-click to edit
+        const safeProjectId   = esc(t.project_id);
+        const safeProjectName = esc(t.project_name || '');
+        const projectCell = `<td class="ts-project-cell"
+            data-task-id="${t.task_id}"
+            data-task-name="${esc(t.task_name)}"
+            data-project-id="${safeProjectId}"
+            data-project-name="${safeProjectName}"
+            data-week-start="${weekStartStr}"
+            data-week-end="${weekEndStr}">
+            <div class="ts-project-view" ondblclick="tsEditProject(this.parentElement)" title="Double-click to edit project">
+                <span style="font-family:monospace;font-size:0.8rem;color:var(--primary-color);font-weight:600;">${safeProjectId}</span>
+                <button onclick="event.stopPropagation();tsClipboard('${safeProjectId}')" title="Copy project number" style="background:none;border:none;cursor:pointer;padding:1px 3px;color:var(--gray-400);font-size:0.7rem;opacity:0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'"><i class="fas fa-copy"></i></button>
+                <i class="fas fa-pencil-alt ts-project-edit-icon"></i>
             </div>
-            ${t.project_name ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${esc(t.project_name)}</span>` : ''}
+            ${t.project_name ? `<span style="font-size:0.75rem;color:var(--gray-500);font-weight:400;">${safeProjectName}</span>` : ''}
         </td>`;
 
         // Phase cell: editable for real tasks
