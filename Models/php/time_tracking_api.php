@@ -255,6 +255,63 @@ try {
         sendJsonResponse(['success' => true]);
     }
 
+    // ── update_entry_project ──────────────────────────────────────────────────
+    elseif ($action === 'update_entry_project') {
+
+        $taskId       = (int)($_POST['task_id']        ?? 0);
+        $taskName     = trim($_POST['task_name']       ?? '');
+        $weekStart    = trim($_POST['week_start']      ?? '');
+        $weekEnd      = trim($_POST['week_end']        ?? '');
+        $newProjectId = trim($_POST['new_project_id']  ?? '');
+
+        if (!$newProjectId) {
+            sendJsonResponse(['success' => false, 'message' => 'new_project_id is required']);
+        }
+
+        // Validate new project ID exists in survey_projects
+        $checkStmt = $pdo->prepare("SELECT project_name FROM survey_projects WHERE project_id = :pid LIMIT 1");
+        $checkStmt->execute([':pid' => $newProjectId]);
+        $proj = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$proj) {
+            sendJsonResponse(['success' => false, 'message' => 'Project ID not found']);
+        }
+        $newProjectName = $proj['project_name'];
+
+        if ($taskId > 0) {
+            // Real task: update all entries for this task across all weeks
+            $stmt = $pdo->prepare(
+                "UPDATE time_entries
+                 SET project_id = :project_id, project_name = :project_name
+                 WHERE task_id = :task_id"
+            );
+            $stmt->execute([
+                ':project_id'   => $newProjectId,
+                ':project_name' => $newProjectName,
+                ':task_id'      => $taskId,
+            ]);
+        } else {
+            // Admin/training entry: scope to the current week and task_name
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStart) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekEnd)) {
+                sendJsonResponse(['success' => false, 'message' => 'week_start and week_end are required for non-task entries']);
+            }
+            $stmt = $pdo->prepare(
+                "UPDATE time_entries
+                 SET project_id = :project_id, project_name = :project_name
+                 WHERE task_id = 0 AND task_name = :task_name
+                   AND DATE(start_time) BETWEEN :week_start AND :week_end"
+            );
+            $stmt->execute([
+                ':project_id'   => $newProjectId,
+                ':project_name' => $newProjectName,
+                ':task_name'    => $taskName,
+                ':week_start'   => $weekStart,
+                ':week_end'     => $weekEnd,
+            ]);
+        }
+
+        sendJsonResponse(['success' => true, 'project_name' => $newProjectName]);
+    }
+
     // ── update_day_hours ──────────────────────────────────────────────────────
     elseif ($action === 'update_day_hours') {
 

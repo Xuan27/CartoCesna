@@ -2780,3 +2780,27 @@ td.today-cell {
     font-size: 0.875rem;
     max-width: 360px;
 }
+
+/* ── Timesheet project cell inline edit ──────────────────────────────────────── */
+.ts-project-cell .ts-project-view {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: default;
+}
+
+.ts-project-edit-icon {
+    font-size: 0.6rem;
+    color: var(--gray-400);
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.ts-project-cell:hover .ts-project-edit-icon {
+    opacity: 0.7;
+}
+
+.ts-project-cell:hover .ts-project-view {
+    cursor: pointer;
+}
