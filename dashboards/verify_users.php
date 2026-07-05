@@ -37,6 +37,9 @@ if ($userRole !== 'admin') {
 // Get root page for constructing URLs
 $root_page = $_SESSION['root_page'] ?? '/';
 
+// Capture CSRF token for API calls before releasing the session
+$csrf_token = Security::getCsrfToken();
+
 // Close session to release lock for AJAX requests
 session_write_close();
 ?>
@@ -277,6 +280,53 @@ session_write_close();
         .back-button:hover {
             text-decoration: underline;
         }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .reset-link-row {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .reset-link-row input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: white;
+        }
+
+        .btn-copy {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .btn-copy:hover {
+            background: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -304,8 +354,12 @@ session_write_close();
                 <div class="stat-number" id="pendingCount">-</div>
                 <div class="stat-label">Pending Verifications</div>
             </div>
+            <div class="stat-box">
+                <div class="stat-number" id="resetCount">-</div>
+                <div class="stat-label">Password Reset Requests</div>
+            </div>
         </div>
-        
+
         <div class="users-table">
             <div class="table-header">
                 <div>Username</div>
@@ -314,9 +368,28 @@ session_write_close();
                 <div>Registration Date</div>
                 <div>Actions</div>
             </div>
-            
+
             <div id="usersContainer">
                 <div class="loading">Loading pending users...</div>
+            </div>
+        </div>
+
+        <div class="page-header" style="margin-top: 2rem;">
+            <h1>Password Reset Requests</h1>
+            <p>Approve a request to generate a one-time reset link, then send it to the user directly (chat, text, or in person). Links expire after 24 hours.</p>
+        </div>
+
+        <div class="users-table">
+            <div class="table-header">
+                <div>Username</div>
+                <div>Email / Name</div>
+                <div>Status</div>
+                <div>Requested / Expires</div>
+                <div>Actions</div>
+            </div>
+
+            <div id="resetsContainer">
+                <div class="loading">Loading reset requests...</div>
             </div>
         </div>
     </div>
@@ -325,6 +398,7 @@ session_write_close();
     
     <script>
         const ROOT_PAGE = '<?php echo addslashes($root_page); ?>';
+        const CSRF_TOKEN = '<?php echo addslashes($csrf_token); ?>';
         
         // Load pending users
         async function loadPendingUsers() {
@@ -461,6 +535,186 @@ session_write_close();
             }
         }
         
+        // Load password reset requests
+        async function loadResetRequests() {
+            const container = document.getElementById('resetsContainer');
+
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/password_reset_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ action: 'list_pending' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span style="font-size: 4rem;">⚠️</span>
+                            <h3>Error</h3>
+                            <p>${escapeHtml(data.message || 'Failed to load reset requests')}</p>
+                        </div>
+                    `;
+                    showToast(data.message, 'error');
+                    return;
+                }
+
+                document.getElementById('resetCount').textContent = data.count;
+
+                if (data.requests.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <span style="font-size: 4rem;">✅</span>
+                            <h3>All Clear!</h3>
+                            <p>No pending password reset requests at this time.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.requests.map(req => `
+                    <div class="user-row" data-reset-user-id="${req.id}">
+                        <div class="user-name">${escapeHtml(req.username)}</div>
+                        <div class="user-info">
+                            <div class="user-email">${escapeHtml(req.email)}</div>
+                            <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.25rem;">
+                                ${escapeHtml(req.first_name || '')} ${escapeHtml(req.last_name || '')}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="user-role status-${req.status}">${req.status}</span>
+                        </div>
+                        <div class="user-date">
+                            ${formatDate(req.requested_at)}<br>
+                            <span style="font-size: 0.75rem;">expires ${formatDate(req.expires_at)}</span>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-approve" onclick="handleResetAction(${req.id}, 'approve')">
+                                ${req.status === 'approved' ? '↻ Regenerate Link' : '✓ Approve'}
+                            </button>
+                            <button class="btn-reject" onclick="handleResetAction(${req.id}, 'deny')">
+                                ✗ Deny
+                            </button>
+                        </div>
+                        <div class="reset-link-container" style="display: contents;"></div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading reset requests:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size: 4rem;">❌</span>
+                        <h3>Connection Error</h3>
+                        <p>Failed to load reset requests. Please refresh the page.</p>
+                        <button onclick="loadResetRequests()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Retry
+                        </button>
+                    </div>
+                `;
+                showToast('Failed to load reset requests', 'error');
+            }
+        }
+
+        // Approve (generate link) or deny a reset request
+        async function handleResetAction(userId, action) {
+            const row = document.querySelector(`[data-reset-user-id="${userId}"]`);
+            const buttons = row.querySelectorAll('.action-buttons button');
+
+            buttons.forEach(btn => btn.disabled = true);
+
+            try {
+                const response = await fetch(ROOT_PAGE + 'Models/php/password_reset_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        user_id: userId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (action === 'approve') {
+                        showToast('Reset link generated — copy it and send it to the user', 'success');
+
+                        // Show the one-time link with a copy button (it cannot be re-displayed later)
+                        const linkContainer = row.querySelector('.reset-link-container');
+                        linkContainer.style.display = 'block';
+                        linkContainer.style.gridColumn = '1 / -1';
+                        linkContainer.innerHTML = `
+                            <div class="reset-link-row">
+                                <input type="text" readonly value="${escapeHtml(data.reset_url)}" onclick="this.select()">
+                                <button class="btn-copy" onclick="copyResetLink(this)">📋 Copy</button>
+                            </div>
+                        `;
+
+                        // Update status badge and button label
+                        const badge = row.querySelector('.user-role');
+                        badge.textContent = 'approved';
+                        badge.className = 'user-role status-approved';
+                        buttons[0].innerHTML = '↻ Regenerate Link';
+                        buttons.forEach(btn => btn.disabled = false);
+                    } else {
+                        showToast(data.message, 'success');
+                        row.style.opacity = '0';
+                        row.style.transition = 'opacity 0.3s';
+
+                        setTimeout(() => {
+                            row.remove();
+
+                            if (document.querySelectorAll('[data-reset-user-id]').length === 0) {
+                                loadResetRequests();
+                            } else {
+                                const currentCount = parseInt(document.getElementById('resetCount').textContent);
+                                document.getElementById('resetCount').textContent = currentCount - 1;
+                            }
+                        }, 300);
+                    }
+                } else {
+                    showToast(data.message, 'error');
+                    buttons.forEach(btn => btn.disabled = false);
+                }
+
+            } catch (error) {
+                console.error('Error handling reset request:', error);
+                showToast('Failed to process request', 'error');
+                buttons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        function copyResetLink(button) {
+            const input = button.parentElement.querySelector('input');
+            const done = () => {
+                button.textContent = '✓ Copied';
+                setTimeout(() => { button.innerHTML = '📋 Copy'; }, 2000);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(done).catch(() => {
+                    input.select();
+                    document.execCommand('copy');
+                    done();
+                });
+            } else {
+                input.select();
+                document.execCommand('copy');
+                done();
+            }
+        }
+
         // Helper functions
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -489,8 +743,11 @@ session_write_close();
             }, 3000);
         }
         
-        // Load users on page load
-        document.addEventListener('DOMContentLoaded', loadPendingUsers);
+        // Load users and reset requests on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPendingUsers();
+            loadResetRequests();
+        });
     </script>
 </body>
 </html>
