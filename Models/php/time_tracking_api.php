@@ -16,6 +16,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'])) {
     ]);
 }
 
+// Resolve the logged-in user; every timesheet action is scoped to them
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$currentUser = trim($_SESSION['username'] ?? '');
+session_write_close();
+
+if ($currentUser === '') {
+    sendJsonResponse(['success' => false, 'message' => 'Not logged in']);
+}
+
 try {
     require_once '../../Private/db_config.php';
     $db = new Database();
@@ -27,6 +38,17 @@ try {
     try {
         $pdo->exec("ALTER TABLE time_entries ADD COLUMN IF NOT EXISTS notes TEXT NULL");
     } catch (Exception $e) { /* column already exists or unsupported syntax — ignore */ }
+    try {
+        $hasUsername = $pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'time_entries' AND COLUMN_NAME = 'username'"
+        )->fetchColumn();
+        if (!$hasUsername) {
+            $pdo->exec("ALTER TABLE time_entries ADD COLUMN username VARCHAR(100) NULL AFTER task_id");
+            $pdo->exec("UPDATE time_entries SET username = 'admin' WHERE username IS NULL");
+            $pdo->exec("CREATE INDEX idx_username ON time_entries (username)");
+        }
+    } catch (Exception $e) { /* ignore */ }
 
     // ── start_timer ──────────────────────────────────────────────────────────
     if ($action === 'start_timer') {
@@ -41,22 +63,24 @@ try {
             sendJsonResponse(['success' => false, 'message' => 'project_id is required']);
         }
 
-        // Auto-stop any currently running timer
-        $pdo->exec(
+        // Auto-stop the current user's running timer (other users' timers keep running)
+        $stopStmt = $pdo->prepare(
             "UPDATE time_entries
              SET end_time = NOW(),
                  duration_seconds = GREATEST(0, TIMESTAMPDIFF(SECOND, start_time, NOW()))
-             WHERE end_time IS NULL"
+             WHERE end_time IS NULL AND username = :username"
         );
+        $stopStmt->execute([':username' => $currentUser]);
 
         // Insert new entry
         $stmt = $pdo->prepare(
-            "INSERT INTO time_entries (project_id, task_id, task_name, project_name, start_time)
-             VALUES (:project_id, :task_id, :task_name, :project_name, NOW())"
+            "INSERT INTO time_entries (project_id, task_id, username, task_name, project_name, start_time)
+             VALUES (:project_id, :task_id, :username, :task_name, :project_name, NOW())"
         );
         $stmt->execute([
             ':project_id'   => $projectId,
             ':task_id'      => $taskId,
+            ':username'     => $currentUser,
             ':task_name'    => $taskName,
             ':project_name' => $projectName,
         ]);
@@ -88,14 +112,15 @@ try {
              SET end_time = NOW(),
                  duration_seconds = GREATEST(0, TIMESTAMPDIFF(SECOND, start_time, NOW())),
                  notes = :notes
-             WHERE entry_id = :entry_id AND end_time IS NULL"
+             WHERE entry_id = :entry_id AND end_time IS NULL AND username = :username"
         );
-        $stmt->execute([':entry_id' => $entryId, ':notes' => $notes ?: null]);
+        $stmt->execute([':entry_id' => $entryId, ':notes' => $notes ?: null, ':username' => $currentUser]);
 
         $getStmt = $pdo->prepare(
-            "SELECT task_id, end_time, duration_seconds FROM time_entries WHERE entry_id = :id"
+            "SELECT task_id, end_time, duration_seconds FROM time_entries
+             WHERE entry_id = :id AND username = :username"
         );
-        $getStmt->execute([':id' => $entryId]);
+        $getStmt->execute([':id' => $entryId, ':username' => $currentUser]);
         $entry = $getStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$entry) {
@@ -133,13 +158,14 @@ try {
     // ── get_active_timer ─────────────────────────────────────────────────────
     elseif ($action === 'get_active_timer') {
 
-        $stmt = $pdo->query(
+        $stmt = $pdo->prepare(
             "SELECT entry_id, project_id, task_id, task_name, project_name, UNIX_TIMESTAMP(start_time) AS start_time
              FROM time_entries
-             WHERE end_time IS NULL
+             WHERE end_time IS NULL AND username = :username
              ORDER BY start_time DESC
              LIMIT 1"
         );
+        $stmt->execute([':username' => $currentUser]);
         $entry = $stmt->fetch(PDO::FETCH_ASSOC);
 
         sendJsonResponse([
@@ -161,9 +187,9 @@ try {
         $stmt = $pdo->prepare(
             "UPDATE time_entries
              SET start_time = FROM_UNIXTIME(:start_time)
-             WHERE entry_id = :entry_id AND end_time IS NULL"
+             WHERE entry_id = :entry_id AND end_time IS NULL AND username = :username"
         );
-        $stmt->execute([':entry_id' => $entryId, ':start_time' => $startUnixTime]);
+        $stmt->execute([':entry_id' => $entryId, ':start_time' => $startUnixTime, ':username' => $currentUser]);
 
         sendJsonResponse(['success' => true]);
     }
@@ -194,6 +220,7 @@ try {
                 LEFT JOIN tasks t ON te.task_id = t.task_id
                 WHERE DATE(te.start_time) BETWEEN :week_start AND :week_end
                   AND te.duration_seconds IS NOT NULL
+                  AND te.username = :username
                 GROUP BY te.task_id,
                          te.task_name,
                          te.project_id,
@@ -204,7 +231,7 @@ try {
                 ORDER BY te.project_id, te.task_id, entry_date";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':week_start' => $weekStart, ':week_end' => $weekEnd]);
+        $stmt->execute([':week_start' => $weekStart, ':week_end' => $weekEnd, ':username' => $currentUser]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         sendJsonResponse([
@@ -228,12 +255,13 @@ try {
              FROM time_entries
              WHERE notes IS NOT NULL AND notes != ''
                AND task_id = :task_id
+               AND username = :username
                AND (:task_id_gt > 0 OR task_name = :task_name)
              GROUP BY notes
              ORDER BY MAX(start_time) DESC
              LIMIT 20"
         );
-        $stmt->execute([':task_id' => $taskId, ':task_id_gt' => $taskId, ':task_name' => $taskName]);
+        $stmt->execute([':task_id' => $taskId, ':task_id_gt' => $taskId, ':task_name' => $taskName, ':username' => $currentUser]);
         $notes = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         sendJsonResponse(['success' => true, 'notes' => $notes]);
@@ -278,16 +306,17 @@ try {
         $newProjectName = $proj['project_name'];
 
         if ($taskId > 0) {
-            // Real task: update all entries for this task across all weeks
+            // Real task: update the user's entries for this task across all weeks
             $stmt = $pdo->prepare(
                 "UPDATE time_entries
                  SET project_id = :project_id, project_name = :project_name
-                 WHERE task_id = :task_id"
+                 WHERE task_id = :task_id AND username = :username"
             );
             $stmt->execute([
                 ':project_id'   => $newProjectId,
                 ':project_name' => $newProjectName,
                 ':task_id'      => $taskId,
+                ':username'     => $currentUser,
             ]);
         } else {
             // Admin/training entry: scope to the current week and task_name
@@ -297,13 +326,14 @@ try {
             $stmt = $pdo->prepare(
                 "UPDATE time_entries
                  SET project_id = :project_id, project_name = :project_name
-                 WHERE task_id = 0 AND task_name = :task_name
+                 WHERE task_id = 0 AND task_name = :task_name AND username = :username
                    AND DATE(start_time) BETWEEN :week_start AND :week_end"
             );
             $stmt->execute([
                 ':project_id'   => $newProjectId,
                 ':project_name' => $newProjectName,
                 ':task_name'    => $taskName,
+                ':username'     => $currentUser,
                 ':week_start'   => $weekStart,
                 ':week_end'     => $weekEnd,
             ]);
@@ -326,14 +356,14 @@ try {
 
         $newSeconds = (int)round($hours * 3600);
 
-        // Find the canonical entry for this task+date
+        // Find the canonical entry for this user+task+date
         $stmt = $pdo->prepare(
             "SELECT MIN(entry_id) AS first_id FROM time_entries
-             WHERE task_id = :task_id AND task_name = :task_name
+             WHERE task_id = :task_id AND task_name = :task_name AND username = :username
                AND DATE(start_time) = :entry_date
                AND duration_seconds IS NOT NULL"
         );
-        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':entry_date' => $entryDate]);
+        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':username' => $currentUser, ':entry_date' => $entryDate]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row || !$row['first_id']) {
@@ -342,11 +372,11 @@ try {
 
         $firstId = (int)$row['first_id'];
 
-        // Set new seconds on the first entry; zero out any others for that task+date
+        // Set new seconds on the first entry; zero out the user's others for that task+date
         $stmt = $pdo->prepare(
             "UPDATE time_entries
              SET duration_seconds = CASE WHEN entry_id = :first_id THEN :seconds ELSE 0 END
-             WHERE task_id = :task_id AND task_name = :task_name
+             WHERE task_id = :task_id AND task_name = :task_name AND username = :username
                AND DATE(start_time) = :entry_date"
         );
         $stmt->execute([
@@ -354,6 +384,7 @@ try {
             ':seconds'    => $newSeconds,
             ':task_id'    => $taskId,
             ':task_name'  => $taskName,
+            ':username'   => $currentUser,
             ':entry_date' => $entryDate,
         ]);
 
@@ -386,14 +417,14 @@ try {
             sendJsonResponse(['success' => false, 'message' => 'Invalid entry_date']);
         }
 
-        // Find the canonical entry (lowest entry_id) for this task+date
+        // Find the canonical entry (lowest entry_id) for this user+task+date
         $stmt = $pdo->prepare(
             "SELECT MIN(entry_id) AS first_id FROM time_entries
-             WHERE task_id = :task_id AND task_name = :task_name
+             WHERE task_id = :task_id AND task_name = :task_name AND username = :username
                AND DATE(start_time) = :entry_date
                AND duration_seconds IS NOT NULL"
         );
-        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':entry_date' => $entryDate]);
+        $stmt->execute([':task_id' => $taskId, ':task_name' => $taskName, ':username' => $currentUser, ':entry_date' => $entryDate]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row || !$row['first_id']) {
@@ -402,11 +433,11 @@ try {
 
         $firstId = (int)$row['first_id'];
 
-        // Set note on the first entry; clear it from any others for that task+date
+        // Set note on the first entry; clear it from the user's others for that task+date
         $stmt = $pdo->prepare(
             "UPDATE time_entries
              SET notes = CASE WHEN entry_id = :first_id THEN :note ELSE NULL END
-             WHERE task_id = :task_id AND task_name = :task_name
+             WHERE task_id = :task_id AND task_name = :task_name AND username = :username
                AND DATE(start_time) = :entry_date"
         );
         $stmt->execute([
@@ -414,6 +445,7 @@ try {
             ':note'       => $note ?: null,
             ':task_id'    => $taskId,
             ':task_name'  => $taskName,
+            ':username'   => $currentUser,
             ':entry_date' => $entryDate,
         ]);
 
@@ -428,8 +460,12 @@ try {
             sendJsonResponse(['success' => false, 'message' => 'entry_id is required']);
         }
 
-        $stmt = $pdo->prepare("DELETE FROM time_entries WHERE entry_id = :entry_id");
-        $stmt->execute([':entry_id' => $entryId]);
+        $stmt = $pdo->prepare("DELETE FROM time_entries WHERE entry_id = :entry_id AND username = :username");
+        $stmt->execute([':entry_id' => $entryId, ':username' => $currentUser]);
+
+        if ($stmt->rowCount() === 0) {
+            sendJsonResponse(['success' => false, 'message' => 'Entry not found']);
+        }
 
         sendJsonResponse(['success' => true, 'message' => 'Entry deleted']);
     }
