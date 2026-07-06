@@ -281,6 +281,16 @@ session_write_close();
             text-decoration: underline;
         }
 
+        .role-select {
+            padding: 0.4rem 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            background: white;
+            color: #1e293b;
+            max-width: 100%;
+        }
+
         .status-pending {
             background: #fef3c7;
             color: #92400e;
@@ -399,6 +409,8 @@ session_write_close();
     <script>
         const ROOT_PAGE = '<?php echo addslashes($root_page); ?>';
         const CSRF_TOKEN = '<?php echo addslashes($csrf_token); ?>';
+        // Roles the admin can grant on approval (all roles recognized by the dashboards)
+        const GRANTABLE_ROLES = ['admin', 'enterprise_user', 'professional_user', 'surveyor_ww', 'personal_user'];
         
         // Load pending users
         async function loadPendingUsers() {
@@ -450,9 +462,14 @@ session_write_close();
                             </div>
                         </div>
                         <div>
-                            <span class="user-role role-${user.role || 'personal'}">
-                                ${user.role || 'personal_user'}
-                            </span>
+                            <select class="role-select" title="Role granted on approval">
+                                ${GRANTABLE_ROLES.map(role => `
+                                    <option value="${role}" ${role === user.role ? 'selected' : ''}>${role}</option>
+                                `).join('')}
+                            </select>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                                requested: ${escapeHtml(user.role || 'personal_user')}
+                            </div>
                         </div>
                         <div class="user-date">${formatDate(user.created_at)}</div>
                         <div class="action-buttons">
@@ -486,10 +503,11 @@ session_write_close();
         async function verifyUser(userId, action) {
             const row = document.querySelector(`[data-user-id="${userId}"]`);
             const buttons = row.querySelectorAll('button');
-            
+            const roleSelect = row.querySelector('.role-select');
+
             // Disable buttons
             buttons.forEach(btn => btn.disabled = true);
-            
+
             try {
                 const response = await fetch(ROOT_PAGE + 'Models/php/verify_user.php', {
                     method: 'POST',
@@ -498,7 +516,8 @@ session_write_close();
                     },
                     body: JSON.stringify({
                         user_id: userId,
-                        action: action
+                        action: action,
+                        role: action === 'approve' && roleSelect ? roleSelect.value : undefined
                     })
                 });
                 

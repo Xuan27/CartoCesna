@@ -45,14 +45,30 @@ if (!in_array($action, ['approve', 'reject'])) {
     exit;
 }
 
+// Roles the admin can grant at approval (all roles recognized by the dashboards)
+$grantableRoles = ['admin', 'enterprise_user', 'professional_user', 'surveyor_ww', 'personal_user'];
+
+$role = $input['role'] ?? '';
+if ($action === 'approve' && $role !== '' && !in_array($role, $grantableRoles, true)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid role']);
+    exit;
+}
+
 try {
     $database = new Database();
     $conn = $database->getConnection();
 
     if ($action === 'approve') {
-        // Activate and verify the user
-        $query = "UPDATE users SET is_active = 1, is_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        // Activate and verify the user, granting the admin-chosen role if provided
+        if ($role !== '') {
+            $query = "UPDATE users SET is_active = 1, is_verified = 1, role = :role, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        } else {
+            $query = "UPDATE users SET is_active = 1, is_verified = 1, updated_at = CURRENT_TIMESTAMP WHERE id = :id";
+        }
         $stmt = $conn->prepare($query);
+        if ($role !== '') {
+            $stmt->bindValue(':role', $role, PDO::PARAM_STR);
+        }
         $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
         $stmt->execute();
 
