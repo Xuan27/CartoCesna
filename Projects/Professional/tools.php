@@ -495,6 +495,10 @@
             margin-bottom: 0;
         }
 
+        .point-range-entry.has-range-conflict {
+            border-left: 4px solid #dc3545;
+        }
+
         .point-range-header {
             display: flex;
             justify-content: space-between;
@@ -1881,10 +1885,11 @@
                         ranges.push({ from: Math.min(from, to), to: Math.max(from, to) });
                     }
                 });
-                jobFileRanges.push({ label, ranges });
+                jobFileRanges.push({ label, ranges, entry });
             });
 
             const overlaps = [];
+            const conflictingEntries = new Set();
             for (let i = 0; i < jobFileRanges.length; i++) {
                 for (let j = i + 1; j < jobFileRanges.length; j++) {
                     const a = jobFileRanges[i];
@@ -1896,11 +1901,17 @@
                             if (start <= end) {
                                 const rangeStr = start === end ? String(start) : `${start}-${end}`;
                                 overlaps.push({ rangeStr, label1: a.label, label2: b.label });
+                                conflictingEntries.add(a.entry);
+                                conflictingEntries.add(b.entry);
                             }
                         });
                     });
                 }
             }
+
+            entries.forEach(entry => {
+                entry.classList.toggle('has-range-conflict', conflictingEntries.has(entry));
+            });
 
             if (overlaps.length > 0) {
                 const msgs = overlaps
