@@ -36,7 +36,7 @@ if ($userRole === 'admin') {
 }
 
 // Check if user can view survey projects
-$canViewSurveyProjects = in_array($userType, ['admin', 'enterprise']);
+$canViewSurveyProjects = in_array($userRole, ['admin', 'surveyor_ww']);
 
 // Handle logout
 if (isset($_POST['logout'])) {
@@ -151,7 +151,7 @@ session_write_close();
             </div>
 
             <?php if ($canViewSurveyProjects): ?>
-            <!--Survey Projects Manager dashboard link - Only for admin and enterprise users-->
+            <!--Survey Projects Manager dashboard link - Only for admin and surveyor_ww users-->
             <div class="header survey-projects-section">
                 <h1>Professional Survey Projects</h1>
                 <p>Manage and view all Professional Survey Projects</p>
