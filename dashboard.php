@@ -108,8 +108,8 @@ if ($userRole === 'admin') {
     debugLog("Personal user - redirecting to personal dashboard");
     header('Location: dashboards/personal_dashboard.php');
     exit();
-} elseif ($userRole === 'professional_user') {
-    debugLog("Professional user - redirecting to professional dashboard");
+} elseif (in_array($userRole, ['professional_user', 'surveyor_ww', 'enterprise_user'])) {
+    debugLog("Professional-tier user ($userRole) - redirecting to professional dashboard");
     header('Location: dashboards/professional_dashboard.php');
     exit();
 } else {
