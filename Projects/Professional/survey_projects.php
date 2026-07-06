@@ -671,6 +671,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Restore any active timer session
     checkActiveTimer();
+
+    // Keep the session alive while this page stays open
+    startSessionHeartbeat();
 });
 
 function loadProjects() {
@@ -2131,6 +2134,24 @@ document.addEventListener('click', function(event) {
 // TIME TRACKER — core logic
 // ═══════════════════════════════════════════════════════════════════════════
 const TIME_API = '../../Models/php/time_tracking_api.php';
+const HEARTBEAT_API = '../../Models/php/session_heartbeat.php';
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 min — well under PHP's session GC window
+
+// Periodically ping the server so the PHP session doesn't expire while this
+// tab is left open (e.g. mid-survey with no clicks for 20-30+ minutes).
+function startSessionHeartbeat() {
+    setInterval(async () => {
+        try {
+            const resp = await fetch(HEARTBEAT_API, { method: 'POST' });
+            const data = await resp.json();
+            if (!data.loggedIn) {
+                showToast('Your session has expired. Please log in again.', 'error');
+            }
+        } catch (err) {
+            console.error('Session heartbeat error:', err);
+        }
+    }, HEARTBEAT_INTERVAL_MS);
+}
 
 // Parse start_time from API — handles both Unix timestamp (integer) and
 // MySQL datetime string (which Hostinger returns as UTC but without 'Z').
