@@ -1,0 +1,457 @@
+/* ============================================================
+   grocery_meal.css — Grocery & Meal Planner component styles
+   Requires: survey_projects_notes.css (base layout, .btn, .checklist-modal*,
+   .toast, .form-group/.form-label, etc.)
+   ============================================================ */
+
+.tab-panel {
+    display: none;
+    animation: gmTabFadeIn 0.2s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes gmTabFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Filter Bar ---------- */
+.gm-filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.gm-filter-bar select {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    background: var(--white);
+    color: var(--gray-700);
+}
+
+.gm-week-label {
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.9rem;
+}
+
+/* ---------- Stat Cards ---------- */
+.gm-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.gm-stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.gm-stat-card i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.gm-stat-card strong {
+    display: block;
+    font-size: 1.4rem;
+    color: var(--gray-900);
+}
+
+.gm-stat-card span {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+/* ---------- Generic Panel ---------- */
+.gm-panel {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 1.5rem 1.75rem;
+}
+
+.gm-panel h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gm-hint {
+    color: var(--gray-500);
+    font-size: 0.825rem;
+    margin-bottom: 1rem;
+}
+
+.gm-hint-inline {
+    color: var(--gray-400);
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.gm-empty-inline {
+    color: var(--gray-500);
+    font-size: 0.875rem;
+}
+
+.gm-plan-summary-row {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 0.875rem;
+}
+
+.gm-plan-summary-row:last-child {
+    border-bottom: none;
+}
+
+.gm-plan-summary-row strong {
+    flex-shrink: 0;
+    width: 130px;
+    color: var(--gray-700);
+}
+
+/* ---------- Meal Card Grid ---------- */
+.gm-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.gm-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 1.125rem 1.25rem;
+}
+
+.gm-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.gm-card-actions {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.gm-card-name {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.gm-card-macros {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-bottom: 0.5rem;
+}
+
+.gm-card-macros i {
+    color: var(--warning-color);
+}
+
+.gm-tags {
+    display: flex;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+.gm-tag {
+    display: inline-flex;
+    padding: 0.15rem 0.5rem;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary-color);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.gm-type-badge {
+    display: inline-flex;
+    padding: 0.2rem 0.625rem;
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--gray-600);
+    border: 1px solid rgba(100, 116, 139, 0.25);
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ---------- Tables ---------- */
+.gm-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    font-size: 0.875rem;
+}
+
+.gm-table th,
+.gm-table td {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.gm-table thead th {
+    background: var(--gray-50);
+    color: var(--gray-600);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gm-table tfoot td {
+    background: var(--gray-50);
+    border-bottom: none;
+}
+
+.gm-table-actions {
+    display: flex;
+    gap: 0.375rem;
+    white-space: nowrap;
+}
+
+/* ---------- Ingredient rows (meal modal) ---------- */
+.gm-ingredient-row {
+    display: grid;
+    grid-template-columns: 2fr 0.8fr 0.8fr auto;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.gm-ingredient-row select,
+.gm-ingredient-row input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    font-size: 0.825rem;
+}
+
+/* ---------- Price modal ---------- */
+.gm-price-latest {
+    margin-bottom: 1.25rem;
+}
+
+.gm-latest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.gm-latest-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.gm-latest-card strong {
+    color: var(--gray-700);
+    font-size: 0.8rem;
+}
+
+.gm-latest-card span {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.gm-latest-card small {
+    color: var(--gray-400);
+    font-size: 0.7rem;
+}
+
+.gm-subhead {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-400);
+    margin: 1.25rem 0 0.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-100);
+}
+
+.gm-inline-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.gm-inline-form select,
+.gm-inline-form input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    font-size: 0.825rem;
+}
+
+.gm-scrape-result {
+    background: rgba(217, 119, 6, 0.06);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+/* ---------- Planner Grid ---------- */
+.gm-planner-grid {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.gm-planner-header,
+.gm-planner-row {
+    display: grid;
+    grid-template-columns: 140px repeat(3, 1fr);
+}
+
+.gm-planner-header {
+    background: var(--gray-50);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray-500);
+}
+
+.gm-planner-header div,
+.gm-planner-day {
+    padding: 0.75rem 1rem;
+}
+
+.gm-planner-row {
+    border-top: 1px solid var(--gray-100);
+}
+
+.gm-planner-day {
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.825rem;
+    display: flex;
+    align-items: center;
+}
+
+.gm-planner-cell {
+    padding: 0.6rem;
+    border-left: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+}
+
+.gm-planner-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--gray-800);
+}
+
+.gm-planner-add {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px dashed var(--gray-300);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--gray-400);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.gm-planner-add:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* ---------- Empty State ---------- */
+.gm-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--gray-500);
+}
+
+.gm-empty-state i {
+    font-size: 4rem;
+    color: var(--gray-300);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.gm-empty-state h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .gm-planner-header,
+    .gm-planner-row {
+        grid-template-columns: 100px repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .gm-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gm-planner-header,
+    .gm-planner-row {
+        grid-template-columns: 1fr;
+    }
+
+    .gm-planner-header div:not(:first-child)::before,
+    .gm-planner-day {
+        font-weight: 700;
+    }
+}
