@@ -17,7 +17,7 @@ require_once __DIR__ . '/BaseHttpScraper.php';
 class HebScraper extends BaseHttpScraper {
     private const STORE_PAGE_URL = 'https://www.heb.com/heb-store/tx/kyle/kyle-h-e-b-plus--14';
 
-    protected string $searchUrlTemplate = 'https://www.heb.com/search/?q=%s';
+    protected string $searchUrlTemplate = 'https://www.heb.com/search?q=%s';
 
     public function lookupPrice(string $productName): ?array {
         if (trim($productName) === '') {
