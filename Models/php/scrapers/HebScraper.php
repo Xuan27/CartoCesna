@@ -5,14 +5,22 @@ require_once __DIR__ . '/BaseHttpScraper.php';
  * Best-effort price lookup scoped to a specific store: Kyle H-E-B plus!, store #14
  * (https://www.heb.com/heb-store/tx/kyle/kyle-h-e-b-plus--14).
  *
- * HEB's storefront is a client-rendered app; store-specific pricing is normally selected
- * via a cookie/API call triggered by clicking "Shop this store" in a browser, not just by
- * loading the store info page. This class visits the store page first to pick up whatever
- * cookies it sets, then reuses them (via a shared cookie jar) for the search request, on
- * the chance that's enough to scope results to Kyle. This is unverified — this sandbox has
- * no outbound access to heb.com, so confirm/adjust once it runs somewhere with real
- * internet access. If it doesn't pick up store-specific pricing, manual entry remains the
- * reliable path.
+ * heb.com is a Next.js storefront that server-renders product data directly into the
+ * HTML (confirmed from a real page capture), so a plain HTTP GET does see prices — good.
+ * It has no JSON-LD, though, so this overrides the generic base-class extractor with one
+ * tailored to HEB's actual markup: product cards carry data-component="product-card",
+ * each with a data-qe-id="productTitle" element (title attribute = clean product name)
+ * and a data-component="product-price-sale-price" element (current price).
+ *
+ * Store-specific pricing is normally selected via a cookie/API call triggered by clicking
+ * "Shop this store" in a browser, not just by loading the store info page. This class
+ * visits the store page first to pick up whatever cookies it sets, then reuses them (via
+ * a shared cookie jar) for the search request, on the chance that's enough to scope
+ * results to Kyle — that part is still unverified. The product-card structure below is
+ * confirmed from a real captured page, but that capture was the "similar items" carousel
+ * on a single product's detail page (search redirects there for a close/exact match)
+ * rather than the multi-result /search grid itself; if search results ever render with
+ * different markup, this will need a follow-up adjustment.
  */
 class HebScraper extends BaseHttpScraper {
     private const STORE_PAGE_URL = 'https://www.heb.com/heb-store/tx/kyle/kyle-h-e-b-plus--14';
@@ -41,6 +49,70 @@ class HebScraper extends BaseHttpScraper {
         }
 
         return $html === null ? null : $this->extractBestMatch($html, $productName);
+    }
+
+    protected function extractBestMatch(string $html, string $productName): ?array {
+        $dom = new DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="utf-8"?>' . $html, LIBXML_NOWARNING | LIBXML_NOERROR);
+        libxml_clear_errors();
+        $xpath = new DOMXPath($dom);
+
+        $needle = strtolower($productName);
+        $best   = null;
+
+        // Search-result / recommendation cards
+        foreach ($xpath->query('//*[@data-component="product-card"]') as $card) {
+            $titleNodes = $xpath->query('.//*[@data-qe-id="productTitle"]', $card);
+            $priceNodes = $xpath->query('.//*[@data-component="product-price-sale-price"]', $card);
+            $candidate  = $this->buildCandidate($titleNodes, $priceNodes, $needle);
+            if ($candidate !== null && ($best === null || $candidate['match_percent'] > $best['match_percent'])) {
+                $best = $candidate;
+            }
+        }
+
+        // Fallback: a single product detail page (search redirected to an exact match)
+        if ($best === null) {
+            $titleNodes = $xpath->query('//h1');
+            $priceNodes = $xpath->query('//*[@data-component="product-price-sale-price"]');
+            $candidate  = $this->buildCandidate($titleNodes, $priceNodes, $needle);
+            if ($candidate !== null) {
+                $best = $candidate;
+            }
+        }
+
+        if ($best === null || $best['match_percent'] < $this->minMatchPercent) {
+            return null;
+        }
+
+        unset($best['match_percent']);
+        return $best;
+    }
+
+    private function buildCandidate(DOMNodeList $titleNodes, DOMNodeList $priceNodes, string $needle): ?array {
+        if ($titleNodes->length === 0 || $priceNodes->length === 0) {
+            return null;
+        }
+
+        $titleNode = $titleNodes->item(0);
+        $name = $titleNode->hasAttribute('title')
+            ? trim($titleNode->getAttribute('title'))
+            : trim(preg_replace('/\s+/', ' ', $titleNode->textContent));
+
+        $priceText = trim($priceNodes->item(0)->textContent);
+        if ($name === '' || !preg_match('/\$([\d,]+\.\d{2})/', $priceText, $m)) {
+            return null;
+        }
+
+        $price = (float) str_replace(',', '', $m[1]);
+        similar_text($needle, strtolower($name), $percent);
+
+        return [
+            'price'         => $price,
+            'matched_name'  => $name,
+            'raw_snippet'   => mb_substr($name . ' - $' . number_format($price, 2), 0, 200),
+            'match_percent' => $percent,
+        ];
     }
 
     private function fetchWithCookies(string $url, string $cookieJar): ?string {
