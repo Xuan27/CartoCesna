@@ -21,23 +21,36 @@ abstract class BaseHttpScraper implements PriceScraperInterface {
     protected int $timeoutSeconds = 8;
     /** Minimum similar_text() match percentage to accept a candidate. */
     protected int $minMatchPercent = 35;
+    protected ?string $lastError = null;
+
+    public function getLastError(): ?string {
+        return $this->lastError;
+    }
 
     public function lookupPrice(string $productName): ?array {
+        $this->lastError = null;
+
         if ($this->searchUrlTemplate === '' || trim($productName) === '') {
+            $this->lastError = 'No search term given.';
             return null;
         }
 
         $url = sprintf($this->searchUrlTemplate, rawurlencode($productName));
         $html = $this->fetch($url);
         if ($html === null) {
-            return null;
+            return null; // lastError already set by fetch()
         }
 
-        return $this->extractBestMatch($html, $productName);
+        $result = $this->extractBestMatch($html, $productName);
+        if ($result === null && $this->lastError === null) {
+            $this->lastError = "Fetched the page okay, but couldn't find a confident product match in the results.";
+        }
+        return $result;
     }
 
     protected function fetch(string $url): ?string {
         if (!function_exists('curl_init')) {
+            $this->lastError = 'The PHP cURL extension is not available on this server.';
             return null;
         }
 
@@ -52,11 +65,27 @@ abstract class BaseHttpScraper implements PriceScraperInterface {
             CURLOPT_HTTPHEADER     => ['Accept: text/html,application/xhtml+xml'],
         ]);
 
-        $body  = curl_exec($ch);
-        $errno = curl_errno($ch);
+        $body     = curl_exec($ch);
+        $errno    = curl_errno($ch);
+        $error    = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return ($errno === 0 && is_string($body) && $body !== '') ? $body : null;
+        if ($errno !== 0) {
+            $this->lastError = "Network error reaching the store's site: $error";
+            return null;
+        }
+        if ($httpCode >= 400) {
+            $this->lastError = "The store's site returned HTTP $httpCode "
+                . '(it may be blocking automated requests from this server).';
+            return null;
+        }
+        if (!is_string($body) || $body === '') {
+            $this->lastError = "The store's site returned an empty response.";
+            return null;
+        }
+
+        return $body;
     }
 
     protected function extractBestMatch(string $html, string $productName): ?array {

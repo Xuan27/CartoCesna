@@ -28,17 +28,23 @@ class HebScraper extends BaseHttpScraper {
     protected string $searchUrlTemplate = 'https://www.heb.com/search?q=%s';
 
     public function lookupPrice(string $productName): ?array {
+        $this->lastError = null;
+
         if (trim($productName) === '') {
+            $this->lastError = 'No search term given.';
             return null;
         }
 
         $cookieJar = tempnam(sys_get_temp_dir(), 'heb_cookie_');
         if ($cookieJar === false) {
+            $this->lastError = 'Could not create a temp file for the cookie jar.';
             return null;
         }
 
         try {
-            // Establish store context first, then search within the same cookie jar.
+            // Establish store context first (best effort — a failure here isn't fatal,
+            // the search request below still runs without it), then search using the
+            // same cookie jar.
             $this->fetchWithCookies(self::STORE_PAGE_URL, $cookieJar);
             $html = $this->fetchWithCookies(
                 sprintf($this->searchUrlTemplate, rawurlencode($productName)),
@@ -48,7 +54,15 @@ class HebScraper extends BaseHttpScraper {
             @unlink($cookieJar);
         }
 
-        return $html === null ? null : $this->extractBestMatch($html, $productName);
+        if ($html === null) {
+            return null; // lastError already set by fetchWithCookies()
+        }
+
+        $result = $this->extractBestMatch($html, $productName);
+        if ($result === null && $this->lastError === null) {
+            $this->lastError = "Fetched HEB's page okay, but couldn't find a confident product match in the results.";
+        }
+        return $result;
     }
 
     protected function extractBestMatch(string $html, string $productName): ?array {
@@ -81,7 +95,15 @@ class HebScraper extends BaseHttpScraper {
             }
         }
 
-        if ($best === null || $best['match_percent'] < $this->minMatchPercent) {
+        if ($best === null) {
+            $this->lastError = "Fetched HEB's page okay, but didn't recognize any product cards in it "
+                . '(the page markup may have changed, or HEB served a bot-check/error page instead of results).';
+            return null;
+        }
+
+        if ($best['match_percent'] < $this->minMatchPercent) {
+            $this->lastError = "Closest match was \"{$best['matched_name']}\", which wasn't a confident enough match "
+                . "for \"$productName\" (try a more specific or simpler search term).";
             return null;
         }
 
@@ -117,6 +139,7 @@ class HebScraper extends BaseHttpScraper {
 
     private function fetchWithCookies(string $url, string $cookieJar): ?string {
         if (!function_exists('curl_init')) {
+            $this->lastError = 'The PHP cURL extension is not available on this server.';
             return null;
         }
 
@@ -133,10 +156,26 @@ class HebScraper extends BaseHttpScraper {
             CURLOPT_HTTPHEADER     => ['Accept: text/html,application/xhtml+xml'],
         ]);
 
-        $body  = curl_exec($ch);
-        $errno = curl_errno($ch);
+        $body     = curl_exec($ch);
+        $errno    = curl_errno($ch);
+        $error    = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return ($errno === 0 && is_string($body) && $body !== '') ? $body : null;
+        if ($errno !== 0) {
+            $this->lastError = "Network error reaching HEB: $error";
+            return null;
+        }
+        if ($httpCode >= 400) {
+            $this->lastError = "HEB's site returned HTTP $httpCode for $url "
+                . '(it may be blocking automated requests from this server).';
+            return null;
+        }
+        if (!is_string($body) || $body === '') {
+            $this->lastError = "HEB's site returned an empty response for $url.";
+            return null;
+        }
+
+        return $body;
     }
 }

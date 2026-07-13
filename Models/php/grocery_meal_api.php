@@ -351,9 +351,10 @@ function scrapePrice(PDO $pdo, array $input) {
 
     $result = $scraper->lookupPrice($productName);
     if ($result === null) {
+        $reason = $scraper->getLastError() ?: 'No confident match found.';
         sendJsonResponse([
             'success' => false,
-            'message' => "Couldn't find a confident match at $storeName — enter the price manually.",
+            'message' => "Couldn't get a price from $storeName: $reason Enter the price manually.",
         ]);
     }
 
