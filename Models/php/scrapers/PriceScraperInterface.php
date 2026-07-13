@@ -15,4 +15,7 @@ interface PriceScraperInterface {
      * matched"). Null if the last call succeeded or hasn't run yet.
      */
     public function getLastError(): ?string;
+
+    /** Raw HTML from the last fetch attempt (even a failed/blocked one), or null if none yet. */
+    public function getLastHtml(): ?string;
 }

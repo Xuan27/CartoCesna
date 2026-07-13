@@ -773,9 +773,25 @@ if (empty($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
                             </button>
                         </div>`;
                 } else {
-                    resultBox.innerHTML = `<p class="gm-hint">${escapeHtml(data.message || 'No match found')}</p>`;
+                    resultBox.innerHTML = `<p class="gm-hint">${escapeHtml(data.message || 'No match found')}</p>${renderScrapeDebug(data.debug)}`;
                 }
             } catch (e) { console.error(e); resultBox.innerHTML = `<p class="gm-hint">Network error checking price.</p>`; }
+        }
+
+        function renderScrapeDebug(debug) {
+            if (!debug) return '';
+            const markers = (debug.suspicious_markers || []).join(', ');
+            return `
+                <details class="gm-scrape-debug">
+                    <summary>Diagnostic details (for troubleshooting)</summary>
+                    <ul>
+                        <li>Response length: ${debug.html_length} bytes</li>
+                        <li>Page title: ${escapeHtml(debug.page_title || '(none)')}</li>
+                        <li>Recognized product markup: ${debug.contains_product_card ? 'yes' : 'no'}</li>
+                        ${markers ? `<li>Possible bot-check markers found: ${escapeHtml(markers)}</li>` : ''}
+                    </ul>
+                    <pre>${escapeHtml(debug.text_snippet || '')}</pre>
+                </details>`;
         }
 
         async function confirmScrapedPrice(storeId, price) {

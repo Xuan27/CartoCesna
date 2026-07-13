@@ -326,6 +326,34 @@
     font-size: 0.825rem;
 }
 
+.gm-scrape-debug {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.gm-scrape-debug summary {
+    cursor: pointer;
+    color: var(--gray-600);
+    font-weight: 600;
+}
+
+.gm-scrape-debug ul {
+    margin: 0.5rem 0 0.5rem 1.25rem;
+}
+
+.gm-scrape-debug pre {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.75rem;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
 .gm-scrape-result {
     background: rgba(217, 119, 6, 0.06);
     border: 1px solid rgba(217, 119, 6, 0.25);

@@ -22,9 +22,16 @@ abstract class BaseHttpScraper implements PriceScraperInterface {
     /** Minimum similar_text() match percentage to accept a candidate. */
     protected int $minMatchPercent = 35;
     protected ?string $lastError = null;
+    /** Raw body of the most recent fetch, kept for diagnostics regardless of outcome. */
+    protected ?string $lastHtml = null;
 
     public function getLastError(): ?string {
         return $this->lastError;
+    }
+
+    /** Raw HTML from the last fetch attempt (even a failed/blocked one), or null if none yet. */
+    public function getLastHtml(): ?string {
+        return $this->lastHtml;
     }
 
     public function lookupPrice(string $productName): ?array {
@@ -70,6 +77,8 @@ abstract class BaseHttpScraper implements PriceScraperInterface {
         $error    = curl_error($ch);
         $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
+        $this->lastHtml = is_string($body) ? $body : null;
 
         if ($errno !== 0) {
             $this->lastError = "Network error reaching the store's site: $error";

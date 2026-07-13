@@ -162,6 +162,8 @@ class HebScraper extends BaseHttpScraper {
         $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        $this->lastHtml = is_string($body) ? $body : null;
+
         if ($errno !== 0) {
             $this->lastError = "Network error reaching HEB: $error";
             return null;
