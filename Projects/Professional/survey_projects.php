@@ -13,6 +13,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 </head>
 <body>
 
+    <header>
+        <div id="header-container">
+            <div class="loading">Loading header...</div>
+        </div>
+    </header>
+
     <div class="container">
         <!-- Mobile Toggle Button -->
         <button class="mobile-toggle" id="mobileToggle">
@@ -3570,6 +3576,14 @@ function copyTimesheetForVantagepoint() {
     syncTopBarHeight();
     window.addEventListener('resize', syncTopBarHeight);
 
+    // Keep sidebar/top-bar offset in sync with the shared header tabs height
+    function syncHeaderHeight() {
+        const h = document.querySelector('.header-tabs-container')?.offsetHeight || 0;
+        document.documentElement.style.setProperty('--header-height', h + 'px');
+    }
+    document.addEventListener('headerLoaded', syncHeaderHeight);
+    window.addEventListener('resize', syncHeaderHeight);
+
     // Close checklist / timesheet modals on outside click
     document.addEventListener('click', function(e) {
         if (e.target.id === 'checklistModal') {
@@ -3583,5 +3597,9 @@ function copyTimesheetForVantagepoint() {
         }
     });
     </script>
+
+    <!-- Shared header tabs (home, about, services/survey projects, articles, contact, dashboard) -->
+    <script src="../../Models/js/header_loader.js"></script>
+    <script src="../../Models/js/header_tabs.js"></script>
 </body>
 </html>
