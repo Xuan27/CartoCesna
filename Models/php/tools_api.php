@@ -67,8 +67,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if ($action === 'get_all' && $table) {
         try {
-            $orderBy = $table === 'survey_projects' ? 'created_date DESC' : 'task_id DESC';
-            $stmt = $pdo->query("SELECT * FROM $table ORDER BY $orderBy");
+            if ($table === 'tasks') {
+                $stmt = $pdo->query("SELECT tasks.*, survey_projects.project_name AS project_name
+                                      FROM tasks
+                                      LEFT JOIN survey_projects ON tasks.project_id = survey_projects.project_id
+                                      ORDER BY tasks.task_id DESC");
+            } else {
+                $stmt = $pdo->query("SELECT * FROM $table ORDER BY created_date DESC");
+            }
             $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             sendJsonResponse([

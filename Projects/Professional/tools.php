@@ -965,6 +965,7 @@
                 columns: [
                     { key: 'task_id', label: 'Task ID', editable: false, visible: true },
                     { key: 'project_id', label: 'Project ID', editable: true, visible: true },
+                    { key: 'project_name', label: 'Project Name', editable: false, visible: true },
                     { key: 'task_name', label: 'Task Name', editable: true, visible: true },
                     { key: 'task_type', label: 'Type', editable: true, type: 'select', options: ['Easement', 'ALTA', 'Plat', 'Construction Staking', 'Boundary Survey', 'Topographic Survey', 'As-Built Survey', 'Other'], visible: true },
                     { key: 'task_status', label: 'Status', editable: true, type: 'select', options: ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'], visible: true },

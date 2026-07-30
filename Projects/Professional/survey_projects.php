@@ -10,6 +10,274 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <title>Survey Project Manager - Professional Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css?v=<?php echo filemtime(__DIR__ . '/../../Models/css/survey_projects_notes.css'); ?>">
+    <style>
+        /* Task Tools quick-edit modal (mirrors the Tools page quick edit) */
+        .quick-edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-edit-modal.active {
+            display: flex;
+        }
+
+        .quick-edit-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .quick-edit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .quick-edit-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--gray-800);
+        }
+
+        .quick-edit-body {
+            padding: 1.5rem;
+        }
+
+        .quick-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .quick-edit-grid .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .quick-edit-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        /* Point Ranges Editor Styles */
+        .point-ranges-container {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1rem;
+            background: var(--gray-50);
+        }
+
+        .point-range-entry {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .point-range-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .point-range-entry.has-range-conflict {
+            border-left: 4px solid #dc3545;
+        }
+
+        .point-range-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .point-range-header span {
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        .point-range-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .point-range-grid .form-group {
+            margin-bottom: 0;
+        }
+
+        .point-range-grid .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .point-range-grid label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        .point-range-grid input,
+        .point-range-grid select {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        .add-point-range-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed var(--gray-300);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+        }
+
+        .add-point-range-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .remove-entry-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .remove-entry-btn:hover {
+            background: #c82333;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .pr-ranges-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .range-row .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .range-separator {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            padding: 0 0.1rem;
+        }
+
+        .remove-range-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.4rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .remove-range-btn:hover {
+            background: #c82333;
+        }
+
+        .add-range-btn {
+            margin-top: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            border: 1px dashed var(--gray-300);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .add-range-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .range-overlap-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 0.65rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .range-overlap-warning i {
+            margin-right: 0.35rem;
+        }
+
+        @media (max-width: 768px) {
+            .quick-edit-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .point-range-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -473,6 +741,31 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         </div>
     </div>
 
+    <!-- Task Tools Quick Edit Modal (mirrors the Tools page quick edit) -->
+    <div class="quick-edit-modal" id="taskToolsModal">
+        <div class="quick-edit-content">
+            <div class="quick-edit-header">
+                <h3 id="taskToolsModalTitle">Edit Task (Tools)</h3>
+                <button class="close-button" onclick="closeTaskToolsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="quick-edit-body">
+                <form id="taskToolsForm">
+                    <div class="quick-edit-grid" id="taskToolsFormFields">
+                        <!-- Form fields will be inserted dynamically -->
+                    </div>
+                </form>
+            </div>
+            <div class="quick-edit-footer">
+                <button class="btn btn-secondary" onclick="closeTaskToolsModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveTaskToolsRecord()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div class="toast-content">
@@ -629,6 +922,412 @@ document.getElementById('pointRangesModal').addEventListener('click', function(e
         closePointRangesModal();
     }
 });
+
+// Close task tools modal on outside click
+document.getElementById('taskToolsModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeTaskToolsModal();
+    }
+});
+
+// ===== Task Tools Quick Edit Modal (mirrors the Database Tools page quick edit) =====
+const taskToolsConfig = {
+    primaryKey: 'task_id',
+    columns: [
+        { key: 'task_id', label: 'Task ID', editable: false },
+        { key: 'project_id', label: 'Project ID', editable: false },
+        { key: 'task_name', label: 'Task Name', editable: true },
+        { key: 'task_type', label: 'Type', editable: true, type: 'select', options: ['Easement', 'ALTA', 'Plat', 'Construction Staking', 'Boundary Survey', 'Topographic Survey', 'As-Built Survey', 'Other'] },
+        { key: 'task_status', label: 'Status', editable: true, type: 'select', options: ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'] },
+        { key: 'task_priority', label: 'Priority', editable: true, type: 'select', options: ['Low', 'Medium', 'High', 'Urgent'] },
+        { key: 'phase_number', label: 'Phase', editable: true },
+        { key: 'assigned_to', label: 'Assigned To', editable: true },
+        { key: 'start_date', label: 'Start Date', editable: true, type: 'date' },
+        { key: 'due_date', label: 'Due Date', editable: true, type: 'date' },
+        { key: 'completion_date', label: 'Completed', editable: true, type: 'date' },
+        { key: 'estimated_hours', label: 'Est. Hours', editable: true, type: 'number' },
+        { key: 'actual_hours', label: 'Actual Hours', editable: true, type: 'number' },
+        { key: 'task_link', label: 'Task Folder', editable: true },
+        { key: 'point_ranges', label: 'Point Ranges', editable: true, type: 'point_ranges' },
+        { key: 'notes', label: 'Notes', editable: true, type: 'textarea' }
+    ]
+};
+
+let taskToolsEditingRecord = null;
+
+function escapeHtmlPR(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function openTaskToolsModal(taskId, projectId) {
+    loadTasksForProject(projectId).then(tasks => {
+        const task = tasks.find(t => t.task_id == taskId);
+        if (!task) {
+            showToast('Task not found', 'error');
+            return;
+        }
+
+        taskToolsEditingRecord = task;
+        document.getElementById('taskToolsModalTitle').textContent = `Edit Task: ${task.task_name || ''}`;
+
+        const fieldsHtml = taskToolsConfig.columns.map(col => {
+            const value = task[col.key] || '';
+            let inputHtml = '';
+
+            if (col.type === 'select') {
+                inputHtml = `
+                    <select class="form-select" name="${col.key}" ${!col.editable ? 'disabled' : ''}>
+                        ${col.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                    </select>
+                `;
+            } else if (col.type === 'textarea') {
+                inputHtml = `<textarea class="form-textarea" name="${col.key}" rows="3" ${!col.editable ? 'disabled' : ''}>${value}</textarea>`;
+            } else if (col.type === 'date') {
+                const dateValue = value ? String(value).split('T')[0] : '';
+                inputHtml = `<input type="date" class="form-input" name="${col.key}" value="${dateValue}" ${!col.editable ? 'disabled' : ''}>`;
+            } else if (col.type === 'number') {
+                inputHtml = `<input type="number" class="form-input" name="${col.key}" value="${value}" step="0.5" ${!col.editable ? 'disabled' : ''}>`;
+            } else if (col.type === 'point_ranges') {
+                inputHtml = buildToolsPointRangesEditor(value);
+            } else {
+                inputHtml = `<input type="text" class="form-input" name="${col.key}" value="${escapeHtmlPR(value)}" ${!col.editable ? 'disabled' : ''}>`;
+            }
+
+            const isFullWidth = col.type === 'textarea' || col.key.includes('link') || col.type === 'point_ranges';
+
+            return `
+                <div class="form-group ${isFullWidth ? 'full-width' : ''}">
+                    <label class="form-label">${col.label}</label>
+                    ${inputHtml}
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('taskToolsFormFields').innerHTML = fieldsHtml;
+        document.getElementById('taskToolsModal').classList.add('active');
+    });
+}
+
+function closeTaskToolsModal() {
+    document.getElementById('taskToolsModal').classList.remove('active');
+    taskToolsEditingRecord = null;
+}
+
+async function saveTaskToolsRecord() {
+    if (!taskToolsEditingRecord) return;
+
+    const form = document.getElementById('taskToolsForm');
+    const formData = new FormData(form);
+
+    const data = {
+        action: 'update',
+        table: 'tasks',
+        id: taskToolsEditingRecord[taskToolsConfig.primaryKey]
+    };
+
+    taskToolsConfig.columns.forEach(col => {
+        if (col.editable) {
+            if (col.type === 'point_ranges') {
+                const pointRanges = collectToolsPointRangesData();
+                data[col.key] = pointRanges ? JSON.stringify(pointRanges) : null;
+            } else {
+                data[col.key] = formData.get(col.key) || null;
+            }
+        }
+    });
+
+    try {
+        const response = await fetch('../../Models/php/tools_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Task updated successfully', 'success');
+            const projectId = taskToolsEditingRecord.project_id;
+            closeTaskToolsModal();
+
+            loadTasksForProject(projectId).then(tasks => {
+                const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
+                if (tasksListElement) {
+                    tasksListElement.innerHTML = createTasksHTML(tasks);
+                }
+
+                const taskSummaryElement = document.getElementById(`task-summary-${projectId}`);
+                if (taskSummaryElement) {
+                    const totalTasks = tasks.length;
+                    const completedTasks = tasks.filter(t => t.task_status === 'Completed').length;
+                    taskSummaryElement.innerHTML = `
+                        <i class="fas fa-tasks"></i> ${completedTasks}/${totalTasks} tasks
+                    `;
+                }
+            });
+        } else {
+            showToast(result.message || 'Error updating task', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Network error', 'error');
+    }
+}
+
+// Point Ranges editor widget (add/remove job file entries with overlap detection)
+let toolsPointRangesData = { entries: [] };
+
+function buildToolsPointRangesEditor(value) {
+    toolsPointRangesData = parsePointRanges(value);
+
+    let entriesHtml = '';
+    if (toolsPointRangesData.entries && toolsPointRangesData.entries.length > 0) {
+        entriesHtml = toolsPointRangesData.entries.map((entry, index) => buildToolsPointRangeEntryHtml(entry, index)).join('');
+    }
+
+    return `
+        <div class="point-ranges-container" id="taskToolsPointRangesContainer">
+            <div id="taskToolsPointRangesWarning" style="display: none;"></div>
+            <div id="taskToolsPointRangesEntries">
+                ${entriesHtml || '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>'}
+            </div>
+            <button type="button" class="add-point-range-btn" onclick="addToolsPointRangeEntry()">
+                <i class="fas fa-plus"></i> Add Job File Entry
+            </button>
+        </div>
+    `;
+}
+
+function buildToolsPointRangeEntryHtml(entry = {}, index) {
+    const existingRanges = parseToolsRangeString(entry.point_number_used || '');
+    const rangeRowsHtml = existingRanges.length > 0
+        ? existingRanges.map(r => buildToolsRangeRowHtml(r.from, r.to)).join('')
+        : buildToolsRangeRowHtml('', '');
+
+    return `
+        <div class="point-range-entry" data-index="${index}">
+            <div class="point-range-header">
+                <span><i class="fas fa-file-alt"></i> Job File #${index + 1}</span>
+                <button type="button" class="remove-entry-btn" onclick="removeToolsPointRangeEntry(${index})">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+            <div class="point-range-grid">
+                <div class="form-group">
+                    <label>Job File Name</label>
+                    <input type="text" class="form-input pr-job-file" value="${escapeHtmlPR(entry.job_file_name || '')}" placeholder="e.g., 01232026JM" oninput="checkToolsPointRangeOverlaps()">
+                </div>
+                <div class="form-group">
+                    <label>Point Numbers Used</label>
+                    <div class="pr-ranges-container">
+                        ${rangeRowsHtml}
+                    </div>
+                    <button type="button" class="add-range-btn" onclick="addToolsRangeRow(this)">
+                        <i class="fas fa-plus"></i> Add Range
+                    </button>
+                </div>
+                <div class="form-group full-width">
+                    <label>Status</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" class="pr-converted" ${entry.converted === 'yes' ? 'checked' : ''}>
+                            Converted
+                        </label>
+                        <label>
+                            <input type="checkbox" class="pr-imported" ${entry.imported === 'yes' ? 'checked' : ''}>
+                            Imported
+                        </label>
+                        <label>
+                            <input type="checkbox" class="pr-checked" ${entry.checked === 'yes' ? 'checked' : ''}>
+                            Checked
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Notes</label>
+                    <input type="text" class="form-input pr-notes" value="${escapeHtmlPR(entry.notes || '')}" placeholder="e.g., Control, Boundary, Topo">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function buildToolsRangeRowHtml(from, to) {
+    return `
+        <div class="range-row">
+            <input type="number" class="form-input pr-range-from" value="${from}" placeholder="From" min="1" oninput="checkToolsPointRangeOverlaps()">
+            <span class="range-separator">to</span>
+            <input type="number" class="form-input pr-range-to" value="${to}" placeholder="To" min="1" oninput="checkToolsPointRangeOverlaps()">
+            <button type="button" class="remove-range-btn" onclick="removeToolsRangeRow(this)" title="Remove range">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+}
+
+function parseToolsRangeString(rangeStr) {
+    if (!rangeStr) return [];
+    const ranges = [];
+    for (const part of rangeStr.split(',')) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        const dashMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+        const singleMatch = trimmed.match(/^(\d+)$/);
+        if (dashMatch) {
+            ranges.push({ from: parseInt(dashMatch[1]), to: parseInt(dashMatch[2]) });
+        } else if (singleMatch) {
+            const n = parseInt(singleMatch[1]);
+            ranges.push({ from: n, to: n });
+        }
+    }
+    return ranges;
+}
+
+function addToolsRangeRow(btn) {
+    const container = btn.previousElementSibling;
+    container.insertAdjacentHTML('beforeend', buildToolsRangeRowHtml('', ''));
+    checkToolsPointRangeOverlaps();
+}
+
+function removeToolsRangeRow(btn) {
+    const row = btn.closest('.range-row');
+    const container = row.closest('.pr-ranges-container');
+    row.remove();
+    if (container.querySelectorAll('.range-row').length === 0) {
+        container.insertAdjacentHTML('beforeend', buildToolsRangeRowHtml('', ''));
+    }
+    checkToolsPointRangeOverlaps();
+}
+
+function serializeToolsRangesFromEntry(entry) {
+    const rangesContainer = entry.querySelector('.pr-ranges-container');
+    if (!rangesContainer) return '';
+    const parts = [];
+    rangesContainer.querySelectorAll('.range-row').forEach(row => {
+        const from = row.querySelector('.pr-range-from')?.value;
+        const to = row.querySelector('.pr-range-to')?.value;
+        if (from && to) {
+            parts.push(from === to ? from : `${from}-${to}`);
+        }
+    });
+    return parts.join(', ');
+}
+
+function checkToolsPointRangeOverlaps() {
+    const entriesContainer = document.getElementById('taskToolsPointRangesEntries');
+    const warningEl = document.getElementById('taskToolsPointRangesWarning');
+    if (!entriesContainer || !warningEl) return;
+
+    const entries = entriesContainer.querySelectorAll('.point-range-entry');
+    const jobFileRanges = [];
+
+    entries.forEach((entry, idx) => {
+        const nameEl = entry.querySelector('.pr-job-file');
+        const label = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : `Job File #${idx + 1}`;
+        const ranges = [];
+        entry.querySelectorAll('.range-row').forEach(row => {
+            const from = parseInt(row.querySelector('.pr-range-from')?.value);
+            const to = parseInt(row.querySelector('.pr-range-to')?.value);
+            if (!isNaN(from) && !isNaN(to) && from > 0 && to > 0) {
+                ranges.push({ from: Math.min(from, to), to: Math.max(from, to) });
+            }
+        });
+        jobFileRanges.push({ label, ranges, entry });
+    });
+
+    const overlaps = [];
+    const conflictingEntries = new Set();
+    for (let i = 0; i < jobFileRanges.length; i++) {
+        for (let j = i + 1; j < jobFileRanges.length; j++) {
+            const a = jobFileRanges[i];
+            const b = jobFileRanges[j];
+            a.ranges.forEach(r1 => {
+                b.ranges.forEach(r2 => {
+                    const start = Math.max(r1.from, r2.from);
+                    const end = Math.min(r1.to, r2.to);
+                    if (start <= end) {
+                        const rangeStr = start === end ? String(start) : `${start}-${end}`;
+                        overlaps.push({ rangeStr, label1: a.label, label2: b.label });
+                        conflictingEntries.add(a.entry);
+                        conflictingEntries.add(b.entry);
+                    }
+                });
+            });
+        }
+    }
+
+    entries.forEach(entry => {
+        entry.classList.toggle('has-range-conflict', conflictingEntries.has(entry));
+    });
+
+    if (overlaps.length > 0) {
+        const msgs = overlaps
+            .map(o => `Points <strong>${o.rangeStr}</strong> overlap between <em>${escapeHtmlPR(o.label1)}</em> and <em>${escapeHtmlPR(o.label2)}</em>`)
+            .join('<br>');
+        warningEl.innerHTML = `<div class="range-overlap-warning"><i class="fas fa-exclamation-triangle"></i> <strong>Point range conflicts detected:</strong><br>${msgs}</div>`;
+        warningEl.style.display = 'block';
+    } else {
+        warningEl.style.display = 'none';
+    }
+}
+
+function addToolsPointRangeEntry() {
+    const container = document.getElementById('taskToolsPointRangesEntries');
+    const entries = container.querySelectorAll('.point-range-entry');
+    const newIndex = entries.length;
+
+    const noEntriesMsg = container.querySelector('p');
+    if (noEntriesMsg) {
+        noEntriesMsg.remove();
+    }
+
+    const newEntryHtml = buildToolsPointRangeEntryHtml({}, newIndex);
+    container.insertAdjacentHTML('beforeend', newEntryHtml);
+    checkToolsPointRangeOverlaps();
+}
+
+function removeToolsPointRangeEntry(index) {
+    const container = document.getElementById('taskToolsPointRangesEntries');
+    const entry = container.querySelector(`.point-range-entry[data-index="${index}"]`);
+    if (entry) {
+        entry.remove();
+
+        const entries = container.querySelectorAll('.point-range-entry');
+        entries.forEach((e, i) => {
+            e.dataset.index = i;
+            e.querySelector('.point-range-header span').innerHTML = `<i class="fas fa-file-alt"></i> Job File #${i + 1}`;
+            e.querySelector('.remove-entry-btn').setAttribute('onclick', `removeToolsPointRangeEntry(${i})`);
+        });
+
+        if (entries.length === 0) {
+            container.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>';
+        }
+
+        checkToolsPointRangeOverlaps();
+    }
+}
+
+function collectToolsPointRangesData() {
+    const container = document.getElementById('taskToolsPointRangesEntries');
+    if (!container) return null;
+
+    const entries = container.querySelectorAll('.point-range-entry');
+    if (entries.length === 0) return null;
+
+    return {
+        entries: Array.from(entries).map(entry => ({
+            job_file_name: entry.querySelector('.pr-job-file')?.value || '',
+            point_number_used: serializeToolsRangesFromEntry(entry),
+            converted: entry.querySelector('.pr-converted')?.checked ? 'yes' : 'no',
+            imported: entry.querySelector('.pr-imported')?.checked ? 'yes' : 'no',
+            checked: entry.querySelector('.pr-checked')?.checked ? 'yes' : 'no',
+            notes: entry.querySelector('.pr-notes')?.value || ''
+        }))
+    };
+}
 
 // Logged-in user (from PHP session)
 const CURRENT_USER = <?php echo json_encode($currentUsername); ?>;
@@ -2026,6 +2725,9 @@ function createTasksHTML(tasks) {
                     </div>
                     <button class="btn btn-xs btn-secondary" onclick="editTask(${task.task_id}, '${task.project_id}')" title="Edit task">
                         <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); openTaskToolsModal(${task.task_id}, '${task.project_id}')" title="Quick edit (Tools)">
+                        <i class="fas fa-tools"></i>
                     </button>
                     <button class="btn btn-xs" style="background: var(--danger-color); color: white;" onclick="deleteTask(${task.task_id}, '${task.project_id}')" title="Delete task">
                         <i class="fas fa-trash"></i>
