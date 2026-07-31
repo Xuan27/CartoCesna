@@ -335,8 +335,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label" for="taskName">Task Name *</label>
-                            <input type="text" class="form-input" id="taskName" name="taskName" required 
+                            <input type="text" class="form-input" id="taskName" name="taskName" required
                                 placeholder="e.g., Field survey and staking">
+                            <small style="color: #6b7280; font-size: 0.75rem;">Auto-fills as [Project ID][Task Type acronym] (e.g., SURV2024-001EX) once a task type is picked - edit freely for special cases</small>
                         </div>
                         
                         <div class="form-group">
@@ -429,6 +430,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                             <label class="form-label" for="taskLink">Task Folder Link</label>
                             <input type="text" class="form-input" id="taskLink" name="taskLink"
                             placeholder="N:\0012345.00\Survey\Task Folder">
+                            <small style="color: #6b7280; font-size: 0.75rem;">Auto-fills as [Drawing Folder Link]\[Task Name].dwg - edit freely for special cases</small>
                         </div>
 
                         <div class="form-group">
@@ -653,9 +655,25 @@ let timerState = {
 };
 
 // DOM element references (will be set after DOM loads)
-let projectIdInput, projectFolderLinkInput, projectSurveyFolderLinkInput, 
-    projectDrawingFolderLinkInput, projectContractLinkInput, projectQAQCLinkInput, 
+let projectIdInput, projectFolderLinkInput, projectSurveyFolderLinkInput,
+    projectDrawingFolderLinkInput, projectContractLinkInput, projectQAQCLinkInput,
     projectResearchLinkInput, projectNameInput;
+
+// Task type -> naming acronym used to build the task name / drawing convention.
+// Edit this map to change the acronym convention; task name/folder fields can
+// always be overridden by hand for special-circumstance tasks.
+const TASK_TYPE_ACRONYMS = {
+    'Easement':             'EX',
+    'ALTA':                 'AS',
+    'Plat':                 'PL',
+    'Construction Staking': 'CS',
+    'Boundary Survey':      'BD',
+    'Topographic Survey':   'T',
+    'As-Built Survey':      'AB',
+    'Other':                'OT',
+};
+
+let taskNameInput, taskTypeInput, taskLinkInput, taskProjectIdInput;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -668,9 +686,14 @@ document.addEventListener('DOMContentLoaded', function() {
     projectQAQCLinkInput = document.getElementById('qaQcFolderLink');
     projectResearchLinkInput = document.getElementById('researchFolderLink');
     projectNameInput = document.getElementById('projectName');
+    taskNameInput = document.getElementById('taskName');
+    taskTypeInput = document.getElementById('taskType');
+    taskLinkInput = document.getElementById('taskLink');
+    taskProjectIdInput = document.getElementById('taskProjectId');
 
     // Set up auto-fill functionality
     setupAutoFill();
+    setupTaskAutoFill();
 
     // Load projects from server
     loadProjects();
@@ -1704,6 +1727,50 @@ function setupAutoFill() {
     });
 }
 
+// Look up the naming acronym for a task type (see TASK_TYPE_ACRONYMS above)
+function getTaskTypeAcronym(taskType) {
+    if (!taskType) return '';
+    return TASK_TYPE_ACRONYMS[taskType] || taskType.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
+}
+
+// Auto-fill the task name ([project_id][task_type acronym]) and the task
+// folder link ([drawing_folder_link]\[task_name].dwg) based on the naming
+// convention. Fields stay editable - once a user focuses a field it's
+// treated as manually set and is no longer overwritten by the convention.
+function setupTaskAutoFill() {
+    function updateTaskDependentFields() {
+        const projectId = (taskProjectIdInput.value || '').trim();
+        const taskType = taskTypeInput.value;
+        if (!projectId || !taskType) return;
+
+        const acronym = getTaskTypeAcronym(taskType);
+        const generatedTaskName = `${projectId}${acronym}`;
+
+        if (!taskNameInput.value.trim() || taskNameInput.classList.contains('auto-filled')) {
+            taskNameInput.value = generatedTaskName;
+            taskNameInput.classList.add('auto-filled');
+        }
+
+        const project = allProjects.find(p => p.projectId === projectId);
+        const drawingFolderLink = project ? project.drawingFolderLink : '';
+        if (drawingFolderLink && (!taskLinkInput.value.trim() || taskLinkInput.classList.contains('auto-filled'))) {
+            const taskName = taskNameInput.value.trim() || generatedTaskName;
+            const separator = /[\\\/]$/.test(drawingFolderLink) ? '' : '\\';
+            taskLinkInput.value = `${drawingFolderLink}${separator}${taskName}.dwg`;
+            taskLinkInput.classList.add('auto-filled');
+        }
+    }
+
+    taskTypeInput.addEventListener('change', updateTaskDependentFields);
+
+    // Allow manual editing of auto-filled fields
+    [taskNameInput, taskLinkInput].forEach(input => {
+        input.addEventListener('focus', function() {
+            this.classList.remove('auto-filled');
+        });
+    });
+}
+
 // Close modal when clicking outside
 document.addEventListener('click', function(event) {
     const projectModal = document.getElementById('projectModal');
@@ -1745,6 +1812,9 @@ function openAddTaskModal(projectId) {
     document.getElementById('taskForm').reset();
     document.getElementById('taskId').value = '';
     document.getElementById('taskProjectId').value = projectId;
+    // Reset auto-fill state so the naming convention kicks in fresh once a task type is picked
+    taskNameInput.classList.remove('auto-filled');
+    taskLinkInput.classList.remove('auto-filled');
     document.getElementById('taskModal').style.display = 'block';
 }
 
@@ -1778,6 +1848,9 @@ function editTask(taskId, projectId) {
         document.getElementById('actualHours').value = task.actual_hours ? roundToHalf(parseFloat(task.actual_hours)) : '';
         document.getElementById('taskLink').value = task.task_link || '';
         document.getElementById('taskNotes').value = task.notes || '';
+        // Existing values are real data, not the auto-fill convention - don't overwrite them
+        taskNameInput.classList.remove('auto-filled');
+        taskLinkInput.classList.remove('auto-filled');
 
         // Populate raw data path from folder_overrides
         let rawDataPath = '';
@@ -3097,9 +3170,9 @@ function copyTimesheetForVantagepoint() {
         </div>
     </div>
 
-    <!-- Checklist Modal -->
-    <div class="checklist-modal" id="checklistModal">
-        <div class="checklist-modal-content">
+    <!-- Checklist Side Panel -->
+    <div class="checklist-panel" id="checklistModal">
+        <div class="checklist-panel-content">
             <div class="checklist-modal-header">
                 <div class="checklist-modal-header-top">
                     <h3><i class="fas fa-clipboard-check"></i> <span id="checklistModalTitle">Checklist</span></h3>
@@ -3584,11 +3657,9 @@ function copyTimesheetForVantagepoint() {
     document.addEventListener('headerLoaded', syncHeaderHeight);
     window.addEventListener('resize', syncHeaderHeight);
 
-    // Close checklist / timesheet modals on outside click
+    // Close timesheet / template-picker modals on outside click
+    // (the checklist side panel has no backdrop, so it's only closed via its own close button)
     document.addEventListener('click', function(e) {
-        if (e.target.id === 'checklistModal') {
-            closeChecklistModal();
-        }
         if (e.target.id === 'templatePickerModal') {
             closeTemplatePicker();
         }
