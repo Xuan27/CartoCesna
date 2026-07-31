@@ -7,9 +7,24 @@ if (session_status() === PHP_SESSION_NONE) {
 $session_root_page = $_SESSION['root_page'] ?? null;
 $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'];
 $username = isset($_SESSION['username']) ? htmlspecialchars($_SESSION['username']) : '';
+$userId = $_SESSION['user_id'] ?? null;
 
 // Close session to release lock (allows other requests to proceed)
 session_write_close();
+
+// Determine whether this user has access to the Survey Projects page
+$canViewSurveyProjects = false;
+if ($isLoggedIn && $userId) {
+    try {
+        require_once __DIR__ . '/../../classes/Auth.php';
+        $auth = new Auth();
+        $userRole = $auth->getUserRole($userId);
+        $canViewSurveyProjects = in_array($userRole, ['admin', 'surveyor_ww'], true);
+    } catch (Exception $e) {
+        error_log('header_tabs: unable to resolve user role - ' . $e->getMessage());
+        $canViewSurveyProjects = false;
+    }
+}
 
 // Determine root path for assets
 if ($session_root_page && $session_root_page !== '/') {
@@ -46,10 +61,17 @@ if ($session_root_page && $session_root_page !== '/') {
             About
         </a>
 
-        <a href="<?php echo $root_page; ?>services.html" class="tab-item" data-page="services">
-            <span class="tab-icon">🛠️</span>
-            Services
-        </a>
+        <?php if ($canViewSurveyProjects): ?>
+            <a href="<?php echo $root_page; ?>Projects/Professional/survey_projects.php" class="tab-item" data-page="survey_projects">
+                <span class="tab-icon">🛠️</span>
+                Survey Projects
+            </a>
+        <?php else: ?>
+            <a href="<?php echo $root_page; ?>services.html" class="tab-item" data-page="services">
+                <span class="tab-icon">🛠️</span>
+                Services
+            </a>
+        <?php endif; ?>
 
         <a href="<?php echo $root_page; ?>list.php" class="tab-item" data-page="article">
             <span class="tab-icon">📖</span>
