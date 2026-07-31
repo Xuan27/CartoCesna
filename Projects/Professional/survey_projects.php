@@ -56,6 +56,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-tools"></i>
                     Tools
                 </a>
+                <a href="./field_data_qc.php" class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    Field Data QC
+                </a>
                 <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
                     <i class="fas fa-clock"></i>
                     Timesheet
@@ -1197,7 +1201,15 @@ function createProjectLinks(project) {
             </a>
         `).join('');
 
-    return dbLinks + autoLinks;
+    // Deep link to the Field Data QA/QC page filtered to this project
+    const qcLink = `
+        <a href="./field_data_qc.php?project_id=${encodeURIComponent(project.projectId)}" class="link-button" style="border-color: #7c3aed;">
+            <i class="fas fa-clipboard-list" style="color: #7c3aed;"></i>
+            Field Data QC
+        </a>
+    `;
+
+    return dbLinks + autoLinks + qcLink;
 }
 
 // Generate task-level Raw Data folder link (only shown if override is set)

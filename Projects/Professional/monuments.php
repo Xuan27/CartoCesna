@@ -146,6 +146,9 @@
             <a href="tools.php" class="nav-item">
                 <i class="fas fa-tools"></i> Tools
             </a>
+            <a href="field_data_qc.php" class="nav-item">
+                <i class="fas fa-clipboard-list"></i> Field Data QC
+            </a>
             <a href="#" class="nav-item">
                 <i class="fas fa-cog"></i> Settings
             </a>
