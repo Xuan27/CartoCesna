@@ -29,6 +29,38 @@ const QC_CATEGORIES = [
 const QC_SEVERITIES = ['Info', 'Minor', 'Major', 'Critical'];
 const QC_STATUSES   = ['Open', 'Resolved', 'Waived'];
 
+// Field crews live in a flat JSON file so they can be added/removed without a migration.
+// Job file names are composed as [yyyymmdd][crew initials], e.g. 20260731JM.
+// The .php extension plus the exit-guard first line keep the file's contents
+// unreadable over HTTP (Apache here ignores .htaccess: AllowOverride None).
+define('QC_CREWS_FILE', __DIR__ . '/../../Private/crews.json.php');
+define('QC_CREWS_GUARD', "<?php exit; // data file — the guard makes direct web requests return nothing ?>\n");
+
+function qcReadCrews() {
+    if (!is_file(QC_CREWS_FILE)) {
+        return [];
+    }
+    $raw = (string)file_get_contents(QC_CREWS_FILE);
+    $raw = preg_replace('/^<\?php.*?\?>\s*/s', '', $raw);
+    $data = json_decode($raw, true);
+    $crews = is_array($data) ? ($data['crews'] ?? []) : [];
+    $clean = [];
+    foreach ($crews as $crew) {
+        if (is_array($crew) && !empty($crew['initials'])) {
+            $clean[] = [
+                'initials' => strtoupper(trim((string)$crew['initials'])),
+                'name'     => trim((string)($crew['name'] ?? '')),
+            ];
+        }
+    }
+    return $clean;
+}
+
+function qcWriteCrews(array $crews) {
+    $json = json_encode(['crews' => array_values($crews)], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return file_put_contents(QC_CREWS_FILE, QC_CREWS_GUARD . $json, LOCK_EX) !== false;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'])) {
     sendJsonResponse([
         'success' => false,
@@ -108,6 +140,7 @@ try {
                 $decoded = json_decode($taskRow['point_ranges'] ?? '', true);
                 foreach (($decoded['entries'] ?? []) as $entry) {
                     if (!is_array($entry)) continue;
+                    $entry['task_id'] = (int)$taskRow['task_id'];
                     $entry['task_name'] = $taskRow['task_name'];
                     $entriesByTask[$taskRow['task_id']][] = $entry;
                     $entriesByProject[$taskRow['project_id']][] = $entry;
@@ -244,6 +277,101 @@ try {
         $updStmt->execute([':stages' => json_encode($stages ?: new stdClass()), ':session_id_upd' => $sessionId]);
 
         sendJsonResponse(['success' => true, 'stages' => $stages ?: new stdClass()]);
+    }
+
+    // ── save_task_point_ranges ───────────────────────────────────────────────
+    // Point ranges live on tasks (tasks.point_ranges JSON); the QC page edits
+    // them per task. An empty entries list clears the column.
+    elseif ($action === 'save_task_point_ranges') {
+
+        $taskId = (int)($_POST['task_id'] ?? 0);
+        if (!$taskId) {
+            sendJsonResponse(['success' => false, 'message' => 'task_id is required']);
+        }
+
+        $decoded = json_decode($_POST['point_ranges'] ?? '', true);
+        // Reject malformed payloads outright — treating them as empty would silently wipe data
+        if (!is_array($decoded) || !isset($decoded['entries']) || !is_array($decoded['entries'])) {
+            sendJsonResponse(['success' => false, 'message' => 'point_ranges must be JSON with an entries array']);
+        }
+        $entriesIn = $decoded['entries'];
+
+        $entries = [];
+        foreach ($entriesIn as $entry) {
+            if (!is_array($entry)) continue;
+            $clean = [
+                'job_file_name'     => trim((string)($entry['job_file_name'] ?? '')),
+                'point_number_used' => trim((string)($entry['point_number_used'] ?? '')),
+                'converted'         => ($entry['converted'] ?? '') === 'yes' ? 'yes' : 'no',
+                'imported'          => ($entry['imported'] ?? '') === 'yes' ? 'yes' : 'no',
+                'checked'           => ($entry['checked'] ?? '') === 'yes' ? 'yes' : 'no',
+                'notes'             => trim((string)($entry['notes'] ?? '')),
+            ];
+            // Skip rows the user left completely empty
+            if ($clean['job_file_name'] === '' && $clean['point_number_used'] === '' && $clean['notes'] === '') {
+                continue;
+            }
+            $entries[] = $clean;
+        }
+
+        $checkStmt = $pdo->prepare("SELECT task_id FROM tasks WHERE task_id = :task_id");
+        $checkStmt->execute([':task_id' => $taskId]);
+        if (!$checkStmt->fetch()) {
+            sendJsonResponse(['success' => false, 'message' => 'Task not found']);
+        }
+
+        $updStmt = $pdo->prepare("UPDATE tasks SET point_ranges = :point_ranges WHERE task_id = :task_id_upd");
+        $updStmt->execute([
+            ':point_ranges' => $entries ? json_encode(['entries' => $entries]) : null,
+            ':task_id_upd'  => $taskId,
+        ]);
+
+        sendJsonResponse(['success' => true, 'entries' => $entries]);
+    }
+
+    // ── get_crews / add_crew / remove_crew ───────────────────────────────────
+    elseif ($action === 'get_crews') {
+        sendJsonResponse(['success' => true, 'crews' => qcReadCrews()]);
+    }
+
+    elseif ($action === 'add_crew') {
+        $initials = strtoupper(trim($_POST['initials'] ?? ''));
+        $name     = trim($_POST['name'] ?? '');
+
+        if (!preg_match('/^[A-Z]{1,5}$/', $initials)) {
+            sendJsonResponse(['success' => false, 'message' => 'Initials must be 1-5 letters']);
+        }
+        if (mb_strlen($name) > 100) {
+            sendJsonResponse(['success' => false, 'message' => 'Name is too long (max 100 characters)']);
+        }
+
+        $crews = qcReadCrews();
+        foreach ($crews as $crew) {
+            if ($crew['initials'] === $initials) {
+                sendJsonResponse(['success' => false, 'message' => "Crew \"$initials\" already exists"]);
+            }
+        }
+        $crews[] = ['initials' => $initials, 'name' => $name];
+        usort($crews, fn($a, $b) => strcmp($a['initials'], $b['initials']));
+
+        if (!qcWriteCrews($crews)) {
+            sendJsonResponse(['success' => false, 'message' => 'Could not write crews file — check permissions on Private/crews.json.php']);
+        }
+        sendJsonResponse(['success' => true, 'crews' => $crews]);
+    }
+
+    elseif ($action === 'remove_crew') {
+        $initials = strtoupper(trim($_POST['initials'] ?? ''));
+        if ($initials === '') {
+            sendJsonResponse(['success' => false, 'message' => 'initials is required']);
+        }
+
+        $crews = array_values(array_filter(qcReadCrews(), fn($c) => $c['initials'] !== $initials));
+
+        if (!qcWriteCrews($crews)) {
+            sendJsonResponse(['success' => false, 'message' => 'Could not write crews file — check permissions on Private/crews.json.php']);
+        }
+        sendJsonResponse(['success' => true, 'crews' => $crews]);
     }
 
     // ── get_findings ─────────────────────────────────────────────────────────

@@ -2832,3 +2832,11 @@ td.today-cell {
 .ts-project-cell:hover .ts-project-view {
     cursor: pointer;
 }
+
+/* Let the shared header tabs scroll away with the page on survey_projects.php.
+   header_tabs.css makes .header-tabs-container sticky site-wide; this page offsets
+   its fixed sidebar and sticky top-bar by --header-height, which the page JS keeps
+   equal to the header's *visible* height as it scrolls out of view. */
+.header-tabs-container {
+    position: static;
+}

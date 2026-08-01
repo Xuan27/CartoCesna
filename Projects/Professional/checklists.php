@@ -75,10 +75,6 @@
                     <i class="fas fa-map-pin"></i>
                     Monuments
                 </a>
-                <a href="./tools.php" class="nav-item">
-                    <i class="fas fa-tools"></i>
-                    Tools
-                </a>
                 <a href="./field_data_qc.php" class="nav-item">
                     <i class="fas fa-clipboard-list"></i>
                     Field Data QC

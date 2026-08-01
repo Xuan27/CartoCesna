@@ -90,6 +90,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             white-space: nowrap;
         }
         .qc-chip i { font-size: 0.65rem; }
+        .qc-chip.qc-chip-warn {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
         .qc-stage-pill {
             display: inline-flex;
             align-items: center;
@@ -295,6 +299,157 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         .auto-filled { background: #fefce8 !important; }
         .path-input-wrap { display: flex; gap: 0.4rem; }
         .path-input-wrap .form-input { flex: 1; }
+
+        /* Point-ranges editor (moved from the retired Tools page) */
+        .point-ranges-container {
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            padding: 1rem;
+            background: var(--gray-50, #f9fafb);
+        }
+        .point-range-entry {
+            background: white;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+        .point-range-entry:last-child { margin-bottom: 0; }
+        .point-range-entry.has-range-conflict { border-left: 4px solid #dc3545; }
+        .point-range-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gray-100, #f3f4f6);
+        }
+        .point-range-header span {
+            font-weight: 600;
+            color: var(--gray-700, #374151);
+            font-size: 0.875rem;
+        }
+        .point-range-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .point-range-grid .form-group { margin-bottom: 0; }
+        .point-range-grid .form-group.full-width { grid-column: 1 / -1; }
+        .point-range-grid label {
+            font-size: 0.75rem;
+            color: var(--gray-600, #4b5563);
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .point-range-grid input,
+        .point-range-grid select {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .add-point-range-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed var(--gray-300, #d1d5db);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            margin-top: 0.75rem;
+        }
+        .add-point-range-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        .remove-entry-btn {
+            background: var(--danger-color, #dc3545);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .remove-entry-btn:hover { background: #c82333; }
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+        .pr-ranges-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .range-row .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+        .range-separator {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            padding: 0 0.1rem;
+        }
+        .remove-range-btn {
+            background: var(--danger-color, #dc3545);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.4rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .remove-range-btn:hover { background: #c82333; }
+        .add-range-btn {
+            margin-top: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            border: 1px dashed var(--gray-300, #d1d5db);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+        .add-range-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        .range-overlap-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 0.65rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+        .range-overlap-warning i { margin-right: 0.35rem; }
     </style>
 </head>
 <body>
@@ -337,10 +492,6 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 <a href="./monuments.php" class="nav-item">
                     <i class="fas fa-map-pin"></i>
                     Monuments
-                </a>
-                <a href="./tools.php" class="nav-item">
-                    <i class="fas fa-tools"></i>
-                    Tools
                 </a>
                 <a href="./field_data_qc.php" class="nav-item active">
                     <i class="fas fa-clipboard-list"></i>
@@ -421,8 +572,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         </div>
                     </div>
                     <div style="font-size:0.75rem; color:var(--gray-400, #9ca3af); margin:-0.25rem 0 0.75rem;">
-                        <i class="fas fa-circle-info"></i> Job files &amp; point numbers used are recorded per task on the
-                        <a href="./tools.php" target="_blank">Tools</a> page and appear automatically in the session detail.
+                        <i class="fas fa-circle-info"></i> Job files &amp; point numbers used are stored per task and edited
+                        in the session's "Point Ranges Used" section below the findings log.
                     </div>
                     <div class="form-row-2">
                         <div class="form-group">
@@ -431,7 +582,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         </div>
                         <div class="form-group">
                             <label class="form-label">Field Crew</label>
-                            <input type="text" class="form-input" id="sessionCrew" placeholder="e.g., J. Martinez / D. Smith">
+                            <div class="path-input-wrap">
+                                <select class="form-select" id="sessionCrew"></select>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openCrewModal()" title="Add or remove crews">
+                                    <i class="fas fa-users"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -481,6 +637,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <div class="form-group">
                         <label class="form-label">Combined Scale Factor</label>
                         <input type="number" class="form-input" id="sessionScaleFactor" step="any" placeholder="e.g., 0.9998675432">
+                        <div id="projectSfHint" style="font-size:0.75rem; color:var(--gray-400, #9ca3af); margin-top:0.3rem; display:none;"></div>
                     </div>
 
                     <div class="qc-modal-section">Notes</div>
@@ -556,6 +713,40 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         </div>
     </div>
 
+    <!-- Crew Management Modal -->
+    <div class="checklist-modal" id="crewModal">
+        <div class="checklist-modal-content" style="max-width: 460px; max-height: 85vh;">
+            <div class="checklist-modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+                <div class="checklist-modal-header-top">
+                    <h3><i class="fas fa-users"></i> Field Crews</h3>
+                    <button class="checklist-modal-close" onclick="closeCrewModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="checklist-modal-body" style="padding: 1.5rem; overflow-y: auto;">
+                <div style="font-size:0.78rem; color:var(--gray-500); margin-bottom: 0.75rem;">
+                    Crew initials are used to build job file names: <code>[yyyymmdd][initials]</code>, e.g. <code>20260731JM</code>.
+                </div>
+                <div id="crewList" style="margin-bottom: 1rem;"></div>
+                <div class="form-row-2" style="align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Initials</label>
+                        <input type="text" class="form-input" id="newCrewInitials" placeholder="e.g., JM" maxlength="5"
+                               style="text-transform: uppercase;" spellcheck="false">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Name (optional)</label>
+                        <input type="text" class="form-input" id="newCrewName" placeholder="e.g., Juan Martinez">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" style="margin-top: 0.75rem; width: 100%;" onclick="addCrew()">
+                    <i class="fas fa-plus"></i> Add Crew
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div class="toast-content">
@@ -594,7 +785,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         let qcSeverities = [];
         let qcStatuses = [];
         let expandedSessionId = null;
-        let findingsCache = {};   // session_id -> findings[]
+        let findingsCache = {};      // session_id -> findings[]
+        let prEditSessionId = null;  // session whose point ranges are being edited
+        let projectTasksCache = {};  // project_id -> tasks[] (for the per-entry task select)
+        let allCrews = [];           // [{initials, name}] from Private/crews.json via the API
 
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
@@ -604,7 +798,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         });
 
         async function init() {
-            await Promise.all([loadProjects(), loadSessions()]);
+            await Promise.all([loadProjects(), loadSessions(), loadCrews()]);
             const deepLinkProject = new URLSearchParams(location.search).get('project_id');
             if (deepLinkProject) {
                 document.getElementById('projectFilter').value = deepLinkProject;
@@ -683,6 +877,118 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 }
             } catch (error) {
                 console.error('Error loading findings:', error);
+            }
+        }
+
+        // ── Crews ────────────────────────────────────────────────────────────
+
+        async function loadCrews() {
+            try {
+                const formData = new FormData();
+                formData.append('action', 'get_crews');
+                const response = await fetch(QC_API, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    allCrews = data.crews || [];
+                }
+            } catch (error) {
+                console.error('Error loading crews:', error);
+            }
+        }
+
+        function crewLabel(crew) {
+            return crew.name ? `${crew.initials} — ${crew.name}` : crew.initials;
+        }
+
+        // Fill the session-form crew dropdown; keep a stored value selectable
+        // even if that crew has since been removed from the list
+        function populateCrewSelect(selectedValue = '') {
+            const sel = document.getElementById('sessionCrew');
+            sel.innerHTML = '<option value="">— Not set —</option>' +
+                allCrews.map(c => `<option value="${escapeHtml(crewLabel(c))}">${escapeHtml(crewLabel(c))}</option>`).join('');
+            if (selectedValue && ![...sel.options].some(o => o.value === selectedValue)) {
+                sel.insertAdjacentHTML('beforeend',
+                    `<option value="${escapeHtml(selectedValue)}">${escapeHtml(selectedValue)}</option>`);
+            }
+            sel.value = selectedValue;
+        }
+
+        function openCrewModal() {
+            renderCrewList();
+            document.getElementById('newCrewInitials').value = '';
+            document.getElementById('newCrewName').value = '';
+            document.getElementById('crewModal').classList.add('active');
+        }
+
+        function closeCrewModal() {
+            document.getElementById('crewModal').classList.remove('active');
+            // Refresh the dropdown in case crews changed while the modal was open
+            populateCrewSelect(document.getElementById('sessionCrew').value);
+        }
+
+        function renderCrewList() {
+            const list = document.getElementById('crewList');
+            if (!allCrews.length) {
+                list.innerHTML = '<div style="font-size:0.83rem; color:var(--gray-400); padding:0.5rem;">No crews yet — add one below.</div>';
+                return;
+            }
+            list.innerHTML = allCrews.map(c => `
+                <div style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.6rem; border:1px solid var(--gray-200, #e5e7eb); border-radius:6px; margin-bottom:0.4rem;">
+                    <span style="font-family:monospace; font-weight:700;">${escapeHtml(c.initials)}</span>
+                    <span style="font-size:0.83rem; color:var(--gray-600, #4b5563); flex:1;">${escapeHtml(c.name || '')}</span>
+                    <button class="btn btn-sm btn-danger-outline" onclick="removeCrew(${jsAttr(c.initials)})" title="Remove crew">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>`).join('');
+        }
+
+        async function addCrew() {
+            const initials = document.getElementById('newCrewInitials').value.trim().toUpperCase();
+            const name = document.getElementById('newCrewName').value.trim();
+            if (!initials) {
+                showToast('Initials are required', 'error');
+                return;
+            }
+            try {
+                const formData = new FormData();
+                formData.append('action', 'add_crew');
+                formData.append('initials', initials);
+                formData.append('name', name);
+                const response = await fetch(QC_API, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    allCrews = data.crews || [];
+                    renderCrewList();
+                    document.getElementById('newCrewInitials').value = '';
+                    document.getElementById('newCrewName').value = '';
+                    showToast(`Crew ${initials} added`);
+                } else {
+                    showToast(data.message || 'Error adding crew', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Network error adding crew', 'error');
+            }
+        }
+
+        async function removeCrew(initials) {
+            if (!confirm(`Remove crew "${initials}"? Existing sessions and job files keep their values.`)) return;
+            try {
+                const formData = new FormData();
+                formData.append('action', 'remove_crew');
+                formData.append('initials', initials);
+                const response = await fetch(QC_API, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) {
+                    allCrews = data.crews || [];
+                    renderCrewList();
+                    showToast(`Crew ${initials} removed`);
+                } else {
+                    showToast(data.message || 'Error removing crew', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Network error removing crew', 'error');
             }
         }
 
@@ -776,7 +1082,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             if (session.coordinate_system) chips.push(`<span class="qc-chip"><i class="fas fa-globe"></i>${escapeHtml(session.coordinate_system)}</span>`);
             if (session.geoid_model) chips.push(`<span class="qc-chip"><i class="fas fa-layer-group"></i>${escapeHtml(session.geoid_model)}</span>`);
             if (session.units) chips.push(`<span class="qc-chip"><i class="fas fa-ruler"></i>${escapeHtml(session.units)}</span>`);
-            if (session.scale_factor) chips.push(`<span class="qc-chip"><i class="fas fa-compress-arrows-alt"></i>SF ${escapeHtml(trimScaleFactor(session.scale_factor))}</span>`);
+            if (session.scale_factor) {
+                const mismatch = scaleFactorMismatch(session);
+                chips.push(`<span class="qc-chip ${mismatch ? 'qc-chip-warn' : ''}"
+                    ${mismatch ? `title="Differs from project scale factor (${escapeHtml(getProjectScaleFactor(session.project_id))})"` : ''}>
+                    <i class="fas ${mismatch ? 'fa-triangle-exclamation' : 'fa-compress-arrows-alt'}"></i>SF ${escapeHtml(trimScaleFactor(session.scale_factor))}</span>`);
+            }
 
             const title = session.task_name || 'Project-wide QC';
             const jobFiles = [...new Set((session.point_range_entries || [])
@@ -818,12 +1129,27 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     </button>
                 </div>` : '';
 
+            const projectSf = getProjectScaleFactor(session.project_id);
+            let sfDisplay = null;
+            if (session.scale_factor) {
+                sfDisplay = trimScaleFactor(session.scale_factor);
+            } else if (projectSf) {
+                sfDisplay = `${projectSf} (from project)`;
+            }
+            const sfWarning = scaleFactorMismatch(session)
+                ? `<div class="range-overlap-warning" style="margin-top:0.6rem; margin-bottom:0;">
+                       <i class="fas fa-triangle-exclamation"></i>
+                       Session scale factor <strong>${escapeHtml(trimScaleFactor(session.scale_factor))}</strong> differs from the
+                       project's <strong>${escapeHtml(projectSf)}</strong> — confirm which is correct.
+                   </div>`
+                : '';
+
             const geoRows = [
                 ['Coordinate System', session.coordinate_system],
                 ['Datum / Epoch', session.datum_epoch],
                 ['Geoid Model', session.geoid_model],
                 ['Vertical Datum', session.vertical_datum],
-                ['Combined Scale Factor', session.scale_factor ? trimScaleFactor(session.scale_factor) : null],
+                ['Combined Scale Factor', sfDisplay],
                 ['Units', session.units],
                 ['Field Crew', session.field_crew],
                 ['Instrument', session.instrument],
@@ -860,6 +1186,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <div class="qc-panel">
                         <h4><i class="fas fa-globe"></i> Geodetic Settings</h4>
                         <div class="qc-geo-rows">${geoRows}</div>
+                        ${sfWarning}
                     </div>
                 </div>
                 <div class="qc-section-header">
@@ -870,12 +1197,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 </div>
                 ${findingsBlock}
                 <div class="qc-section-header">
-                    <h4><i class="fas fa-list-ol"></i> Point Ranges Used (from Tools)</h4>
-                    <a class="btn btn-secondary btn-sm" href="./tools.php" target="_blank">
-                        <i class="fas fa-tools"></i> Edit in Tools
-                    </a>
+                    <h4><i class="fas fa-list-ol"></i> Point Ranges Used</h4>
+                    ${prEditSessionId === session.session_id ? '' : `
+                    <button class="btn btn-secondary btn-sm" onclick="openPointRangesEditor(${session.session_id})">
+                        <i class="fas fa-edit"></i> Edit Point Ranges
+                    </button>`}
                 </div>
-                ${createPointRangesTable(session)}
+                ${prEditSessionId === session.session_id ? createPointRangesEditor(session) : createPointRangesTable(session)}
                 ${session.general_notes ? `<div class="qc-notes-block"><strong><i class="fas fa-sticky-note"></i> Notes:</strong> ${escapeHtml(session.general_notes)}</div>` : ''}
                 <div class="qc-card-actions">
                     <button class="btn btn-secondary btn-sm" onclick="openSessionModal(${session.session_id})">
@@ -925,7 +1253,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         function createPointRangesTable(session) {
             const entries = session.point_range_entries || [];
             if (!entries.length) {
-                return '<div style="font-size:0.83rem; color:var(--gray-400); padding:0.5rem;">No point range entries recorded yet — log job files and point numbers used per task on the Tools page.</div>';
+                return '<div style="font-size:0.83rem; color:var(--gray-400); padding:0.5rem;">No point range entries recorded yet — click "Edit Point Ranges" to log job files and point numbers used.</div>';
             }
             // Show which task each entry came from when the session spans the whole project
             const showTask = !session.task_id;
@@ -953,7 +1281,408 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 </div>`;
         }
 
+        // ── Point-ranges editor (moved here from the retired Tools page) ──────
+        // Entries are stored per task in tasks.point_ranges. Task-linked sessions
+        // edit that task's entries; project-wide sessions edit entries across all
+        // of the project's tasks, choosing the task per entry.
+
+        async function fetchProjectTasks(projectId) {
+            try {
+                const response = await fetch(TASKS_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=load_tasks&project_id=${encodeURIComponent(projectId)}`
+                });
+                const data = await response.json();
+                return data.success ? (data.tasks || []) : [];
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                return [];
+            }
+        }
+
+        async function openPointRangesEditor(sessionId) {
+            const session = allSessions.find(s => s.session_id === sessionId);
+            if (!session) return;
+            if (!session.task_id) {
+                if (!projectTasksCache[session.project_id]) {
+                    projectTasksCache[session.project_id] = await fetchProjectTasks(session.project_id);
+                }
+                if (projectTasksCache[session.project_id].length === 0) {
+                    showToast('This project has no tasks yet — point ranges are stored per task. Add a task first.', 'error');
+                    return;
+                }
+            }
+            prEditSessionId = sessionId;
+            expandedSessionId = sessionId;
+            renderSessions();
+            checkPointRangeOverlaps();
+        }
+
+        function cancelPointRangesEdit() {
+            prEditSessionId = null;
+            renderSessions();
+        }
+
+        function createPointRangesEditor(session) {
+            const entries = session.point_range_entries || [];
+            const entriesHtml = entries.map((e, i) => buildPointRangeEntryHtml(session, e, i)).join('');
+            return `
+                <div class="point-ranges-container" id="pointRangesContainer">
+                    <div id="pointRangesWarning" style="display: none;"></div>
+                    <div id="pointRangesEntries">
+                        ${entriesHtml || '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>'}
+                    </div>
+                    <button type="button" class="add-point-range-btn" onclick="addPointRangeEntry()">
+                        <i class="fas fa-plus"></i> Add Job File Entry
+                    </button>
+                    <div class="qc-card-actions" style="border-top: none; padding-top: 0; margin-top: 0.75rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="cancelPointRangesEdit()">Cancel</button>
+                        <button class="btn btn-primary btn-sm" onclick="savePointRanges(${session.session_id})">
+                            <i class="fas fa-save"></i> Save Point Ranges
+                        </button>
+                    </div>
+                </div>`;
+        }
+
+        function buildPointRangeEntryHtml(session, entry = {}, index) {
+            const existingRanges = parseRangeString(entry.point_number_used || '');
+            const rangeRowsHtml = existingRanges.length > 0
+                ? existingRanges.map(r => buildRangeRowHtml(r.from, r.to)).join('')
+                : buildRangeRowHtml('', '');
+
+            let taskSelectHtml = '';
+            if (!session.task_id) {
+                const tasks = projectTasksCache[session.project_id] || [];
+                const options = tasks.map(t =>
+                    `<option value="${t.task_id}" ${Number(entry.task_id) === Number(t.task_id) ? 'selected' : ''}>${escapeHtml(t.task_name)}</option>`).join('');
+                taskSelectHtml = `
+                    <div class="form-group full-width">
+                        <label>Task</label>
+                        <select class="form-select pr-task">${options}</select>
+                    </div>`;
+            }
+
+            return `
+                <div class="point-range-entry" data-index="${index}">
+                    <div class="point-range-header">
+                        <span><i class="fas fa-file-alt"></i> Job File #${index + 1}</span>
+                        <button type="button" class="remove-entry-btn" onclick="removePointRangeEntry(${index})">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    <div class="point-range-grid">
+                        ${taskSelectHtml}
+                        <div class="form-group">
+                            ${buildJobFileControls(entry)}
+                        </div>
+                        <div class="form-group">
+                            <label>Point Numbers Used</label>
+                            <div class="pr-ranges-container">
+                                ${rangeRowsHtml}
+                            </div>
+                            <button type="button" class="add-range-btn" onclick="addRangeRow(this)">
+                                <i class="fas fa-plus"></i> Add Range
+                            </button>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Status</label>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" class="pr-converted" ${entry.converted === 'yes' ? 'checked' : ''}>
+                                    Converted
+                                </label>
+                                <label>
+                                    <input type="checkbox" class="pr-imported" ${entry.imported === 'yes' ? 'checked' : ''}>
+                                    Imported
+                                </label>
+                                <label>
+                                    <input type="checkbox" class="pr-checked" ${entry.checked === 'yes' ? 'checked' : ''}>
+                                    Checked
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Notes</label>
+                            <input type="text" class="form-input pr-notes" value="${escapeHtml(entry.notes || '')}" placeholder="e.g., Control, Boundary, Topo">
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // Job file names follow [yyyymmdd][crew initials], e.g. 20260731JM,
+        // composed from a date picker and the crew list. Names saved before this
+        // convention (e.g. 01232026JM) stay editable as plain text.
+        function buildJobFileControls(entry) {
+            const raw = entry.job_file_name || '';
+            const m = raw.match(/^(\d{4})(\d{2})(\d{2})([A-Za-z]{1,5})$/);
+
+            if (raw && !m) {
+                return `
+                    <label>Job File Name <span style="color:var(--gray-400);">(legacy format)</span></label>
+                    <input type="text" class="form-input pr-job-file" value="${escapeHtml(raw)}" oninput="checkPointRangeOverlaps()">`;
+            }
+
+            const dateVal = m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+            const crewVal = m ? m[4].toUpperCase() : '';
+            let crewOptions = '<option value="">Crew…</option>' +
+                allCrews.map(c => `<option value="${escapeHtml(c.initials)}" ${c.initials === crewVal ? 'selected' : ''}>${escapeHtml(c.initials)}</option>`).join('');
+            if (crewVal && !allCrews.some(c => c.initials === crewVal)) {
+                crewOptions += `<option value="${escapeHtml(crewVal)}" selected>${escapeHtml(crewVal)}</option>`;
+            }
+
+            return `
+                <label>Job File Name
+                    <span class="pr-job-preview" style="color:var(--gray-400); font-family:monospace; margin-left:0.35rem;">${escapeHtml(raw)}</span>
+                </label>
+                <div style="display:flex; gap:0.4rem;">
+                    <input type="date" class="form-input pr-job-date" value="${dateVal}" onchange="syncJobFileName(this)">
+                    <select class="form-select pr-job-crew" style="max-width:7rem;" onchange="syncJobFileName(this)">${crewOptions}</select>
+                </div>
+                <input type="hidden" class="pr-job-file" value="${escapeHtml(raw)}">`;
+        }
+
+        function syncJobFileName(el) {
+            const group = el.closest('.form-group');
+            const date = group.querySelector('.pr-job-date')?.value || '';
+            const crew = group.querySelector('.pr-job-crew')?.value || '';
+            const composed = (date && crew) ? date.replace(/-/g, '') + crew : '';
+            const hidden = group.querySelector('input.pr-job-file');
+            if (hidden) hidden.value = composed;
+            const preview = group.querySelector('.pr-job-preview');
+            if (preview) preview.textContent = composed;
+            checkPointRangeOverlaps();
+        }
+
+        function buildRangeRowHtml(from, to) {
+            return `
+                <div class="range-row">
+                    <input type="number" class="form-input pr-range-from" value="${from}" placeholder="From" min="1" oninput="checkPointRangeOverlaps()">
+                    <span class="range-separator">to</span>
+                    <input type="number" class="form-input pr-range-to" value="${to}" placeholder="To" min="1" oninput="checkPointRangeOverlaps()">
+                    <button type="button" class="remove-range-btn" onclick="removeRangeRow(this)" title="Remove range">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>`;
+        }
+
+        function parseRangeString(rangeStr) {
+            if (!rangeStr) return [];
+            const ranges = [];
+            for (const part of rangeStr.split(',')) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+                const dashMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+                const singleMatch = trimmed.match(/^(\d+)$/);
+                if (dashMatch) {
+                    ranges.push({ from: parseInt(dashMatch[1]), to: parseInt(dashMatch[2]) });
+                } else if (singleMatch) {
+                    const n = parseInt(singleMatch[1]);
+                    ranges.push({ from: n, to: n });
+                }
+            }
+            return ranges;
+        }
+
+        function addRangeRow(btn) {
+            const container = btn.previousElementSibling;
+            container.insertAdjacentHTML('beforeend', buildRangeRowHtml('', ''));
+            checkPointRangeOverlaps();
+        }
+
+        function removeRangeRow(btn) {
+            const row = btn.closest('.range-row');
+            const container = row.closest('.pr-ranges-container');
+            row.remove();
+            if (container.querySelectorAll('.range-row').length === 0) {
+                container.insertAdjacentHTML('beforeend', buildRangeRowHtml('', ''));
+            }
+            checkPointRangeOverlaps();
+        }
+
+        function serializeRangesFromEntry(entry) {
+            const rangesContainer = entry.querySelector('.pr-ranges-container');
+            if (!rangesContainer) return '';
+            const parts = [];
+            rangesContainer.querySelectorAll('.range-row').forEach(row => {
+                const from = row.querySelector('.pr-range-from')?.value;
+                const to = row.querySelector('.pr-range-to')?.value;
+                if (from && to) {
+                    parts.push(from === to ? from : `${from}-${to}`);
+                }
+            });
+            return parts.join(', ');
+        }
+
+        function checkPointRangeOverlaps() {
+            const entriesContainer = document.getElementById('pointRangesEntries');
+            const warningEl = document.getElementById('pointRangesWarning');
+            if (!entriesContainer || !warningEl) return;
+
+            const entries = entriesContainer.querySelectorAll('.point-range-entry');
+            const jobFileRanges = [];
+
+            entries.forEach((entry, idx) => {
+                const nameEl = entry.querySelector('.pr-job-file');
+                const label = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : `Job File #${idx + 1}`;
+                const ranges = [];
+                entry.querySelectorAll('.range-row').forEach(row => {
+                    const from = parseInt(row.querySelector('.pr-range-from')?.value);
+                    const to = parseInt(row.querySelector('.pr-range-to')?.value);
+                    if (!isNaN(from) && !isNaN(to) && from > 0 && to > 0) {
+                        ranges.push({ from: Math.min(from, to), to: Math.max(from, to) });
+                    }
+                });
+                jobFileRanges.push({ label, ranges, entry });
+            });
+
+            const overlaps = [];
+            const conflictingEntries = new Set();
+            for (let i = 0; i < jobFileRanges.length; i++) {
+                for (let j = i + 1; j < jobFileRanges.length; j++) {
+                    const a = jobFileRanges[i];
+                    const b = jobFileRanges[j];
+                    a.ranges.forEach(r1 => {
+                        b.ranges.forEach(r2 => {
+                            const start = Math.max(r1.from, r2.from);
+                            const end = Math.min(r1.to, r2.to);
+                            if (start <= end) {
+                                const rangeStr = start === end ? String(start) : `${start}-${end}`;
+                                overlaps.push({ rangeStr, label1: a.label, label2: b.label });
+                                conflictingEntries.add(a.entry);
+                                conflictingEntries.add(b.entry);
+                            }
+                        });
+                    });
+                }
+            }
+
+            entries.forEach(entry => {
+                entry.classList.toggle('has-range-conflict', conflictingEntries.has(entry));
+            });
+
+            if (overlaps.length > 0) {
+                const msgs = overlaps
+                    .map(o => `Points <strong>${o.rangeStr}</strong> overlap between <em>${escapeHtml(o.label1)}</em> and <em>${escapeHtml(o.label2)}</em>`)
+                    .join('<br>');
+                warningEl.innerHTML = `<div class="range-overlap-warning"><i class="fas fa-exclamation-triangle"></i> <strong>Point range conflicts detected:</strong><br>${msgs}</div>`;
+                warningEl.style.display = 'block';
+            } else {
+                warningEl.style.display = 'none';
+            }
+        }
+
+        function addPointRangeEntry() {
+            const session = allSessions.find(s => s.session_id === prEditSessionId);
+            const container = document.getElementById('pointRangesEntries');
+            if (!session || !container) return;
+
+            const noEntriesMsg = container.querySelector('p');
+            if (noEntriesMsg) {
+                noEntriesMsg.remove();
+            }
+
+            const newIndex = container.querySelectorAll('.point-range-entry').length;
+            container.insertAdjacentHTML('beforeend', buildPointRangeEntryHtml(session, {}, newIndex));
+            checkPointRangeOverlaps();
+        }
+
+        function removePointRangeEntry(index) {
+            const container = document.getElementById('pointRangesEntries');
+            const entry = container.querySelector(`.point-range-entry[data-index="${index}"]`);
+            if (entry) {
+                entry.remove();
+
+                const entries = container.querySelectorAll('.point-range-entry');
+                entries.forEach((e, i) => {
+                    e.dataset.index = i;
+                    e.querySelector('.point-range-header span').innerHTML = `<i class="fas fa-file-alt"></i> Job File #${i + 1}`;
+                    e.querySelector('.remove-entry-btn').setAttribute('onclick', `removePointRangeEntry(${i})`);
+                });
+
+                if (entries.length === 0) {
+                    container.innerHTML = '<p style="color: var(--gray-500); text-align: center; padding: 1rem;">No point range entries yet. Click the button below to add one.</p>';
+                }
+
+                checkPointRangeOverlaps();
+            }
+        }
+
+        async function savePointRanges(sessionId) {
+            const session = allSessions.find(s => s.session_id === sessionId);
+            const container = document.getElementById('pointRangesEntries');
+            if (!session || !container) return;
+
+            // A composed job file name needs both its parts
+            const halfFilled = Array.from(container.querySelectorAll('.point-range-entry')).some(entryEl => {
+                const date = entryEl.querySelector('.pr-job-date')?.value || '';
+                const crew = entryEl.querySelector('.pr-job-crew')?.value || '';
+                return (date && !crew) || (!date && crew);
+            });
+            if (halfFilled) {
+                showToast('Each job file name needs both a date and a crew', 'error');
+                return;
+            }
+
+            const collected = Array.from(container.querySelectorAll('.point-range-entry')).map(entryEl => ({
+                task_id: session.task_id || parseInt(entryEl.querySelector('.pr-task')?.value, 10) || 0,
+                job_file_name: entryEl.querySelector('.pr-job-file')?.value.trim() || '',
+                point_number_used: serializeRangesFromEntry(entryEl),
+                converted: entryEl.querySelector('.pr-converted')?.checked ? 'yes' : 'no',
+                imported: entryEl.querySelector('.pr-imported')?.checked ? 'yes' : 'no',
+                checked: entryEl.querySelector('.pr-checked')?.checked ? 'yes' : 'no',
+                notes: entryEl.querySelector('.pr-notes')?.value.trim() || ''
+            })).filter(e => e.job_file_name || e.point_number_used || e.notes);
+
+            if (collected.some(e => !e.task_id)) {
+                showToast('Select a task for every entry', 'error');
+                return;
+            }
+
+            // Save per task: every task that had entries before or has them now
+            const grouped = {};
+            collected.forEach(e => {
+                (grouped[e.task_id] = grouped[e.task_id] || []).push({
+                    job_file_name: e.job_file_name,
+                    point_number_used: e.point_number_used,
+                    converted: e.converted,
+                    imported: e.imported,
+                    checked: e.checked,
+                    notes: e.notes
+                });
+            });
+            const affectedTaskIds = new Set(Object.keys(grouped).map(Number));
+            (session.point_range_entries || []).forEach(e => {
+                if (e.task_id) affectedTaskIds.add(Number(e.task_id));
+            });
+
+            try {
+                for (const taskId of affectedTaskIds) {
+                    const formData = new FormData();
+                    formData.append('action', 'save_task_point_ranges');
+                    formData.append('task_id', taskId);
+                    formData.append('point_ranges', JSON.stringify({ entries: grouped[taskId] || [] }));
+                    const response = await fetch(QC_API, { method: 'POST', body: formData });
+                    const data = await response.json();
+                    if (!data.success) {
+                        showToast(data.message || 'Error saving point ranges', 'error');
+                        return;
+                    }
+                }
+                prEditSessionId = null;
+                showToast('Point ranges saved');
+                await loadSessions();
+                renderSessions();
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Network error saving point ranges', 'error');
+            }
+        }
+
         async function toggleSessionCard(sessionId) {
+            if (prEditSessionId !== null) {
+                prEditSessionId = null; // collapsing or switching cards discards an open editor
+            }
             if (expandedSessionId === sessionId) {
                 expandedSessionId = null;
                 renderSessions();
@@ -1046,6 +1775,33 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         function setupPathAutoSuggest() {
             const pathInput = document.getElementById('sessionRawPath');
             pathInput.addEventListener('input', () => pathInput.classList.remove('auto-filled'));
+            const sfInput = document.getElementById('sessionScaleFactor');
+            sfInput.addEventListener('input', () => sfInput.classList.remove('auto-filled'));
+        }
+
+        function getProjectScaleFactor(projectId) {
+            const project = allProjects.find(p => p.projectId === projectId);
+            const sf = project ? String(project.scale_factor ?? '').trim() : '';
+            return sf && !isNaN(parseFloat(sf)) ? sf : '';
+        }
+
+        // True when the session and its project both have a scale factor and they disagree
+        function scaleFactorMismatch(session) {
+            const projSf = parseFloat(getProjectScaleFactor(session.project_id));
+            const sessSf = parseFloat(session.scale_factor);
+            if (isNaN(projSf) || isNaN(sessSf)) return false;
+            return Math.abs(projSf - sessSf) > 1e-9;
+        }
+
+        function updateProjectSfHint(projectId) {
+            const hint = document.getElementById('projectSfHint');
+            const projectSf = getProjectScaleFactor(projectId);
+            if (projectSf) {
+                hint.textContent = `Project scale factor: ${projectSf}`;
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
         }
 
         async function onProjectChange() {
@@ -1057,6 +1813,16 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 pathInput.value = `N:\\${projectId}\\05 Service Groups\\Survey\\Downloads`;
                 pathInput.classList.add('auto-filled');
             }
+
+            // Default the session's scale factor from the project unless the user typed their own
+            const sfInput = document.getElementById('sessionScaleFactor');
+            const projectSf = getProjectScaleFactor(projectId);
+            if (projectSf && (sfInput.value === '' || sfInput.classList.contains('auto-filled'))) {
+                sfInput.value = projectSf;
+                sfInput.classList.add('auto-filled');
+            }
+            updateProjectSfHint(projectId);
+
             await populateTaskSelect(projectId);
         }
 
@@ -1090,6 +1856,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             document.getElementById('editSessionId').value = sessionId || '';
             document.getElementById('sessionModalTitle').textContent = sessionId ? 'Edit QC Session' : 'New QC Session';
             document.getElementById('sessionRawPath').classList.remove('auto-filled');
+            document.getElementById('sessionScaleFactor').classList.remove('auto-filled');
+            document.getElementById('projectSfHint').style.display = 'none';
 
             if (sessionId) {
                 const s = allSessions.find(x => x.session_id === sessionId);
@@ -1097,7 +1865,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 document.getElementById('sessionProject').value = s.project_id;
                 document.getElementById('sessionDate').value = s.collection_date || '';
                 document.getElementById('sessionRawPath').value = s.raw_data_path || '';
-                document.getElementById('sessionCrew').value = s.field_crew || '';
+                populateCrewSelect(s.field_crew || '');
                 document.getElementById('sessionInstrument').value = s.instrument || '';
                 document.getElementById('sessionScaleFactor').value = s.scale_factor ? trimScaleFactor(s.scale_factor) : '';
                 document.getElementById('sessionNotes').value = s.general_notes || '';
@@ -1106,8 +1874,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 setGeoValue('sessionGeoid', s.geoid_model);
                 setGeoValue('sessionVDatum', s.vertical_datum);
                 setGeoValue('sessionUnits', s.units);
+                updateProjectSfHint(s.project_id);
                 await populateTaskSelect(s.project_id, s.task_id || '');
             } else {
+                populateCrewSelect('');
                 // Preselect the filtered project for convenience
                 const filtered = document.getElementById('projectFilter').value;
                 if (filtered) {
