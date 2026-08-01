@@ -469,8 +469,11 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body" id="pointRangesModalBody">
-                <!-- Content will be inserted here -->
+            <div class="modal-body">
+                <div id="pointRangesQcLink" style="margin-bottom: 1rem;"></div>
+                <div id="pointRangesModalBody">
+                    <!-- Content will be inserted here -->
+                </div>
             </div>
         </div>
     </div>
@@ -507,17 +510,19 @@ function renderPointRangesIcon(task) {
     const entryCount = pointRanges.entries ? pointRanges.entries.length : 0;
     const safeTaskName = btoa(encodeURIComponent(task.task_name || 'Task'));
     const safeData = entryCount > 0 ? btoa(encodeURIComponent(JSON.stringify(pointRanges))) : '';
+    const projectId = task.project_id || '';
+    const taskId = task.task_id || '';
 
     if (entryCount > 0) {
         return `
-            <button class="btn btn-xs" style="background: var(--primary-color); color: white;" data-task-name="${safeTaskName}" data-point-ranges="${safeData}" onclick="event.stopPropagation(); handlePointRangesClick(this);" title="View point ranges (${entryCount} job file${entryCount > 1 ? 's' : ''})">
+            <button class="btn btn-xs" style="background: var(--primary-color); color: white;" data-task-name="${safeTaskName}" data-point-ranges="${safeData}" data-project-id="${projectId}" data-task-id="${taskId}" onclick="event.stopPropagation(); handlePointRangesClick(this);" title="View point ranges (${entryCount} job file${entryCount > 1 ? 's' : ''})">
                 <i class="fas fa-map-marker-alt"></i>
                 <span style="margin-left: 0.25rem;">${entryCount}</span>
             </button>
         `;
     } else {
         return `
-            <button class="btn btn-xs btn-secondary" data-task-name="${safeTaskName}" data-point-ranges="" onclick="event.stopPropagation(); handlePointRangesClick(this);" title="No point ranges data - click to view">
+            <button class="btn btn-xs btn-secondary" data-task-name="${safeTaskName}" data-point-ranges="" data-project-id="${projectId}" data-task-id="${taskId}" onclick="event.stopPropagation(); handlePointRangesClick(this);" title="No point ranges data - click to view">
                 <i class="fas fa-map-marker-alt"></i>
             </button>
         `;
@@ -528,19 +533,33 @@ function handlePointRangesClick(button) {
     try {
         const taskName = decodeURIComponent(atob(button.dataset.taskName));
         const pointRangesData = button.dataset.pointRanges ? decodeURIComponent(atob(button.dataset.pointRanges)) : null;
-        showPointRangesModal(taskName, pointRangesData);
+        showPointRangesModal(taskName, pointRangesData, button.dataset.projectId || '', button.dataset.taskId || '');
     } catch (e) {
         console.error('Error handling point ranges click:', e);
-        showPointRangesModal('Task', null);
+        showPointRangesModal('Task', null, '', '');
     }
 }
 
-function showPointRangesModal(taskName, jsonData) {
+function showPointRangesModal(taskName, jsonData, projectId, taskId) {
     const modal = document.getElementById('pointRangesModal');
     const taskNameEl = document.getElementById('pointRangesTaskName');
     const bodyEl = document.getElementById('pointRangesModalBody');
+    const qcLinkEl = document.getElementById('pointRangesQcLink');
 
     taskNameEl.textContent = taskName;
+
+    if (qcLinkEl) {
+        if (projectId) {
+            const qcUrl = `field_data_qc.php?project_id=${encodeURIComponent(projectId)}`;
+            qcLinkEl.innerHTML = `
+                <a href="${qcUrl}" target="_blank" rel="noopener" class="btn btn-xs btn-secondary" style="text-decoration: none;">
+                    <i class="fas fa-external-link-alt"></i> View Field Data QC
+                </a>
+            `;
+        } else {
+            qcLinkEl.innerHTML = '';
+        }
+    }
 
     if (!jsonData) {
         bodyEl.innerHTML = `
