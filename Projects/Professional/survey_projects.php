@@ -58,9 +58,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-map-pin"></i>
                     Monuments
                 </a>
-                <a href="./tools.php" class="nav-item">
-                    <i class="fas fa-tools"></i>
-                    Tools
+                <a href="./field_data_qc.php" class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    Field Data QC
                 </a>
                 <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
                     <i class="fas fa-clock"></i>
@@ -547,7 +547,7 @@ function showPointRangesModal(taskName, jsonData) {
             <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
                 <i class="fas fa-map-marker-alt" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
                 <p style="margin: 0;">No point range data available for this task.</p>
-                <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--gray-400);">Use the Tools page to add point range information.</p>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--gray-400);">Use the Field Data QC page to add point range information.</p>
             </div>
         `;
     } else {
@@ -1226,7 +1226,15 @@ function createProjectLinks(project) {
             </a>
         `).join('');
 
-    return dbLinks + autoLinks;
+    // Deep link to the Field Data QA/QC page filtered to this project
+    const qcLink = `
+        <a href="./field_data_qc.php?project_id=${encodeURIComponent(project.projectId)}" class="link-button" style="border-color: #7c3aed;">
+            <i class="fas fa-clipboard-list" style="color: #7c3aed;"></i>
+            Field Data QC
+        </a>
+    `;
+
+    return dbLinks + autoLinks + qcLink;
 }
 
 // Generate task-level Raw Data folder link (only shown if override is set)
@@ -3649,13 +3657,18 @@ function copyTimesheetForVantagepoint() {
     syncTopBarHeight();
     window.addEventListener('resize', syncTopBarHeight);
 
-    // Keep sidebar/top-bar offset in sync with the shared header tabs height
+    // Keep sidebar/top-bar offset in sync with the shared header tabs height.
+    // The header scrolls with the page (not sticky here), so the offset tracks
+    // only its still-visible portion — once it scrolls off, the sidebar and
+    // sticky top-bar sit at the very top.
     function syncHeaderHeight() {
-        const h = document.querySelector('.header-tabs-container')?.offsetHeight || 0;
-        document.documentElement.style.setProperty('--header-height', h + 'px');
+        const total = document.querySelector('.header-tabs-container')?.offsetHeight || 0;
+        const visible = Math.max(0, total - window.scrollY);
+        document.documentElement.style.setProperty('--header-height', visible + 'px');
     }
     document.addEventListener('headerLoaded', syncHeaderHeight);
     window.addEventListener('resize', syncHeaderHeight);
+    window.addEventListener('scroll', syncHeaderHeight, { passive: true });
 
     // Close timesheet / template-picker modals on outside click
     // (the checklist side panel has no backdrop, so it's only closed via its own close button)

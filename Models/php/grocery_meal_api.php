@@ -351,9 +351,11 @@ function scrapePrice(PDO $pdo, array $input) {
 
     $result = $scraper->lookupPrice($productName);
     if ($result === null) {
+        $reason = $scraper->getLastError() ?: 'No confident match found.';
         sendJsonResponse([
             'success' => false,
-            'message' => "Couldn't find a confident match at $storeName — enter the price manually.",
+            'message' => "Couldn't get a price from $storeName: $reason Enter the price manually.",
+            'debug'   => buildScrapeDebugInfo($scraper->getLastHtml()),
         ]);
     }
 
@@ -732,6 +734,45 @@ function getShoppingList(PDO $pdo, array $input, string $currentUser) {
 // ─────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Cheap, human-readable summary of what a scraper actually received, so a failed
+ * scrape_price can be diagnosed from the UI without pasting raw page HTML by hand.
+ */
+function buildScrapeDebugInfo(?string $rawHtml): ?array {
+    if ($rawHtml === null || $rawHtml === '') {
+        return null;
+    }
+
+    preg_match('/<title[^>]*>(.*?)<\/title>/is', $rawHtml, $titleMatch);
+    $lowerHtml = strtolower($rawHtml);
+
+    $suspiciousMarkers = [
+        'captcha', 'access denied', 'are you a human', 'unusual traffic',
+        'px-captcha', 'cloudflare', 'request blocked', 'verify you are human',
+        'rejected', 'support id', 'reference #', 'administrator',
+    ];
+    $foundMarkers = array_values(array_filter(
+        $suspiciousMarkers,
+        function ($marker) use ($lowerHtml) { return strpos($lowerHtml, $marker) !== false; }
+    ));
+
+    $textOnly = trim(preg_replace('/\s+/', ' ', strip_tags($rawHtml)));
+    $isMetaRefresh = (bool) preg_match('/http-equiv\s*=\s*["\']refresh["\']/i', $rawHtml);
+
+    return [
+        'html_length'           => strlen($rawHtml),
+        'page_title'            => trim($titleMatch[1] ?? ''),
+        'contains_product_card' => strpos($rawHtml, 'data-component="product-card"') !== false,
+        'suspicious_markers'    => $foundMarkers,
+        'is_meta_refresh'       => $isMetaRefresh,
+        'text_snippet'          => mb_substr($textOnly, 0, 400),
+        // Raw markup matters here too: a silent redirect stub or WAF block page can be
+        // pure tags/attributes with zero visible text, which text_snippet would show as
+        // empty even though the body clearly isn't real search results.
+        'raw_snippet'           => mb_substr($rawHtml, 0, 600),
+    ];
+}
 
 /** @return array{0: string, 1: string} */
 function resolveDateRange(array $input): array {
