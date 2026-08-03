@@ -558,7 +558,7 @@
                     <div class="detail-item" style="grid-column: 1 / -1;">
                         <span class="detail-label">Task Folder</span>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <a href="file:///${task.task_link.replace(/N:\\/g, 'westwoodps.local\\\\Global Projects\\\\')}" target="_blank" class="detail-value" style="color: var(--primary-color);">
+                            <a href="file:///${task.task_link.replace(/N:\\/g, 'westwoodps.local/Global Projects/').replace(/\\/g, '/')}" target="_blank" class="detail-value" style="color: var(--primary-color);">
                                 <i class="fas fa-folder"></i> ${task.task_link}
                             </a>
                             <button class="btn btn-xs btn-secondary" onclick="copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}'); event.stopPropagation();" title="Copy task folder path">
