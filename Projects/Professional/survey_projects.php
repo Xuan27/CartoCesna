@@ -281,10 +281,16 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                                     What's this?
                                 </a>
                             </label>
-                            <input type="text" class="form-input" id="plus_code" name="plus_code"
-                                   placeholder="e.g. 87G8Q2PV+W3 or 2PVH+W3 Austin, Texas"
-                                   style="font-family:monospace;text-transform:uppercase;"
-                                   oninput="this.value=this.value.toUpperCase()">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" class="form-input" id="plus_code" name="plus_code"
+                                       placeholder="e.g. 87G8Q2PV+W3 or 2PVH+W3 Austin, Texas"
+                                       style="font-family:monospace;text-transform:uppercase;flex:1;min-width:0;"
+                                       oninput="this.value=this.value.toUpperCase()">
+                                <button type="button" id="plusCodeLookupBtn" class="btn btn-secondary" style="flex-shrink:0;"
+                                        onclick="lookupLocationFromPlusCode()" title="Fill City/County/State from this Plus Code">
+                                    <i class="fas fa-location-crosshairs"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="scale_factor">Scale Factor</label>
@@ -661,6 +667,12 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let currentEditingProject = null;
 
+// Tasks for every project, keyed by project_id. Warmed by one batched
+// request instead of firing a separate load_tasks.php call per rendered
+// project row (that fan-out is what made the task lists slow to appear).
+let taskCache = {};
+let taskCachePromise = null;
+
 // ── Timer state ──────────────────────────────────────────────────────────────
 let timerState = {
     isRunning:   false,
@@ -714,7 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupAutoFill();
     setupTaskAutoFill();
 
-    // Load projects from server
+    // Load projects and warm the task cache in parallel
+    warmTaskCache();
     loadProjects();
 
     // Restore any active timer session
@@ -795,8 +808,34 @@ function handleDeepLink() {
     }
 }
 
-// Loads the different tasks per project
-function loadTasksForProject(projectId) {
+// Warms taskCache with every project's tasks in a single request. Kicked off
+// once at page load (in parallel with loadProjects) so that rendering the
+// project rows doesn't have to wait on one load_tasks.php round trip per row.
+function warmTaskCache() {
+    taskCachePromise = fetch('../../Models/php/load_tasks.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=load_all_tasks'
+    })
+    .then(response => response.json())
+    .then(data => {
+        taskCache = (data.success && data.tasksByProject) ? data.tasksByProject : {};
+        return taskCache;
+    })
+    .catch(error => {
+        console.error('Error warming task cache:', error);
+        taskCache = {};
+        return taskCache;
+    });
+    return taskCachePromise;
+}
+
+// Fetches tasks for a single project directly from the server, bypassing
+// the cache, and updates the cache with the result. Use this after a
+// mutation (add/edit/delete/status change) so stale cached data isn't shown.
+function refreshTasksForProject(projectId) {
     return fetch('../../Models/php/load_tasks.php', {
         method: 'POST',
         headers: {
@@ -806,15 +845,26 @@ function loadTasksForProject(projectId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            return data.tasks || [];
-        }
-        return [];
+        const tasks = data.success ? (data.tasks || []) : [];
+        taskCache[projectId] = tasks;
+        return tasks;
     })
     .catch(error => {
         console.error('Error loading tasks:', error);
         return [];
     });
+}
+
+// Loads the tasks for a project, preferring the warmed cache so rendering
+// many project rows doesn't fire one request per row.
+function loadTasksForProject(projectId) {
+    if (taskCache[projectId]) {
+        return Promise.resolve(taskCache[projectId]);
+    }
+    if (taskCachePromise) {
+        return taskCachePromise.then(() => taskCache[projectId] || []);
+    }
+    return refreshTasksForProject(projectId);
 }
 
 // Round hours to the nearest 0.5 increment using threshold rules:
@@ -1632,6 +1682,9 @@ function saveTaskNotes(taskId, projectId) {
                 <i class="fas fa-sticky-note"></i>
                 <span class="task-notes-content">${displayContent}</span>
             `;
+            // Keep the cached task list in sync so a later re-render doesn't show stale notes
+            const cachedTask = (taskCache[projectId] || []).find(t => t.task_id == taskId);
+            if (cachedTask) cachedTask.notes = newNotes;
             showToast('Notes saved successfully!', 'success');
         } else {
             showToast(data.message || 'Failed to save notes', 'error');
@@ -1709,6 +1762,112 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// ── Google Plus Code (Open Location Code) decoding ─────────────────────────
+// Pure client-side implementation of the OLC "full code" decode algorithm
+// (https://github.com/google/open-location-code) - no API key required.
+const OLC_ALPHABET = '23456789CFGHJMPQRVWX';
+const OLC_SEPARATOR = '+';
+const OLC_SEPARATOR_POSITION = 8;
+const OLC_PAIR_RESOLUTIONS = [20.0, 1.0, 0.05, 0.0025, 0.000125];
+const OLC_GRID_ROWS = 5;
+const OLC_GRID_COLUMNS = 4;
+
+// A "full" plus code (e.g. 87G8Q2PV+W3) can be decoded on its own. A "short"
+// code (e.g. 2PVH+W3) is missing its leading digits and can only be resolved
+// relative to a nearby reference location, so it isn't handled here.
+function isFullPlusCode(code) {
+    if (!code || code.indexOf(OLC_SEPARATOR) !== OLC_SEPARATOR_POSITION) return false;
+    return code.replace(OLC_SEPARATOR, '').indexOf('0') === -1;
+}
+
+function decodePlusCode(code) {
+    const clean = code.toUpperCase().replace(OLC_SEPARATOR, '');
+    let latVal = 0, lngVal = 0;
+    for (let i = 0; i * 2 < Math.min(clean.length, 10); i++) {
+        latVal += OLC_ALPHABET.indexOf(clean[i * 2]) * OLC_PAIR_RESOLUTIONS[i];
+    }
+    for (let i = 0; i * 2 + 1 < Math.min(clean.length, 10); i++) {
+        lngVal += OLC_ALPHABET.indexOf(clean[i * 2 + 1]) * OLC_PAIR_RESOLUTIONS[i];
+    }
+    let latResolution = OLC_PAIR_RESOLUTIONS[4];
+    let lngResolution = OLC_PAIR_RESOLUTIONS[4];
+    for (let i = 10; i < clean.length; i++) {
+        const idx = OLC_ALPHABET.indexOf(clean[i]);
+        if (idx < 0) break;
+        const row = Math.floor(idx / OLC_GRID_COLUMNS);
+        const col = idx % OLC_GRID_COLUMNS;
+        latResolution /= OLC_GRID_ROWS;
+        lngResolution /= OLC_GRID_COLUMNS;
+        latVal += row * latResolution;
+        lngVal += col * lngResolution;
+    }
+    return {
+        lat: (latVal - 90) + latResolution / 2,
+        lng: (lngVal - 180) + lngResolution / 2
+    };
+}
+
+// Build a "City, County, State" string from a Nominatim address object
+function formatCityCountyState(address) {
+    const city = address.city || address.town || address.village || address.hamlet || '';
+    const county = address.county || '';
+    const state = address.state || '';
+    return [city, county, state].filter(Boolean).join(', ');
+}
+
+// Fill the City/County/State field by looking up the entered Plus Code.
+// Full codes are decoded locally then reverse-geocoded; short codes (which
+// include a locality after the code, e.g. "2PVH+W3 Austin, Texas") skip the
+// code math and just forward-geocode that locality text directly. Uses the
+// free OpenStreetMap Nominatim API - no API key required.
+async function lookupLocationFromPlusCode() {
+    const plusCodeInput = document.getElementById('plus_code');
+    const locationInput = document.getElementById('location');
+    const raw = (plusCodeInput.value || '').trim();
+    if (!raw) {
+        showToast('Enter a Plus Code first', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('plusCodeLookupBtn');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const spaceIndex = raw.indexOf(' ');
+        let address;
+
+        if (spaceIndex === -1) {
+            if (!isFullPlusCode(raw)) {
+                throw new Error('Short Plus Codes need a locality after the code, e.g. "2PVH+W3 Austin, Texas"');
+            }
+            const { lat, lng } = decodePlusCode(raw);
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            if (!data || !data.address) throw new Error('Could not resolve that Plus Code to a location');
+            address = data.address;
+        } else {
+            const locality = raw.substring(spaceIndex + 1).trim();
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(locality)}`);
+            const results = await response.json();
+            if (!results.length) throw new Error(`Could not find location "${locality}"`);
+            address = results[0].address;
+        }
+
+        const formatted = formatCityCountyState(address);
+        if (!formatted) throw new Error('Could not determine city/county/state for that Plus Code');
+        locationInput.value = formatted;
+        showToast('City/County/State filled from Plus Code', 'success');
+    } catch (err) {
+        console.error('Plus Code lookup failed:', err);
+        showToast(err.message || 'Failed to look up location from Plus Code', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
 // Set up auto-fill functionality
 function setupAutoFill() {
     // Function to update dependent fields based on project ID
@@ -1720,7 +1879,7 @@ function setupAutoFill() {
             projectFolderLinkInput.value = `N:\\\\${projectId}`;
             projectSurveyFolderLinkInput.value = `N:\\\\${projectId}\\\\05 Service Groups\\\\Survey`;
             projectDrawingFolderLinkInput.value = `N:\\\\${projectId}\\\\06 CAD\\\\DWG\\\\Survey C3D`;
-            projectContractLinkInput.value = `N:\\\\${projectId}\\\\Administration\\\\Contracts`;
+            projectContractLinkInput.value = `N:\\\\${projectId}\\\\01 Administration\\\\Contracts`;
             projectQAQCLinkInput.value = `N:\\\\${projectId}\\\\07 QA-QC\\\\5 - Plan and Report Markups\\\\Land Surveying`;
             projectResearchLinkInput.value = `N:\\\\${projectId}\\\\09 Research\\\\Survey Research`;
             
@@ -1947,7 +2106,7 @@ function saveTask(event) {
             
             // Reload tasks for the project
             const projectId = document.getElementById('taskProjectId').value;
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -1993,9 +2152,9 @@ function deleteTask(taskId, projectId) {
     .then(data => {
         if (data.success) {
             showToast('Task deleted successfully!', 'success');
-            
+
             // Reload tasks for the project
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -2199,9 +2358,9 @@ function changeTaskStatus(event, taskId, projectId, newStatus) {
     .then(data => {
         if (data.success) {
             showToast(`Task status updated to "${newStatus}"`, 'success');
-            
+
             // Reload tasks for the project
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -3649,8 +3808,9 @@ function copyTimesheetForVantagepoint() {
         loadTasksForProject = async function(projectId) {
             const tasks = await origFn(projectId);
             if (tasks && tasks.length > 0) {
-                const taskIds = tasks.map(t => t.task_id);
-                await loadChecklistSummaries(taskIds);
+                // Fire-and-forget: don't hold up rendering the task list
+                // (which is already loaded) just to wait on checklist badges.
+                loadChecklistSummaries(tasks.map(t => t.task_id));
             }
             return tasks;
         };

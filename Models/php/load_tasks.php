@@ -7,7 +7,22 @@ $conn = $db->getConnection();
 try {
     $action = $_POST['action'] ?? $_GET['action'] ?? '';
     
-    if ($action === 'load_tasks') {
+    if ($action === 'load_all_tasks') {
+        // Single query for every project's tasks, grouped by project_id, so the
+        // UI can populate all project rows without one request per project.
+        $stmt = $conn->query("SELECT task_id, project_id, phase_number, task_name, task_type, coordinate_type, task_status, task_priority, task_link, start_date, due_date, completion_date, assigned_to, created_by, modified_by, estimated_hours, actual_hours, notes, folder_overrides, point_ranges, created_date, modified_date FROM tasks ORDER BY FIELD(task_status, 'In Progress', 'Not Started', 'On Hold', 'Completed', 'Cancelled'), due_date ASC, task_id ASC");
+
+        $tasksByProject = [];
+        while ($task = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $tasksByProject[$task['project_id']][] = $task;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'tasksByProject' => $tasksByProject
+        ]);
+
+    } else if ($action === 'load_tasks') {
         $project_id = $_POST['project_id'] ?? '';
         
         if (empty($project_id)) {
