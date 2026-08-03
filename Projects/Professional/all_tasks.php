@@ -248,14 +248,16 @@
             }
         }
 
-        // Load all tasks from all projects
+        // Load all tasks from all projects. Loads projects (for names) and every
+        // project's tasks in two batched requests, instead of one load_tasks.php
+        // call per project - that per-project fan-out was what made this page
+        // slow to display on accounts with many projects.
         function loadAllTasks() {
             const tasksCount = document.getElementById('tasksCount');
             if (tasksCount) {
                 tasksCount.textContent = 'Loading tasks...';
             }
 
-            // First load all projects
             const formData = new FormData();
             formData.append('action', 'load_project');
 
@@ -265,22 +267,38 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    const projects = data.projects || [];
-                    
-                    // Load tasks for each project
-                    const taskPromises = projects.map(project => 
-                        loadTasksForProject(project.projectId, project.projectName)
-                    );
-
-                    return Promise.all(taskPromises);
-                } else {
+                if (!data.success) {
                     throw new Error(data.message || 'Failed to load projects');
                 }
+                const projectNameById = {};
+                (data.projects || []).forEach(project => {
+                    projectNameById[project.projectId] = project.projectName;
+                });
+
+                return fetch('../../Models/php/load_tasks.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=load_all_tasks'
+                })
+                .then(response => response.json())
+                .then(taskData => {
+                    if (!taskData.success) {
+                        throw new Error(taskData.message || 'Failed to load tasks');
+                    }
+                    const tasksByProject = taskData.tasksByProject || {};
+                    const tasks = [];
+                    Object.keys(tasksByProject).forEach(projectId => {
+                        tasksByProject[projectId].forEach(task => {
+                            tasks.push({ ...task, projectName: projectNameById[projectId] });
+                        });
+                    });
+                    return tasks;
+                });
             })
-            .then(tasksArrays => {
-                // Flatten all tasks into one array
-                allTasks = tasksArrays.flat();
+            .then(tasks => {
+                allTasks = tasks;
                 console.log('All tasks loaded:', allTasks.length, 'tasks');
                 searchTasks();
                 showToast('Tasks loaded successfully!', 'success');
@@ -290,33 +308,6 @@
                 allTasks = [];
                 searchTasks();
                 showToast('Error loading tasks - check console', 'error');
-            });
-        }
-
-        // Load tasks for a specific project
-        function loadTasksForProject(projectId, projectName) {
-            return fetch('../../Models/php/load_tasks.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `action=load_tasks&project_id=${encodeURIComponent(projectId)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const tasks = data.tasks || [];
-                    // Add project name to each task
-                    return tasks.map(task => ({
-                        ...task,
-                        projectName: projectName
-                    }));
-                }
-                return [];
-            })
-            .catch(error => {
-                console.error(`Error loading tasks for project ${projectId}:`, error);
-                return [];
             });
         }
 

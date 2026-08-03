@@ -667,6 +667,12 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let currentEditingProject = null;
 
+// Tasks for every project, keyed by project_id. Warmed by one batched
+// request instead of firing a separate load_tasks.php call per rendered
+// project row (that fan-out is what made the task lists slow to appear).
+let taskCache = {};
+let taskCachePromise = null;
+
 // ── Timer state ──────────────────────────────────────────────────────────────
 let timerState = {
     isRunning:   false,
@@ -720,7 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setupAutoFill();
     setupTaskAutoFill();
 
-    // Load projects from server
+    // Load projects and warm the task cache in parallel
+    warmTaskCache();
     loadProjects();
 
     // Restore any active timer session
@@ -801,8 +808,34 @@ function handleDeepLink() {
     }
 }
 
-// Loads the different tasks per project
-function loadTasksForProject(projectId) {
+// Warms taskCache with every project's tasks in a single request. Kicked off
+// once at page load (in parallel with loadProjects) so that rendering the
+// project rows doesn't have to wait on one load_tasks.php round trip per row.
+function warmTaskCache() {
+    taskCachePromise = fetch('../../Models/php/load_tasks.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=load_all_tasks'
+    })
+    .then(response => response.json())
+    .then(data => {
+        taskCache = (data.success && data.tasksByProject) ? data.tasksByProject : {};
+        return taskCache;
+    })
+    .catch(error => {
+        console.error('Error warming task cache:', error);
+        taskCache = {};
+        return taskCache;
+    });
+    return taskCachePromise;
+}
+
+// Fetches tasks for a single project directly from the server, bypassing
+// the cache, and updates the cache with the result. Use this after a
+// mutation (add/edit/delete/status change) so stale cached data isn't shown.
+function refreshTasksForProject(projectId) {
     return fetch('../../Models/php/load_tasks.php', {
         method: 'POST',
         headers: {
@@ -812,15 +845,26 @@ function loadTasksForProject(projectId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            return data.tasks || [];
-        }
-        return [];
+        const tasks = data.success ? (data.tasks || []) : [];
+        taskCache[projectId] = tasks;
+        return tasks;
     })
     .catch(error => {
         console.error('Error loading tasks:', error);
         return [];
     });
+}
+
+// Loads the tasks for a project, preferring the warmed cache so rendering
+// many project rows doesn't fire one request per row.
+function loadTasksForProject(projectId) {
+    if (taskCache[projectId]) {
+        return Promise.resolve(taskCache[projectId]);
+    }
+    if (taskCachePromise) {
+        return taskCachePromise.then(() => taskCache[projectId] || []);
+    }
+    return refreshTasksForProject(projectId);
 }
 
 // Round hours to the nearest 0.5 increment using threshold rules:
@@ -1638,6 +1682,9 @@ function saveTaskNotes(taskId, projectId) {
                 <i class="fas fa-sticky-note"></i>
                 <span class="task-notes-content">${displayContent}</span>
             `;
+            // Keep the cached task list in sync so a later re-render doesn't show stale notes
+            const cachedTask = (taskCache[projectId] || []).find(t => t.task_id == taskId);
+            if (cachedTask) cachedTask.notes = newNotes;
             showToast('Notes saved successfully!', 'success');
         } else {
             showToast(data.message || 'Failed to save notes', 'error');
@@ -2059,7 +2106,7 @@ function saveTask(event) {
             
             // Reload tasks for the project
             const projectId = document.getElementById('taskProjectId').value;
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -2105,9 +2152,9 @@ function deleteTask(taskId, projectId) {
     .then(data => {
         if (data.success) {
             showToast('Task deleted successfully!', 'success');
-            
+
             // Reload tasks for the project
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -2311,9 +2358,9 @@ function changeTaskStatus(event, taskId, projectId, newStatus) {
     .then(data => {
         if (data.success) {
             showToast(`Task status updated to "${newStatus}"`, 'success');
-            
+
             // Reload tasks for the project
-            loadTasksForProject(projectId).then(tasks => {
+            refreshTasksForProject(projectId).then(tasks => {
                 const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
                 if (tasksListElement) {
                     tasksListElement.innerHTML = createTasksHTML(tasks);
@@ -3761,8 +3808,9 @@ function copyTimesheetForVantagepoint() {
         loadTasksForProject = async function(projectId) {
             const tasks = await origFn(projectId);
             if (tasks && tasks.length > 0) {
-                const taskIds = tasks.map(t => t.task_id);
-                await loadChecklistSummaries(taskIds);
+                // Fire-and-forget: don't hold up rendering the task list
+                // (which is already loaded) just to wait on checklist badges.
+                loadChecklistSummaries(tasks.map(t => t.task_id));
             }
             return tasks;
         };
