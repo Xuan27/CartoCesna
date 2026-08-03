@@ -281,10 +281,16 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                                     What's this?
                                 </a>
                             </label>
-                            <input type="text" class="form-input" id="plus_code" name="plus_code"
-                                   placeholder="e.g. 87G8Q2PV+W3 or 2PVH+W3 Austin, Texas"
-                                   style="font-family:monospace;text-transform:uppercase;"
-                                   oninput="this.value=this.value.toUpperCase()">
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="text" class="form-input" id="plus_code" name="plus_code"
+                                       placeholder="e.g. 87G8Q2PV+W3 or 2PVH+W3 Austin, Texas"
+                                       style="font-family:monospace;text-transform:uppercase;flex:1;min-width:0;"
+                                       oninput="this.value=this.value.toUpperCase()">
+                                <button type="button" id="plusCodeLookupBtn" class="btn btn-secondary" style="flex-shrink:0;"
+                                        onclick="lookupLocationFromPlusCode()" title="Fill City/County/State from this Plus Code">
+                                    <i class="fas fa-location-crosshairs"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="scale_factor">Scale Factor</label>
@@ -1707,6 +1713,112 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
+}
+
+// ── Google Plus Code (Open Location Code) decoding ─────────────────────────
+// Pure client-side implementation of the OLC "full code" decode algorithm
+// (https://github.com/google/open-location-code) - no API key required.
+const OLC_ALPHABET = '23456789CFGHJMPQRVWX';
+const OLC_SEPARATOR = '+';
+const OLC_SEPARATOR_POSITION = 8;
+const OLC_PAIR_RESOLUTIONS = [20.0, 1.0, 0.05, 0.0025, 0.000125];
+const OLC_GRID_ROWS = 5;
+const OLC_GRID_COLUMNS = 4;
+
+// A "full" plus code (e.g. 87G8Q2PV+W3) can be decoded on its own. A "short"
+// code (e.g. 2PVH+W3) is missing its leading digits and can only be resolved
+// relative to a nearby reference location, so it isn't handled here.
+function isFullPlusCode(code) {
+    if (!code || code.indexOf(OLC_SEPARATOR) !== OLC_SEPARATOR_POSITION) return false;
+    return code.replace(OLC_SEPARATOR, '').indexOf('0') === -1;
+}
+
+function decodePlusCode(code) {
+    const clean = code.toUpperCase().replace(OLC_SEPARATOR, '');
+    let latVal = 0, lngVal = 0;
+    for (let i = 0; i * 2 < Math.min(clean.length, 10); i++) {
+        latVal += OLC_ALPHABET.indexOf(clean[i * 2]) * OLC_PAIR_RESOLUTIONS[i];
+    }
+    for (let i = 0; i * 2 + 1 < Math.min(clean.length, 10); i++) {
+        lngVal += OLC_ALPHABET.indexOf(clean[i * 2 + 1]) * OLC_PAIR_RESOLUTIONS[i];
+    }
+    let latResolution = OLC_PAIR_RESOLUTIONS[4];
+    let lngResolution = OLC_PAIR_RESOLUTIONS[4];
+    for (let i = 10; i < clean.length; i++) {
+        const idx = OLC_ALPHABET.indexOf(clean[i]);
+        if (idx < 0) break;
+        const row = Math.floor(idx / OLC_GRID_COLUMNS);
+        const col = idx % OLC_GRID_COLUMNS;
+        latResolution /= OLC_GRID_ROWS;
+        lngResolution /= OLC_GRID_COLUMNS;
+        latVal += row * latResolution;
+        lngVal += col * lngResolution;
+    }
+    return {
+        lat: (latVal - 90) + latResolution / 2,
+        lng: (lngVal - 180) + lngResolution / 2
+    };
+}
+
+// Build a "City, County, State" string from a Nominatim address object
+function formatCityCountyState(address) {
+    const city = address.city || address.town || address.village || address.hamlet || '';
+    const county = address.county || '';
+    const state = address.state || '';
+    return [city, county, state].filter(Boolean).join(', ');
+}
+
+// Fill the City/County/State field by looking up the entered Plus Code.
+// Full codes are decoded locally then reverse-geocoded; short codes (which
+// include a locality after the code, e.g. "2PVH+W3 Austin, Texas") skip the
+// code math and just forward-geocode that locality text directly. Uses the
+// free OpenStreetMap Nominatim API - no API key required.
+async function lookupLocationFromPlusCode() {
+    const plusCodeInput = document.getElementById('plus_code');
+    const locationInput = document.getElementById('location');
+    const raw = (plusCodeInput.value || '').trim();
+    if (!raw) {
+        showToast('Enter a Plus Code first', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('plusCodeLookupBtn');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const spaceIndex = raw.indexOf(' ');
+        let address;
+
+        if (spaceIndex === -1) {
+            if (!isFullPlusCode(raw)) {
+                throw new Error('Short Plus Codes need a locality after the code, e.g. "2PVH+W3 Austin, Texas"');
+            }
+            const { lat, lng } = decodePlusCode(raw);
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            if (!data || !data.address) throw new Error('Could not resolve that Plus Code to a location');
+            address = data.address;
+        } else {
+            const locality = raw.substring(spaceIndex + 1).trim();
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(locality)}`);
+            const results = await response.json();
+            if (!results.length) throw new Error(`Could not find location "${locality}"`);
+            address = results[0].address;
+        }
+
+        const formatted = formatCityCountyState(address);
+        if (!formatted) throw new Error('Could not determine city/county/state for that Plus Code');
+        locationInput.value = formatted;
+        showToast('City/County/State filled from Plus Code', 'success');
+    } catch (err) {
+        console.error('Plus Code lookup failed:', err);
+        showToast(err.message || 'Failed to look up location from Plus Code', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
 }
 
 // Set up auto-fill functionality
