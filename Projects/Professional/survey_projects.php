@@ -34,9 +34,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" id="navDashboard" onclick="switchProjectsView('all'); return false;">
                     <i class="fas fa-th-large"></i>
                     Dashboard
+                </a>
+                <a href="#" class="nav-item" id="navMyTodo" onclick="switchProjectsView('todo'); return false;">
+                    <i class="fas fa-star"></i>
+                    My To-Do
                 </a>
                 <a href="./all_tasks.php" class="nav-item">
                     <i class="fas fa-folder-open"></i>
@@ -94,8 +98,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-bars"></i>
                 </button>
                 <div>
-                    <h2>Survey Projects</h2>
-                    <p>Manage and organize your surveying projects</p>
+                    <h2 id="pageTitle">Survey Projects</h2>
+                    <p id="pageSubtitle">Manage and organize your surveying projects</p>
                 </div>
             </div>
             <div class="top-bar-right">
@@ -145,6 +149,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         <option value="25">25 per page</option>
                         <option value="50">50 per page</option>
                     </select>
+                    <select class="filter-select" id="todoSortSelect" style="display:none;" onchange="searchProjects()" title="Sort My To-Do list">
+                        <option value="priority-desc">Sort: Priority (High → Low)</option>
+                        <option value="priority-asc">Sort: Priority (Low → High)</option>
+                        <option value="recent">Sort: Recently Added</option>
+                        <option value="name">Sort: Project Name (A-Z)</option>
+                    </select>
                 </div>
             </div>
 
@@ -177,10 +187,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
                 <!-- Empty State -->
                 <div class="empty-state" id="emptyState" style="display: none;">
-                    <i class="fas fa-folder-open"></i>
-                    <h3>No Projects Found</h3>
-                    <p>Create your first survey project to get started</p>
-                    <button class="btn btn-primary" onclick="openCreateModal()" style="margin-top: 1rem;">
+                    <i class="fas fa-folder-open" id="emptyStateIcon"></i>
+                    <h3 id="emptyStateTitle">No Projects Found</h3>
+                    <p id="emptyStateText">Create your first survey project to get started</p>
+                    <button class="btn btn-primary" onclick="openCreateModal()" style="margin-top: 1rem;" id="emptyStateAction">
                         <i class="fas fa-plus"></i> Create Project
                     </button>
                 </div>
@@ -667,6 +677,20 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let currentEditingProject = null;
 
+// Priority levels available for My To-Do items, highest first, with the
+// colors used for the badge/select shown on each todo row.
+const TODO_PRIORITY_LEVELS = ['Urgent', 'High', 'Medium', 'Low'];
+const TODO_PRIORITY_RANK = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+const TODO_PRIORITY_COLORS = {
+    Urgent: { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+    High:   { bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+    Medium: { bg: '#fef9c3', color: '#a16207', border: '#fde68a' },
+    Low:    { bg: '#e0f2fe', color: '#0369a1', border: '#7dd3fc' },
+};
+
+// Which sidebar tab is active: 'all' (Dashboard) or 'todo' (My To-Do)
+let currentProjectsView = 'all';
+
 // Tasks for every project, keyed by project_id. Warmed by one batched
 // request instead of firing a separate load_tasks.php call per rendered
 // project row (that fan-out is what made the task lists slow to appear).
@@ -1016,19 +1040,164 @@ function getSampleData() {
 function searchProjects() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
-    
+
     filteredProjects = allProjects.filter(project => {
-        const matchesSearch = project.projectName.toLowerCase().includes(searchTerm) || 
+        const matchesSearch = project.projectName.toLowerCase().includes(searchTerm) ||
                             project.projectId.toLowerCase().includes(searchTerm) ||
                             project.createdBy.toLowerCase().includes(searchTerm);
-        
+
         const matchesStatus = !statusFilter || project.projectStatus === statusFilter;
-        
-        return matchesSearch && matchesStatus;
+
+        const matchesView = currentProjectsView !== 'todo' || project.isTodo;
+
+        return matchesSearch && matchesStatus && matchesView;
     });
-    
+
+    if (currentProjectsView === 'todo') {
+        sortTodoProjects(filteredProjects);
+    }
+
     currentPage = 1;
     updateProjectsDisplay();
+}
+
+// Sorts the (already filtered) My To-Do project list in place according to
+// the #todoSortSelect control. Priority order defaults to highest first so
+// the most urgent projects surface at the top of the dashboard.
+function sortTodoProjects(list) {
+    const sortSelect = document.getElementById('todoSortSelect');
+    const mode = sortSelect ? sortSelect.value : 'priority-desc';
+
+    list.sort((a, b) => {
+        switch (mode) {
+            case 'priority-asc':
+                return (TODO_PRIORITY_RANK[a.todoPriority] || 0) - (TODO_PRIORITY_RANK[b.todoPriority] || 0);
+            case 'name':
+                return a.projectName.localeCompare(b.projectName);
+            case 'recent':
+                return new Date(b.todoAddedAt || 0) - new Date(a.todoAddedAt || 0);
+            case 'priority-desc':
+            default:
+                return (TODO_PRIORITY_RANK[b.todoPriority] || 0) - (TODO_PRIORITY_RANK[a.todoPriority] || 0);
+        }
+    });
+
+    return list;
+}
+
+// Switches between the full Dashboard view and the My To-Do view (projects
+// the user has starred). Both views share the same table/search/pagination -
+// only the underlying project set and some header text change.
+function switchProjectsView(view) {
+    currentProjectsView = view;
+
+    document.getElementById('navDashboard').classList.toggle('active', view === 'all');
+    document.getElementById('navMyTodo').classList.toggle('active', view === 'todo');
+
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const todoSortSelect = document.getElementById('todoSortSelect');
+    if (view === 'todo') {
+        pageTitle.textContent = 'My To-Do';
+        pageSubtitle.textContent = 'Projects you\'ve added to your personal to-do list';
+        todoSortSelect.style.display = '';
+    } else {
+        pageTitle.textContent = 'Survey Projects';
+        pageSubtitle.textContent = 'Manage and organize your surveying projects';
+        todoSortSelect.style.display = 'none';
+    }
+
+    searchProjects();
+}
+
+// Adds or removes a project from the current user's My To-Do list and
+// persists the change server-side, then refreshes whichever view is active.
+function toggleProjectTodo(projectId) {
+    const project = allProjects.find(p => p.projectId === projectId);
+    if (!project) return;
+
+    const addingTodo = !project.isTodo;
+    const action = addingTodo ? 'add_todo' : 'remove_todo';
+
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('projectId', projectId);
+
+    fetch('../../Models/php/load_survey_project_notes.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message || 'Unable to update My To-Do list');
+        }
+        project.isTodo = addingTodo;
+        showToast(addingTodo ? 'Added to My To-Do' : 'Removed from My To-Do', 'success');
+        searchProjects();
+    })
+    .catch(error => {
+        console.error('Error updating My To-Do list:', error);
+        showToast('Failed to update My To-Do list', 'error');
+    });
+}
+
+// Updates the priority of a project already on the current user's My To-Do
+// list and re-sorts the visible list so the change is reflected immediately.
+function updateTodoPriority(projectId, priority) {
+    const project = allProjects.find(p => p.projectId === projectId);
+    if (!project) return;
+
+    const previousPriority = project.todoPriority;
+    project.todoPriority = priority; // optimistic update
+
+    const formData = new FormData();
+    formData.append('action', 'update_todo_priority');
+    formData.append('projectId', projectId);
+    formData.append('priority', priority);
+
+    fetch('../../Models/php/load_survey_project_notes.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message || 'Unable to update priority');
+        }
+        showToast(`Priority set to ${priority}`, 'success');
+        if (currentProjectsView === 'todo') {
+            searchProjects();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating todo priority:', error);
+        project.todoPriority = previousPriority; // roll back
+        showToast('Failed to update priority', 'error');
+        if (currentProjectsView === 'todo') {
+            searchProjects();
+        }
+    });
+}
+
+// Renders the priority badge/select shown on a My To-Do row so priority can
+// be changed inline without opening the project.
+function renderTodoPriorityControl(project) {
+    const priority = TODO_PRIORITY_LEVELS.includes(project.todoPriority) ? project.todoPriority : 'Medium';
+    const colors = TODO_PRIORITY_COLORS[priority];
+    const options = TODO_PRIORITY_LEVELS.map(level =>
+        `<option value="${level}" ${level === priority ? 'selected' : ''}>${level}</option>`
+    ).join('');
+
+    return `
+        <select class="todo-priority-select" data-project-id="${project.projectId}"
+            style="font-size:0.72rem;font-weight:700;padding:0.15rem 1.4rem 0.15rem 0.5rem;border-radius:5px;border:1px solid ${colors.border};background-color:${colors.bg};color:${colors.color};cursor:pointer;-webkit-appearance:none;appearance:none;"
+            title="Set priority"
+            onclick="event.stopPropagation();"
+            onchange="event.stopPropagation(); updateTodoPriority('${project.projectId}', this.value);">
+            ${options}
+        </select>
+    `;
 }
 
 // Filter by status
@@ -1059,6 +1228,21 @@ function updateProjectsDisplay() {
     const pagination = document.getElementById('pagination');
     
     if (totalProjects === 0) {
+        const emptyIcon = document.getElementById('emptyStateIcon');
+        const emptyTitle = document.getElementById('emptyStateTitle');
+        const emptyText = document.getElementById('emptyStateText');
+        const emptyAction = document.getElementById('emptyStateAction');
+        if (currentProjectsView === 'todo') {
+            emptyIcon.className = 'fas fa-star';
+            emptyTitle.textContent = 'Your To-Do List Is Empty';
+            emptyText.textContent = 'Click the star next to a project to add it to My To-Do';
+            emptyAction.style.display = 'none';
+        } else {
+            emptyIcon.className = 'fas fa-folder-open';
+            emptyTitle.textContent = 'No Projects Found';
+            emptyText.textContent = 'Create your first survey project to get started';
+            emptyAction.style.display = '';
+        }
         emptyState.style.display = 'block';
         tableContainer.style.display = 'none';
         pagination.style.display = 'none';
@@ -1111,7 +1295,11 @@ function createProjectRow(project) {
                 <div>
                     <div class="project-id">${project.projectId}</div>
                     <div style="display:flex;align-items:center;gap:0.4rem;">
+                        <button type="button" class="todo-star-btn ${project.isTodo ? 'active' : ''}" id="todo-star-${project.projectId}" onclick="event.stopPropagation(); toggleProjectTodo('${project.projectId}');" title="${project.isTodo ? 'Remove from My To-Do' : 'Add to My To-Do'}">
+                            <i class="fa-star ${project.isTodo ? 'fas' : 'far'}"></i>
+                        </button>
                         <div class="project-name">${project.projectName}</div>
+                        ${currentProjectsView === 'todo' ? renderTodoPriorityControl(project) : ''}
                         ${project.needs_monuments ? `<span title="Needs monument setting" style="font-size:0.7rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:0.1rem 0.4rem;font-weight:600;white-space:nowrap;"><i class="fas fa-map-pin"></i> Monuments</span>` : ''}
                     </div>
                 </div>
@@ -1193,6 +1381,10 @@ function createProjectRow(project) {
                 </div>
                 
                 <div class="actions-section">
+                    <button class="btn btn-sm btn-secondary" id="todo-action-btn-${project.projectId}" onclick="event.stopPropagation(); toggleProjectTodo('${project.projectId}');">
+                        <i class="fa-star ${project.isTodo ? 'fas' : 'far'}"></i> ${project.isTodo ? 'Remove from My To-Do' : 'Add to My To-Do'}
+                    </button>
+                    ${project.isTodo ? renderTodoPriorityControl(project) : ''}
                     <button class="btn btn-sm btn-secondary" onclick="editProject('${project.projectId}')">
                         <i class="fas fa-edit"></i> Edit
                     </button>

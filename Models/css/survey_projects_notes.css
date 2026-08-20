@@ -305,6 +305,27 @@ body {
     font-size: 0.875rem;
 }
 
+.todo-star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.15rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--gray-400);
+    flex-shrink: 0;
+    transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.todo-star-btn:hover {
+    color: #f59e0b;
+    transform: scale(1.1);
+}
+
+.todo-star-btn.active {
+    color: #f59e0b;
+}
+
 .status-badge {
     display: inline-flex;
     align-items: center;
