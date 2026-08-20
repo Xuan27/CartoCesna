@@ -29,9 +29,12 @@ try {
         todo_id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(100) NOT NULL,
         project_id VARCHAR(50) NOT NULL,
+        priority ENUM('Low','Medium','High','Urgent') NOT NULL DEFAULT 'Medium',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uniq_username_project (username, project_id)
     ) ENGINE=InnoDB");
+    $pdo->exec("ALTER TABLE survey_project_todos ADD COLUMN IF NOT EXISTS priority ENUM('Low','Medium','High','Urgent') NOT NULL DEFAULT 'Medium'");
+    $VALID_TODO_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
     if ($_POST['action'] === 'load_project') {
         try {
@@ -41,12 +44,16 @@ try {
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $todoStmt = $pdo->prepare("SELECT project_id FROM survey_project_todos WHERE username = :username");
+            $todoStmt = $pdo->prepare("SELECT project_id, priority, created_at FROM survey_project_todos WHERE username = :username");
             $todoStmt->execute([':username' => $currentUsername]);
-            $todoProjectIds = array_flip($todoStmt->fetchAll(PDO::FETCH_COLUMN));
+            $todoByProjectId = [];
+            foreach ($todoStmt->fetchAll(PDO::FETCH_ASSOC) as $todoRow) {
+                $todoByProjectId[$todoRow['project_id']] = $todoRow;
+            }
 
             // Transform database field names to match JavaScript expectations
-            $transformedProjects = array_map(function($project) use ($todoProjectIds) {
+            $transformedProjects = array_map(function($project) use ($todoByProjectId) {
+                $todoRow = $todoByProjectId[$project['project_id']] ?? null;
                 return [
                     'projectId' => $project['project_id'],
                     'projectName' => $project['project_name'],
@@ -69,7 +76,9 @@ try {
                     'needs_monuments' => (int)$project['needs_monuments'],
                     'latitude'  => $project['latitude']  !== null ? (float)$project['latitude']  : null,
                     'longitude' => $project['longitude'] !== null ? (float)$project['longitude'] : null,
-                    'isTodo' => isset($todoProjectIds[$project['project_id']])
+                    'isTodo' => $todoRow !== null,
+                    'todoPriority' => $todoRow['priority'] ?? 'Medium',
+                    'todoAddedAt' => $todoRow['created_at'] ?? null
                 ];
             }, $projects);
 
@@ -234,6 +243,45 @@ try {
             sendJsonResponse([
                 'success' => false,
                 'message' => 'Database error occurred while adding to To-Do list'
+            ]);
+        }
+    }
+    elseif ($_POST['action'] === 'update_todo_priority') {
+        try {
+            if (!isset($_POST['projectId']) || $_POST['projectId'] === '') {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Project ID is required'
+                ]);
+            }
+
+            $priority = $_POST['priority'] ?? '';
+            if (!in_array($priority, $VALID_TODO_PRIORITIES, true)) {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Invalid priority value'
+                ]);
+            }
+
+            $stmt = $pdo->prepare("UPDATE survey_project_todos SET priority = :priority WHERE username = :username AND project_id = :project_id");
+            $stmt->execute([':priority' => $priority, ':username' => $currentUsername, ':project_id' => $_POST['projectId']]);
+
+            if ($stmt->rowCount() === 0) {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Project is not on your My To-Do list'
+                ]);
+            }
+
+            sendJsonResponse([
+                'success' => true,
+                'message' => 'Priority updated'
+            ]);
+        } catch(PDOException $e) {
+            error_log("Database error updating todo priority: " . $e->getMessage());
+            sendJsonResponse([
+                'success' => false,
+                'message' => 'Database error occurred while updating priority'
             ]);
         }
     }
