@@ -34,9 +34,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" id="navDashboard" onclick="switchProjectsView('all'); return false;">
                     <i class="fas fa-th-large"></i>
                     Dashboard
+                </a>
+                <a href="#" class="nav-item" id="navMyTodo" onclick="switchProjectsView('todo'); return false;">
+                    <i class="fas fa-star"></i>
+                    My To-Do
                 </a>
                 <a href="./all_tasks.php" class="nav-item">
                     <i class="fas fa-folder-open"></i>
@@ -94,8 +98,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-bars"></i>
                 </button>
                 <div>
-                    <h2>Survey Projects</h2>
-                    <p>Manage and organize your surveying projects</p>
+                    <h2 id="pageTitle">Survey Projects</h2>
+                    <p id="pageSubtitle">Manage and organize your surveying projects</p>
                 </div>
             </div>
             <div class="top-bar-right">
@@ -177,10 +181,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
                 <!-- Empty State -->
                 <div class="empty-state" id="emptyState" style="display: none;">
-                    <i class="fas fa-folder-open"></i>
-                    <h3>No Projects Found</h3>
-                    <p>Create your first survey project to get started</p>
-                    <button class="btn btn-primary" onclick="openCreateModal()" style="margin-top: 1rem;">
+                    <i class="fas fa-folder-open" id="emptyStateIcon"></i>
+                    <h3 id="emptyStateTitle">No Projects Found</h3>
+                    <p id="emptyStateText">Create your first survey project to get started</p>
+                    <button class="btn btn-primary" onclick="openCreateModal()" style="margin-top: 1rem;" id="emptyStateAction">
                         <i class="fas fa-plus"></i> Create Project
                     </button>
                 </div>
@@ -667,6 +671,9 @@ let currentPage = 1;
 let itemsPerPage = 10;
 let currentEditingProject = null;
 
+// Which sidebar tab is active: 'all' (Dashboard) or 'todo' (My To-Do)
+let currentProjectsView = 'all';
+
 // Tasks for every project, keyed by project_id. Warmed by one batched
 // request instead of firing a separate load_tasks.php call per rendered
 // project row (that fan-out is what made the task lists slow to appear).
@@ -1016,19 +1023,75 @@ function getSampleData() {
 function searchProjects() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
-    
+
     filteredProjects = allProjects.filter(project => {
-        const matchesSearch = project.projectName.toLowerCase().includes(searchTerm) || 
+        const matchesSearch = project.projectName.toLowerCase().includes(searchTerm) ||
                             project.projectId.toLowerCase().includes(searchTerm) ||
                             project.createdBy.toLowerCase().includes(searchTerm);
-        
+
         const matchesStatus = !statusFilter || project.projectStatus === statusFilter;
-        
-        return matchesSearch && matchesStatus;
+
+        const matchesView = currentProjectsView !== 'todo' || project.isTodo;
+
+        return matchesSearch && matchesStatus && matchesView;
     });
-    
+
     currentPage = 1;
     updateProjectsDisplay();
+}
+
+// Switches between the full Dashboard view and the My To-Do view (projects
+// the user has starred). Both views share the same table/search/pagination -
+// only the underlying project set and some header text change.
+function switchProjectsView(view) {
+    currentProjectsView = view;
+
+    document.getElementById('navDashboard').classList.toggle('active', view === 'all');
+    document.getElementById('navMyTodo').classList.toggle('active', view === 'todo');
+
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    if (view === 'todo') {
+        pageTitle.textContent = 'My To-Do';
+        pageSubtitle.textContent = 'Projects you\'ve added to your personal to-do list';
+    } else {
+        pageTitle.textContent = 'Survey Projects';
+        pageSubtitle.textContent = 'Manage and organize your surveying projects';
+    }
+
+    searchProjects();
+}
+
+// Adds or removes a project from the current user's My To-Do list and
+// persists the change server-side, then refreshes whichever view is active.
+function toggleProjectTodo(projectId) {
+    const project = allProjects.find(p => p.projectId === projectId);
+    if (!project) return;
+
+    const addingTodo = !project.isTodo;
+    const action = addingTodo ? 'add_todo' : 'remove_todo';
+
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('projectId', projectId);
+
+    fetch('../../Models/php/load_survey_project_notes.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message || 'Unable to update My To-Do list');
+        }
+        project.isTodo = addingTodo;
+        showToast(addingTodo ? 'Added to My To-Do' : 'Removed from My To-Do', 'success');
+        searchProjects();
+    })
+    .catch(error => {
+        console.error('Error updating My To-Do list:', error);
+        showToast('Failed to update My To-Do list', 'error');
+    });
 }
 
 // Filter by status
@@ -1059,6 +1122,21 @@ function updateProjectsDisplay() {
     const pagination = document.getElementById('pagination');
     
     if (totalProjects === 0) {
+        const emptyIcon = document.getElementById('emptyStateIcon');
+        const emptyTitle = document.getElementById('emptyStateTitle');
+        const emptyText = document.getElementById('emptyStateText');
+        const emptyAction = document.getElementById('emptyStateAction');
+        if (currentProjectsView === 'todo') {
+            emptyIcon.className = 'fas fa-star';
+            emptyTitle.textContent = 'Your To-Do List Is Empty';
+            emptyText.textContent = 'Click the star next to a project to add it to My To-Do';
+            emptyAction.style.display = 'none';
+        } else {
+            emptyIcon.className = 'fas fa-folder-open';
+            emptyTitle.textContent = 'No Projects Found';
+            emptyText.textContent = 'Create your first survey project to get started';
+            emptyAction.style.display = '';
+        }
         emptyState.style.display = 'block';
         tableContainer.style.display = 'none';
         pagination.style.display = 'none';
@@ -1111,6 +1189,9 @@ function createProjectRow(project) {
                 <div>
                     <div class="project-id">${project.projectId}</div>
                     <div style="display:flex;align-items:center;gap:0.4rem;">
+                        <button type="button" class="todo-star-btn ${project.isTodo ? 'active' : ''}" id="todo-star-${project.projectId}" onclick="event.stopPropagation(); toggleProjectTodo('${project.projectId}');" title="${project.isTodo ? 'Remove from My To-Do' : 'Add to My To-Do'}">
+                            <i class="fa-star ${project.isTodo ? 'fas' : 'far'}"></i>
+                        </button>
                         <div class="project-name">${project.projectName}</div>
                         ${project.needs_monuments ? `<span title="Needs monument setting" style="font-size:0.7rem;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:0.1rem 0.4rem;font-weight:600;white-space:nowrap;"><i class="fas fa-map-pin"></i> Monuments</span>` : ''}
                     </div>
@@ -1193,6 +1274,9 @@ function createProjectRow(project) {
                 </div>
                 
                 <div class="actions-section">
+                    <button class="btn btn-sm btn-secondary" id="todo-action-btn-${project.projectId}" onclick="event.stopPropagation(); toggleProjectTodo('${project.projectId}');">
+                        <i class="fa-star ${project.isTodo ? 'fas' : 'far'}"></i> ${project.isTodo ? 'Remove from My To-Do' : 'Add to My To-Do'}
+                    </button>
                     <button class="btn btn-sm btn-secondary" onclick="editProject('${project.projectId}')">
                         <i class="fas fa-edit"></i> Edit
                     </button>

@@ -1,4 +1,5 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors in response
 ini_set('log_errors', 1); // Log errors to file
@@ -15,11 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'])) {
     ]);
 }
 
+$currentUsername = $_SESSION['username'] ?? 'User';
+
 try {
     require_once '../../Private/db_config.php';
     require_once __DIR__ . '/olc_helper.php';
     $db = new Database();
     $pdo = $db->getConnection();
+
+    // Per-user "My To-Do" list of projects (idempotent - safe to run every request)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS survey_project_todos (
+        todo_id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL,
+        project_id VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_username_project (username, project_id)
+    ) ENGINE=InnoDB");
 
     if ($_POST['action'] === 'load_project') {
         try {
@@ -29,8 +41,12 @@ try {
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            $todoStmt = $pdo->prepare("SELECT project_id FROM survey_project_todos WHERE username = :username");
+            $todoStmt->execute([':username' => $currentUsername]);
+            $todoProjectIds = array_flip($todoStmt->fetchAll(PDO::FETCH_COLUMN));
+
             // Transform database field names to match JavaScript expectations
-            $transformedProjects = array_map(function($project) {
+            $transformedProjects = array_map(function($project) use ($todoProjectIds) {
                 return [
                     'projectId' => $project['project_id'],
                     'projectName' => $project['project_name'],
@@ -52,7 +68,8 @@ try {
                     'scale_factor' => $project['scale_factor'],
                     'needs_monuments' => (int)$project['needs_monuments'],
                     'latitude'  => $project['latitude']  !== null ? (float)$project['latitude']  : null,
-                    'longitude' => $project['longitude'] !== null ? (float)$project['longitude'] : null
+                    'longitude' => $project['longitude'] !== null ? (float)$project['longitude'] : null,
+                    'isTodo' => isset($todoProjectIds[$project['project_id']])
                 ];
             }, $projects);
 
@@ -195,7 +212,55 @@ try {
                 'message' => 'Database error occurred while updating project'
             ]);
         }
-    } 
+    }
+    elseif ($_POST['action'] === 'add_todo') {
+        try {
+            if (!isset($_POST['projectId']) || $_POST['projectId'] === '') {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Project ID is required'
+                ]);
+            }
+
+            $stmt = $pdo->prepare("INSERT IGNORE INTO survey_project_todos (username, project_id) VALUES (:username, :project_id)");
+            $stmt->execute([':username' => $currentUsername, ':project_id' => $_POST['projectId']]);
+
+            sendJsonResponse([
+                'success' => true,
+                'message' => 'Project added to My To-Do list'
+            ]);
+        } catch(PDOException $e) {
+            error_log("Database error adding todo: " . $e->getMessage());
+            sendJsonResponse([
+                'success' => false,
+                'message' => 'Database error occurred while adding to To-Do list'
+            ]);
+        }
+    }
+    elseif ($_POST['action'] === 'remove_todo') {
+        try {
+            if (!isset($_POST['projectId']) || $_POST['projectId'] === '') {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Project ID is required'
+                ]);
+            }
+
+            $stmt = $pdo->prepare("DELETE FROM survey_project_todos WHERE username = :username AND project_id = :project_id");
+            $stmt->execute([':username' => $currentUsername, ':project_id' => $_POST['projectId']]);
+
+            sendJsonResponse([
+                'success' => true,
+                'message' => 'Project removed from My To-Do list'
+            ]);
+        } catch(PDOException $e) {
+            error_log("Database error removing todo: " . $e->getMessage());
+            sendJsonResponse([
+                'success' => false,
+                'message' => 'Database error occurred while removing from To-Do list'
+            ]);
+        }
+    }
     else {
         sendJsonResponse([
             'success' => false,
