@@ -149,6 +149,9 @@
             <a href="field_data_qc.php" class="nav-item">
                 <i class="fas fa-clipboard-list"></i> Field Data QC
             </a>
+            <a href="control_points.php" class="nav-item">
+                <i class="fas fa-crosshairs"></i> Control Points
+            </a>
             <a href="#" class="nav-item">
                 <i class="fas fa-cog"></i> Settings
             </a>

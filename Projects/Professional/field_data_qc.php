@@ -519,6 +519,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-clipboard-list"></i>
                     Field Data QC
                 </a>
+                <a href="./control_points.php" class="nav-item">
+                    <i class="fas fa-crosshairs"></i>
+                    Control Points
+                </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-cog"></i>
                     Settings
@@ -824,11 +828,19 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
         async function init() {
             await Promise.all([loadProjects(), loadSessions(), loadCrews()]);
-            const deepLinkProject = new URLSearchParams(location.search).get('project_id');
+            const params = new URLSearchParams(location.search);
+            const deepLinkProject = params.get('project_id');
             if (deepLinkProject) {
                 document.getElementById('projectFilter').value = deepLinkProject;
             }
             renderSessions();
+
+            // Deep link from Control Points: land with a specific session expanded
+            const deepLinkSession = parseInt(params.get('session_id'), 10);
+            if (deepLinkSession && allSessions.some(s => s.session_id === deepLinkSession)) {
+                await toggleSessionCard(deepLinkSession);
+                document.getElementById(`qc-card-${deepLinkSession}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function setupSidebar() {
@@ -1085,6 +1097,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                                class="qc-survey-link" title="Open this project's Survey folder">
                                 <i class="fas fa-map"></i> Survey Folder
                             </a>` : ''}
+                            <a href="./control_points.php?project_id=${encodeURIComponent(projectId)}"
+                               class="qc-survey-link" title="View this project's control points & benchmarks">
+                                <i class="fas fa-crosshairs"></i> Control Points
+                            </a>
                         </div>
                         ${groupSessions.map(createSessionCard).join('')}
                     </div>`;
@@ -1240,6 +1256,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 ${prEditSessionId === session.session_id ? createPointRangesEditor(session) : createPointRangesTable(session)}
                 ${session.general_notes ? `<div class="qc-notes-block"><strong><i class="fas fa-sticky-note"></i> Notes:</strong> ${escapeHtml(session.general_notes)}</div>` : ''}
                 <div class="qc-card-actions">
+                    <a class="btn btn-secondary btn-sm" href="${controlPointLogHref(session)}"
+                       title="New control set or verified during this session? Log it in the Control Points registry.">
+                        <i class="fas fa-crosshairs"></i> Log Control Point
+                    </a>
                     <button class="btn btn-secondary btn-sm" onclick="openSessionModal(${session.session_id})">
                         <i class="fas fa-edit"></i> Edit Session
                     </button>
@@ -1829,6 +1849,19 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             if (isLikelyUrl(path)) return path;
             const uncPath = 'westwoodps.local\\Global Projects';
             return `file:///${path.replace(/N:\\/g, uncPath)}`;
+        }
+
+        // Deep-links into Control Points, prefilled to log a point set/verified
+        // during this session — new control is scoped to whichever task a
+        // session belongs to, so pass task_id along whenever the session has one.
+        function controlPointLogHref(session) {
+            const params = new URLSearchParams({
+                project_id: session.project_id,
+                session_id: session.session_id,
+                action: 'new',
+            });
+            if (session.task_id) params.set('task_id', session.task_id);
+            return `./control_points.php?${params.toString()}`;
         }
 
         // True when the session and its project both have a scale factor and they disagree
