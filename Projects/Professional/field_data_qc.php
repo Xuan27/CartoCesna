@@ -204,6 +204,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             word-break: break-all;
         }
         .qc-path-row i.fa-folder-open { color: #d97706; flex-shrink: 0; }
+        .qc-path-row i.fa-cloud { color: #0369a1; flex-shrink: 0; }
+        .qc-path-row a {
+            color: #1d4ed8;
+            text-decoration: none;
+        }
+        .qc-path-row a:hover { text-decoration: underline; }
         .qc-path-row .copy-btn {
             margin-left: auto;
             border: none;
@@ -591,9 +597,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Raw Data Path</label>
+                        <label class="form-label">Raw Data Folder</label>
                         <div class="path-input-wrap">
-                            <input type="text" class="form-input" id="sessionRawPath" placeholder="N:\0012345.00\05 Service Groups\Survey\Downloads" spellcheck="false">
+                            <input type="text" class="form-input" id="sessionRawPath" placeholder="https://[company].sharepoint.com/... (OneDrive folder link) or N:\0012345.00\05 Service Groups\Survey\Downloads" spellcheck="false">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openRawPath(document.getElementById('sessionRawPath').value)" title="Open folder link">
+                                <i class="fas fa-up-right-from-square"></i>
+                            </button>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="copyPath(document.getElementById('sessionRawPath').value)" title="Copy path">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -1120,10 +1129,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         function createSessionDetail(session) {
             const findings = findingsCache[session.session_id];
 
+            const pathIsLink = isLikelyUrl(session.raw_data_path);
             const pathBlock = session.raw_data_path ? `
                 <div class="qc-path-row">
-                    <i class="fas fa-folder-open"></i>
-                    <span>${escapeHtml(session.raw_data_path)}</span>
+                    <i class="fas ${pathIsLink ? 'fa-cloud' : 'fa-folder-open'}"></i>
+                    ${pathIsLink
+                        ? `<a href="${escapeHtml(session.raw_data_path)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="Open raw data folder">${escapeHtml(session.raw_data_path)}</a>`
+                        : `<span>${escapeHtml(session.raw_data_path)}</span>`}
                     <button class="copy-btn" onclick="event.stopPropagation(); copyPath(${jsAttr(session.raw_data_path)})" title="Copy raw data path">
                         <i class="fas fa-copy"></i>
                     </button>
@@ -2105,6 +2117,26 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             }).catch(() => {
                 showToast('Could not copy path', 'error');
             });
+        }
+
+        // Raw data paths are usually cloud folder links (OneDrive/SharePoint) rather
+        // than local file paths — detect that so we can open them directly instead
+        // of making people copy/paste into a browser.
+        function isLikelyUrl(path) {
+            return /^https?:\/\//i.test((path || '').trim());
+        }
+
+        function openRawPath(path) {
+            path = (path || '').trim();
+            if (!path) {
+                showToast('No path to open', 'error');
+                return;
+            }
+            if (!isLikelyUrl(path)) {
+                showToast('Not a folder link — this looks like a local/network path', 'error');
+                return;
+            }
+            window.open(path, '_blank', 'noopener,noreferrer');
         }
 
         function showToast(message, type = 'success') {
