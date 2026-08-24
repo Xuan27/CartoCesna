@@ -66,6 +66,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-clipboard-list"></i>
                     Field Data QC
                 </a>
+                <a href="./control_points.php" class="nav-item">
+                    <i class="fas fa-crosshairs"></i>
+                    Control Points
+                </a>
                 <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
                     <i class="fas fa-clock"></i>
                     Timesheet
@@ -810,9 +814,15 @@ function loadProjects() {
     });
 }
 
-// Handle deep-link from All Tasks page (?project=X&task=Y)
+// Handle deep-link from All Tasks page (?project=X&task=Y) and from other
+// pages' sidebar (?view=todo) linking straight into the My To-Do view.
 function handleDeepLink() {
     const params = new URLSearchParams(window.location.search);
+
+    if (params.get('view') === 'todo') {
+        switchProjectsView('todo');
+    }
+
     const projectId = params.get('project');
     if (!projectId) return;
 

@@ -350,6 +350,9 @@
             <a href="survey_projects.php" class="nav-item">
                 <i class="fas fa-th-large"></i> Dashboard
             </a>
+            <a href="survey_projects.php?view=todo" class="nav-item">
+                <i class="fas fa-star"></i> My To-Do
+            </a>
             <a href="all_tasks.php" class="nav-item">
                 <i class="fas fa-folder-open"></i> All Tasks
             </a>
@@ -367,6 +370,9 @@
             </a>
             <a href="field_data_qc.php" class="nav-item">
                 <i class="fas fa-clipboard-list"></i> Field Data QC
+            </a>
+            <a href="control_points.php" class="nav-item">
+                <i class="fas fa-crosshairs"></i> Control Points
             </a>
             <a href="#" class="nav-item">
                 <i class="fas fa-cog"></i> Settings
