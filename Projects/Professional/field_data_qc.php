@@ -51,6 +51,18 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             font-size: 0.85rem;
             color: var(--gray-500);
         }
+        .qc-survey-link {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #7c3aed;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .qc-survey-link:hover { text-decoration: underline; }
         .qc-card {
             background: white;
             border: 1px solid var(--gray-200, #e5e7eb);
@@ -1062,11 +1074,17 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             let html = '';
             groups.forEach((groupSessions, projectId) => {
                 const projectName = groupSessions[0].project_name || '';
+                const surveyHref = projectSurveyFolderHref(projectId);
                 html += `
                     <div class="qc-project-group">
                         <div class="qc-project-group-header">
                             <h3>${escapeHtml(projectName)}</h3>
                             <span class="qc-project-id">${escapeHtml(projectId)}</span>
+                            ${surveyHref ? `
+                            <a href="${escapeHtml(surveyHref)}" target="_blank" rel="noopener noreferrer"
+                               class="qc-survey-link" title="Open this project's Survey folder">
+                                <i class="fas fa-map"></i> Survey Folder
+                            </a>` : ''}
                         </div>
                         ${groupSessions.map(createSessionCard).join('')}
                     </div>`;
@@ -1799,6 +1817,18 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             const project = allProjects.find(p => p.projectId === projectId);
             const sf = project ? String(project.scale_factor ?? '').trim() : '';
             return sf && !isNaN(parseFloat(sf)) ? sf : '';
+        }
+
+        // Builds an openable href for the project's Survey folder — a cloud
+        // link (OneDrive/SharePoint) is opened as-is; a local/network path is
+        // turned into a file:// UNC link, same convention as the Dashboard.
+        function projectSurveyFolderHref(projectId) {
+            const project = allProjects.find(p => p.projectId === projectId);
+            const path = project ? (project.surveyFolderLink || '').trim() : '';
+            if (!path) return null;
+            if (isLikelyUrl(path)) return path;
+            const uncPath = 'westwoodps.local\\Global Projects';
+            return `file:///${path.replace(/N:\\/g, uncPath)}`;
         }
 
         // True when the session and its project both have a scale factor and they disagree
