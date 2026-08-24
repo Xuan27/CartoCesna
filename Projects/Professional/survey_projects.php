@@ -810,9 +810,15 @@ function loadProjects() {
     });
 }
 
-// Handle deep-link from All Tasks page (?project=X&task=Y)
+// Handle deep-link from All Tasks page (?project=X&task=Y) and from other
+// pages' sidebar (?view=todo) linking straight into the My To-Do view.
 function handleDeepLink() {
     const params = new URLSearchParams(window.location.search);
+
+    if (params.get('view') === 'todo') {
+        switchProjectsView('todo');
+    }
+
     const projectId = params.get('project');
     if (!projectId) return;
 

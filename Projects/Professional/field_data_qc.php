@@ -479,6 +479,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-th-large"></i>
                     Dashboard
                 </a>
+                <a href="./survey_projects.php?view=todo" class="nav-item">
+                    <i class="fas fa-star"></i>
+                    My To-Do
+                </a>
                 <a href="./all_tasks.php" class="nav-item">
                     <i class="fas fa-folder-open"></i>
                     All Tasks
