@@ -63,6 +63,28 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             white-space: nowrap;
         }
         .qc-survey-link:hover { text-decoration: underline; }
+        .qc-survey-link-group {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .qc-survey-link-group .qc-survey-link { margin-left: 0; }
+        .qc-icon-copy-btn {
+            border: none;
+            background: var(--gray-100, #f3f4f6);
+            color: var(--gray-500);
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            flex-shrink: 0;
+        }
+        .qc-icon-copy-btn:hover { background: var(--gray-200, #e5e7eb); color: var(--gray-700, #374151); }
         .qc-card {
             background: white;
             border: 1px solid var(--gray-200, #e5e7eb);
@@ -1086,6 +1108,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             let html = '';
             groups.forEach((groupSessions, projectId) => {
                 const projectName = groupSessions[0].project_name || '';
+                const surveyPath = getProjectSurveyFolderPath(projectId);
                 const surveyHref = projectSurveyFolderHref(projectId);
                 html += `
                     <div class="qc-project-group">
@@ -1093,10 +1116,15 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                             <h3>${escapeHtml(projectName)}</h3>
                             <span class="qc-project-id">${escapeHtml(projectId)}</span>
                             ${surveyHref ? `
-                            <a href="${escapeHtml(surveyHref)}" target="_blank" rel="noopener noreferrer"
-                               class="qc-survey-link" title="Open this project's Survey folder">
-                                <i class="fas fa-map"></i> Survey Folder
-                            </a>` : ''}
+                            <span class="qc-survey-link-group">
+                                <a href="${escapeHtml(surveyHref)}" target="_blank" rel="noopener noreferrer"
+                                   class="qc-survey-link" title="Open this project's Survey folder">
+                                    <i class="fas fa-map"></i> Survey Folder
+                                </a>
+                                <button class="qc-icon-copy-btn" onclick="event.stopPropagation(); copyPath(${jsAttr(surveyPath)})" title="Copy Survey folder path">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </span>` : ''}
                             <a href="./control_points.php?project_id=${encodeURIComponent(projectId)}"
                                class="qc-survey-link" title="View this project's control points & benchmarks">
                                 <i class="fas fa-crosshairs"></i> Control Points
@@ -1839,12 +1867,16 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             return sf && !isNaN(parseFloat(sf)) ? sf : '';
         }
 
+        function getProjectSurveyFolderPath(projectId) {
+            const project = allProjects.find(p => p.projectId === projectId);
+            return project ? (project.surveyFolderLink || '').trim() : '';
+        }
+
         // Builds an openable href for the project's Survey folder — a cloud
         // link (OneDrive/SharePoint) is opened as-is; a local/network path is
         // turned into a file:// UNC link, same convention as the Dashboard.
         function projectSurveyFolderHref(projectId) {
-            const project = allProjects.find(p => p.projectId === projectId);
-            const path = project ? (project.surveyFolderLink || '').trim() : '';
+            const path = getProjectSurveyFolderPath(projectId);
             if (!path) return null;
             if (isLikelyUrl(path)) return path;
             const uncPath = 'westwoodps.local\\Global Projects';
