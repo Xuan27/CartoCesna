@@ -3643,6 +3643,7 @@ function copyTimesheetForVantagepoint() {
             const btnClass = isComplete ? 'checklist-complete' : 'checklist-in-progress';
             return `
                 <button class="checklist-btn ${btnClass}"
+                        data-task-id="${task.task_id}"
                         onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}', '${(task.assigned_to || '').replace(/'/g, "\\'")}')"
                         title="Checklist: ${summary.completed}/${summary.total}">
                     <i class="fas ${isComplete ? 'fa-check-circle' : 'fa-clipboard-check'}"></i>
@@ -3655,6 +3656,7 @@ function copyTimesheetForVantagepoint() {
             if (summary.template_count > 1) {
                 return `
                     <button class="checklist-btn checklist-pick"
+                            data-task-id="${task.task_id}"
                             onclick="event.stopPropagation(); showTemplatePicker(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}')"
                             title="Select a checklist template">
                         <i class="fas fa-clipboard-list"></i> Select Checklist
@@ -3663,6 +3665,7 @@ function copyTimesheetForVantagepoint() {
             }
             return `
                 <button class="checklist-btn checklist-not-started"
+                        data-task-id="${task.task_id}"
                         onclick="event.stopPropagation(); showChecklistModal(${task.task_id}, '${(task.task_name || '').replace(/'/g, "\\'")}', '${(task.assigned_to || '').replace(/'/g, "\\'")}')"
                         title="Open checklist">
                     <i class="fas fa-clipboard-check"></i> Checklist
@@ -3916,18 +3919,33 @@ function copyTimesheetForVantagepoint() {
         currentChecklistTaskName = null;
     }
 
+    // Finds a task object by ID across the warmed task cache, so a checklist
+    // button can be re-rendered without a fresh server round trip.
+    function findCachedTask(taskId) {
+        for (const projectId in taskCache) {
+            const found = (taskCache[projectId] || []).find(t => String(t.task_id) === String(taskId));
+            if (found) return found;
+        }
+        return null;
+    }
+
+    // Swaps each task's checklist placeholder/button in the DOM for a freshly
+    // rendered one now that checklistSummaries has data for it.
+    function updateChecklistButtonsForTaskIds(taskIds) {
+        taskIds.forEach(taskId => {
+            const task = findCachedTask(taskId);
+            if (!task) return;
+            document.querySelectorAll(`.checklist-btn[data-task-id="${taskId}"], .checklist-btn-placeholder[data-task-id="${taskId}"]`)
+                .forEach(el => { el.outerHTML = renderChecklistButton(task); });
+        });
+    }
+
     // Refresh checklist button displays after changes
     async function refreshChecklistButtons() {
         const taskIds = Object.keys(checklistSummaries);
         if (taskIds.length > 0) {
             await loadChecklistSummaries(taskIds);
-            // Update placeholder buttons
-            document.querySelectorAll('.checklist-btn, .checklist-btn-placeholder').forEach(el => {
-                const taskId = el.dataset?.taskId || el.getAttribute('onclick')?.match(/\d+/)?.[0];
-                if (taskId && checklistSummaries[taskId]) {
-                    // Re-render by reloading the project tasks
-                }
-            });
+            updateChecklistButtonsForTaskIds(taskIds);
         }
     }
 
@@ -4010,9 +4028,11 @@ function copyTimesheetForVantagepoint() {
         loadTasksForProject = async function(projectId) {
             const tasks = await origFn(projectId);
             if (tasks && tasks.length > 0) {
-                // Fire-and-forget: don't hold up rendering the task list
-                // (which is already loaded) just to wait on checklist badges.
-                loadChecklistSummaries(tasks.map(t => t.task_id));
+                const ids = tasks.map(t => t.task_id);
+                // Don't hold up rendering the task list (which is already
+                // loaded) just to wait on checklist badges - but once the
+                // summaries do arrive, swap the placeholders for real buttons.
+                loadChecklistSummaries(ids).then(() => updateChecklistButtonsForTaskIds(ids));
             }
             return tasks;
         };
@@ -4026,6 +4046,7 @@ function copyTimesheetForVantagepoint() {
             const ids = [...new Set(Array.from(taskElements).map(el => el.dataset.taskId).filter(Boolean))];
             if (ids.length > 0) {
                 await loadChecklistSummaries(ids);
+                updateChecklistButtonsForTaskIds(ids);
             }
         }, 2000);
     });
