@@ -939,65 +939,6 @@ function formatTaskStatusClass(status) {
     return status.toLowerCase().replace(/\s+/g, '-');
 }
 
-// Create tasks HTML
-function createTasksHTML(tasks) {
-    if (!tasks || tasks.length === 0) {
-        return `
-            <div class="no-tasks-message">
-                <i class="fas fa-tasks" style="margin-right: 0.5rem;"></i>
-                No tasks assigned to this project yet
-            </div>
-        `;
-    }
-    
-    return tasks.map(task => {
-        const taskTypeClass = `task-type-${formatTaskTypeClass(task.task_type)}`;
-        const taskStatusClass = `task-status-${formatTaskStatusClass(task.task_status)}`;
-        const dueDate = task.due_date ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No due date';
-        const uncPath = "westwoodps.local\\\\Global Projects";
-        
-        return `
-            <div class="task-item" data-task-type="${task.task_type}">
-                <div class="task-info">
-                    <div class="task-header">
-                        <span class="task-type-badge ${taskTypeClass}"><i class="fas ${getTaskTypeIcon(task.task_type)}"></i>${task.task_type}</span>
-                        <span class="task-name">${task.task_name}</span>
-                    </div>
-                    <div class="task-meta">
-                        ${task.phase_number ? `<span><i class="fas fa-layer-group"></i> Phase ${task.phase_number}</span>` : ''}
-                        <span><i class="fas fa-calendar"></i> ${dueDate}</span>
-                        ${task.assigned_to ? `<span><i class="fas fa-user"></i> ${task.assigned_to}</span>` : ''}
-                        ${renderPointRangesIcon(task)}
-                        ${renderChecklistButton(task)}
-                        ${task.task_link ? `
-                            <span style="display: flex; align-items: center; gap: 0.25rem;">
-                                <a href="file:///${task.task_link.replace(/N:\\\\/g, uncPath)}" target="_blank" style="color: var(--primary-color);">
-                                    <i class="fas fa-folder"></i> Task Folder
-                                </a>
-                                <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); copyTaskPath('${task.task_link.replace(/\\/g, '\\\\')}', '${task.task_name.replace(/'/g, "\\'")}'); return false;" title="Copy task folder path" style="padding: 0.15rem 0.35rem;">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </span>
-                        ` : ''}
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="task-status-badge ${taskStatusClass}">
-                        <i class="fas fa-circle"></i>
-                        ${task.task_status}
-                    </span>
-                    <button class="btn btn-xs btn-secondary" onclick="editTask(${task.task_id}, '${task.project_id}')" title="Edit task">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-xs" style="background: var(--danger-color); color: white;" onclick="deleteTask(${task.task_id}, '${task.project_id}')" title="Delete task">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
 // Sample data for fallback
 function getSampleData() {
     return [
@@ -3770,7 +3711,7 @@ function copyTimesheetForVantagepoint() {
 
         let html = '';
         for (const [category, catItems] of Object.entries(grouped)) {
-            html += `<div class="checklist-category-header">${escapeHtmlChecklist(category)}</div>`;
+            html += `<div class="checklist-category-header">${esc(category)}</div>`;
             catItems.forEach(item => {
                 html += item.item_type === 'conditional'
                     ? renderConditionalChecklistItem(item, childrenOf[item.item_id] || [])
@@ -3809,7 +3750,7 @@ function copyTimesheetForVantagepoint() {
             ? new Date(item.completed_date.replace(' ', 'T')).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
             : '';
         const meta = isCompleted && item.completed_by
-            ? `<div class="checklist-item-meta">${escapeHtmlChecklist(item.completed_by)}${completedDateStr ? ' - ' + completedDateStr : ''}</div>`
+            ? `<div class="checklist-item-meta">${esc(item.completed_by)}${completedDateStr ? ' - ' + completedDateStr : ''}</div>`
             : '';
         const newStatusOnCheck = isCompleted ? 'unchecked' : 'completed';
         const newStatusOnNa   = isNa ? 'unchecked' : 'na';
@@ -3818,7 +3759,7 @@ function copyTimesheetForVantagepoint() {
                 <input type="checkbox" ${isCompleted ? 'checked' : ''}
                        onchange="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newStatusOnCheck}')">
                 <div style="flex:1;">
-                    <div class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}${naLabel}</div>
+                    <div class="checklist-item-label">${esc(item.item_text)}${naLabel}</div>
                     ${meta}
                 </div>
                 <button class="btn-na ${isNa ? 'active' : ''}" title="Not Applicable"
@@ -3850,7 +3791,7 @@ function copyTimesheetForVantagepoint() {
             <div class="checklist-conditional-item ${answeredClass}">
                 <div class="conditional-question">
                     <i class="fas fa-code-branch" style="color:var(--primary-color);flex-shrink:0;"></i>
-                    <span class="checklist-item-label">${escapeHtmlChecklist(item.item_text)}</span>
+                    <span class="checklist-item-label">${esc(item.item_text)}</span>
                     <div class="conditional-buttons">
                         <button class="btn-branch yes-btn ${yesActive}"
                                 onclick="setChecklistItemStatus(${currentChecklistTaskId}, ${item.item_id}, '${newYes}')">
@@ -3973,8 +3914,8 @@ function copyTimesheetForVantagepoint() {
             <div class="template-picker-item" onclick="assignTemplate(${taskId}, ${t.template_id}, '${(taskName || '').replace(/'/g, "\\'")}')">
                 <i class="fas fa-clipboard-check"></i>
                 <div class="template-picker-info">
-                    <h4>${escapeHtmlChecklist(t.template_name)}</h4>
-                    ${t.description ? `<p>${escapeHtmlChecklist(t.description)}</p>` : ''}
+                    <h4>${esc(t.template_name)}</h4>
+                    ${t.description ? `<p>${esc(t.description)}</p>` : ''}
                 </div>
             </div>
         `).join('');
@@ -4011,13 +3952,6 @@ function copyTimesheetForVantagepoint() {
             console.error('Error:', error);
             showToast('Network error', 'error');
         }
-    }
-
-    function escapeHtmlChecklist(text) {
-        if (text === null || text === undefined) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     // Hook into task loading to fetch checklist summaries
