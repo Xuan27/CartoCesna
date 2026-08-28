@@ -1310,17 +1310,6 @@ function generateTaskFolderLinks(projectId, task) {
     `;
 }
 
-// Copy task folder path to clipboard
-function copyTaskFolderPath(path, label) {
-    event.stopPropagation();
-    navigator.clipboard.writeText(path.replace(/\\\\/g, '\\')).then(() => {
-        showToast(`${label} path copied to clipboard`, 'success');
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        showToast('Failed to copy path', 'error');
-    });
-}
-
 // Update pagination
 function updatePagination(totalProjects) {
     const totalPages = Math.ceil(totalProjects / itemsPerPage);

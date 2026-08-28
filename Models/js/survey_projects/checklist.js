@@ -298,12 +298,6 @@ async function refreshChecklistView(taskId) {
     }
 }
 
-// Legacy toggle (kept for any external callers)
-async function toggleChecklistItem(taskId, itemId, checkbox) {
-    const newStatus = checkbox.checked ? 'completed' : 'unchecked';
-    await setChecklistItemStatus(taskId, itemId, newStatus);
-}
-
 function closeChecklistModal() {
     document.getElementById('checklistModal').classList.remove('active');
     // Refresh the task display to update buttons

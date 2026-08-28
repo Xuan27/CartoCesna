@@ -383,9 +383,3 @@ function formatDurationShort(seconds) {
     return `${m}m`;
 }
 
-// Format decimal hours for timesheet cells
-function formatDecimalHours(seconds) {
-    if (!seconds || seconds <= 0) return null;
-    return roundToHalf(seconds / 3600);
-}
-
