@@ -9,7 +9,14 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Points - Survey Project Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- proj4.js must load before modules that use it (served locally for reliability) -->
+    <script src="../../Models/js/proj4.min.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
+    <link rel="stylesheet" href="../../Models/css/bulk-import.css">
+    <!-- Module scripts can defer since proj4 is already loaded -->
+    <script src="../../Models/js/CoordinateTransformer.js" defer></script>
+    <script src="../../Models/js/CSVParser.js" defer></script>
+    <script src="../../Models/js/BulkImportUI.js" defer></script>
     <style>
         .cp-empty-state {
             text-align: center;
@@ -136,6 +143,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         @media (max-width: 640px) {
             .form-row-2 { grid-template-columns: 1fr; }
         }
+
     </style>
 </head>
 <body>
@@ -213,6 +221,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 </div>
             </div>
             <div class="top-bar-right">
+                <button class="btn btn-secondary" onclick="toggleBulkImport()" style="margin-right: 0.75rem;">
+                    <i class="fas fa-file-csv"></i> Bulk Import
+                </button>
                 <button class="btn btn-primary" onclick="openPointModal()">
                     <i class="fas fa-plus"></i> Add Control Point
                 </button>
@@ -221,6 +232,50 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
         <!-- Content Area -->
         <div class="content-area">
+            <!-- Bulk Import CSV Section -->
+            <div id="bulkImportSection" class="cp-bulk-import-section" style="display: none;">
+                <div class="section-header" onclick="toggleBulkImport(event)">
+                    <i class="fas fa-file-csv"></i>
+                    <h3>Bulk Import from PNEZD CSV</h3>
+                    <div style="flex: 1;"></div>
+                    <i class="fas fa-chevron-down" id="bulkToggleIcon"></i>
+                </div>
+                <div class="bulk-import-body" id="bulkImportBody" style="display: none; padding: 1.5rem;">
+                    <form id="bulkImportForm" onsubmit="return false;">
+                        <div class="form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">Source Coordinate System *</label>
+                                <select class="form-select" id="bulkCoordSystem" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Datum/Epoch *</label>
+                                <select class="form-select" id="bulkDatum" required></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">CSV File (PNEZD Format) *</label>
+                            <input type="file" class="form-input" id="bulkCsvFile" accept=".csv,.txt" required>
+                            <div class="cp-hint">
+                                <i class="fas fa-circle-info"></i> Columns: P (Point ID), N (Northing), E (Easting), Z (Elevation), D (Description)
+                            </div>
+                        </div>
+
+                        <div id="transformationPreview" style="margin-top: 1.5rem;"></div>
+
+                        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                            <button type="button" class="btn btn-secondary" onclick="toggleBulkImport()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="validateAndPreview()">
+                                <i class="fas fa-search"></i> Preview &amp; Validate
+                            </button>
+                            <button type="button" class="btn btn-success" id="importBtn" onclick="performImport()" style="display: none;">
+                                <i class="fas fa-upload"></i> Import Points
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="cp-filters">
                 <select class="form-select" id="projectFilter" onchange="onProjectFilterChange()">
                     <option value="">All Projects</option>
@@ -472,6 +527,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         async function init() {
             await Promise.all([loadProjects(), loadPoints(), loadCrews()]);
             populateCrewSelect('');
+
+            // Initialize bulk import UI with coordinate systems
+            BulkImportUI.init(COORD_SYSTEMS, DATUM_EPOCHS);
 
             const params = new URLSearchParams(location.search);
             const projectId = params.get('project_id') || '';
@@ -1040,6 +1098,30 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ── BULK IMPORT: Thin wrappers for modular functions ────
+
+        function toggleBulkImport(event) {
+            BulkImportUI.toggle(event);
+        }
+
+        function validateAndPreview() {
+            BulkImportUI.validateAndPreview();
+        }
+
+        function performImport() {
+            BulkImportUI.performImport(CP_API,
+                async (data) => {
+                    // Success callback
+                    await loadPoints();
+                    renderPoints();
+                },
+                (err) => {
+                    // Error callback
+                    console.error('Import failed:', err);
+                }
+            );
         }
     </script>
 </body>

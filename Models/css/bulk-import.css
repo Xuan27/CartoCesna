@@ -1,0 +1,194 @@
+/* Bulk Import Module - PNEZD CSV Upload & Coordinate Transformation */
+
+.cp-bulk-import-section {
+    background: linear-gradient(135deg, #f8f4ff 0%, #fff5f0 100%);
+    border: 2px solid #d8c4f1;
+    border-radius: 10px;
+    padding: 0;
+    margin: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    user-select: none;
+}
+
+.section-header:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.section-header i:last-child {
+    transition: transform 0.3s ease;
+    margin-left: auto;
+}
+
+.bulk-import-body {
+    background: white;
+    border-top: 1px solid var(--gray-200);
+    border-radius: 0 0 8px 8px;
+}
+
+/* Validation & Success Messages */
+.validation-errors,
+.transformation-success {
+    margin: 1rem 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid;
+}
+
+.validation-errors {
+    border-color: #fed7d7;
+    background: #fef2f2;
+}
+
+.transformation-success {
+    border-color: #c6f6d5;
+    background: #ecfdf5;
+}
+
+.validation-errors h4,
+.transformation-success h4 {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.validation-errors h4 {
+    background: #fff5f5;
+    color: #b91c1c;
+}
+
+.transformation-success h4 {
+    background: #f0fdf4;
+    color: #047857;
+}
+
+/* Tables */
+.validation-errors table,
+.transformation-success table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.validation-errors th,
+.transformation-success th {
+    background: rgba(0, 0, 0, 0.03);
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.validation-errors td,
+.transformation-success td {
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    max-width: 250px;
+    word-break: break-word;
+}
+
+/* Row Styling */
+.error-row {
+    background: #fef2f2;
+}
+
+.ok-row {
+    background: white;
+}
+
+.warn-row {
+    background: #fffbeb;
+}
+
+.error-row:hover {
+    background: #fed7d7;
+}
+
+.warn-row:hover {
+    background: #fef3c7;
+}
+
+.ok-row:hover {
+    background: #f9fafb;
+}
+
+/* Status Indicators */
+.validation-errors .warning {
+    color: #b91c1c;
+    font-weight: 500;
+}
+
+.transformation-success .ok {
+    color: #047857;
+    font-weight: 500;
+}
+
+.transformation-success .warning {
+    color: #d97706;
+    font-weight: 500;
+}
+
+/* Info Text */
+.bulk-import-hint {
+    font-size: 0.75rem;
+    color: var(--gray-400, #9ca3af);
+    margin: -0.25rem 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.bulk-import-hint i {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cp-bulk-import-section {
+        margin: 0 1rem 1.5rem 1rem;
+    }
+
+    .section-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .section-header h3 {
+        font-size: 0.9rem;
+    }
+
+    .bulk-import-body {
+        padding: 1rem !important;
+    }
+
+    .validation-errors table,
+    .transformation-success table {
+        font-size: 0.75rem;
+    }
+
+    .validation-errors td,
+    .transformation-success td {
+        padding: 0.35rem;
+        max-width: 150px;
+    }
+}
