@@ -197,6 +197,81 @@ try {
         sendJsonResponse(['success' => true]);
     }
 
+    // ── bulk_import ──────────────────────────────────────────────────────────
+    elseif ($action === 'bulk_import') {
+
+        $projectId = trim($_POST['project_id'] ?? '');
+        $pointsJson = $_POST['points_json'] ?? '[]';
+        $points = json_decode($pointsJson, true);
+
+        if ($projectId === '') {
+            sendJsonResponse(['success' => false, 'message' => 'project_id is required']);
+        }
+
+        if (!is_array($points) || empty($points)) {
+            sendJsonResponse(['success' => false, 'message' => 'No points to import']);
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO control_points
+                    (project_id, point_number, point_name, point_type, status,
+                     northing, easting, elevation, latitude, longitude,
+                     coordinate_system, datum_epoch, units, created_by)
+                 VALUES
+                    (:project_id, :point_number, :point_name, :point_type, :status,
+                     :northing, :easting, :elevation, :latitude, :longitude,
+                     :coordinate_system, :datum_epoch, :units, :created_by)"
+            );
+
+            $importedCount = 0;
+            $skipped = [];
+
+            foreach ($points as $idx => $p) {
+                try {
+                    $stmt->execute([
+                        ':project_id' => $p['project_id'] ?? $projectId,
+                        ':point_number' => $p['point_number'] ?? '',
+                        ':point_name' => $p['point_name'] ?? null,
+                        ':point_type' => $p['point_type'] ?? 'Control',
+                        ':status' => $p['status'] ?? 'Set',
+                        ':northing' => isset($p['northing']) ? (float)$p['northing'] : null,
+                        ':easting' => isset($p['easting']) ? (float)$p['easting'] : null,
+                        ':elevation' => isset($p['elevation']) ? (float)$p['elevation'] : null,
+                        ':latitude' => isset($p['latitude']) ? (float)$p['latitude'] : null,
+                        ':longitude' => isset($p['longitude']) ? (float)$p['longitude'] : null,
+                        ':coordinate_system' => $p['coordinate_system'] ?? null,
+                        ':datum_epoch' => $p['datum_epoch'] ?? null,
+                        ':units' => $p['units'] ?? null,
+                        ':created_by' => $currentUser
+                    ]);
+                    $importedCount++;
+                } catch (Exception $e) {
+                    $skipped[] = [
+                        'row' => $idx + 1,
+                        'point_number' => $p['point_number'] ?? 'unknown',
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+
+            $pdo->commit();
+
+            sendJsonResponse([
+                'success' => true,
+                'imported_count' => $importedCount,
+                'skipped' => $skipped
+            ]);
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            error_log('bulk_import error: ' . $e->getMessage());
+            sendJsonResponse(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    }
+
     else {
         sendJsonResponse(['success' => false, 'message' => 'Invalid action parameter']);
     }
