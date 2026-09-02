@@ -33,7 +33,12 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uniq_username_project (username, project_id)
     ) ENGINE=InnoDB");
-    $pdo->exec("ALTER TABLE survey_project_todos ADD COLUMN IF NOT EXISTS priority ENUM('Low','Medium','High','Urgent') NOT NULL DEFAULT 'Medium'");
+
+    // Add priority column if it doesn't exist (MySQL doesn't support ADD COLUMN IF NOT EXISTS)
+    $columnExists = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_NAME = 'survey_project_todos' AND COLUMN_NAME = 'priority'")->fetch();
+    if (!$columnExists) {
+        $pdo->exec("ALTER TABLE survey_project_todos ADD COLUMN priority ENUM('Low','Medium','High','Urgent') NOT NULL DEFAULT 'Medium'");
+    }
     $VALID_TODO_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
     if ($_POST['action'] === 'load_project') {
