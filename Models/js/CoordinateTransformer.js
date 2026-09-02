@@ -8,31 +8,31 @@ const CoordinateTransformer = (() => {
     // Projection definitions for Texas coordinate systems
     const PROJ_DEFINITIONS = {
         'NAD83(2011) TX State Plane North (4201)': {
-            proj: '+proj=lcc +lat_1=36.11666666666667 +lat_2=34.65 +lat_0=34.00 +lon_0=-101.5 +x_0=213360 +y_0=88386.39 +datum=NAD83 +units=us-ft +no_defs',
+            proj: '+proj=lcc +lat_1=36.11666666666667 +lat_2=34.65 +lat_0=34.00 +lon_0=-101.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
             zone: 4201,
             unit: 'US Survey Feet',
             bounds: { minN: 3000000, maxN: 11000000, minE: 1500000, maxE: 3500000 }
         },
         'NAD83(2011) TX State Plane North Central (4202)': {
-            proj: '+proj=lcc +lat_1=33.96666666666667 +lat_2=32.13333333333333 +lat_0=31.66666666666667 +lon_0=-98.5 +x_0=213360 +y_0=88386.39 +datum=NAD83 +units=us-ft +no_defs',
+            proj: '+proj=lcc +lat_1=33.96666666666667 +lat_2=32.13333333333333 +lat_0=31.66666666666667 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
             zone: 4202,
             unit: 'US Survey Feet',
             bounds: { minN: 2800000, maxN: 10500000, minE: 1500000, maxE: 3500000 }
         },
         'NAD83(2011) TX State Plane Central (4203)': {
-            proj: '+proj=lcc +lat_1=31.88333333333333 +lat_2=30.11666666666667 +lat_0=29.66666666666667 +lon_0=-100.3333333333333 +x_0=213360 +y_0=88386.39 +datum=NAD83 +units=us-ft +no_defs',
+            proj: '+proj=lcc +lat_1=31.88333333333333 +lat_2=30.11666666666667 +lat_0=29.66666666666667 +lon_0=-100.3333333333333 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
             zone: 4203,
             unit: 'US Survey Feet',
             bounds: { minN: 2600000, maxN: 10200000, minE: 2000000, maxE: 3500000 }
         },
         'NAD83(2011) TX State Plane South Central (4204)': {
-            proj: '+proj=lcc +lat_1=30.28333333333333 +lat_2=28.38333333333333 +lat_0=27.83333333333333 +lon_0=-99 +x_0=213360 +y_0=88386.39 +datum=NAD83 +units=us-ft +no_defs',
+            proj: '+proj=lcc +lat_1=30.28333333333333 +lat_2=28.38333333333333 +lat_0=27.83333333333333 +lon_0=-99 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
             zone: 4204,
             unit: 'US Survey Feet',
             bounds: { minN: 2400000, maxN: 10000000, minE: 2000000, maxE: 3500000 }
         },
         'NAD83(2011) TX State Plane South (4205)': {
-            proj: '+proj=lcc +lat_1=27.83333333333333 +lat_2=26.16666666666667 +lat_0=25.5 +lon_0=-98.5 +x_0=213360 +y_0=88386.39 +datum=NAD83 +units=us-ft +no_defs',
+            proj: '+proj=lcc +lat_1=27.83333333333333 +lat_2=26.16666666666667 +lat_0=25.5 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
             zone: 4205,
             unit: 'US Survey Feet',
             bounds: { minN: 2200000, maxN: 9800000, minE: 2000000, maxE: 3500000 }
@@ -98,12 +98,15 @@ const CoordinateTransformer = (() => {
 
             const sourceProj = proj4Lib(def.proj);
             const targetProj = proj4Lib(WGS84_PROJ);
+            // proj4.js returns [longitude, latitude] for geographic output
             const transformed = proj4Lib(sourceProj, targetProj, [easting, northing]);
+
+            console.log(`Transform ${coordSystem}: input [E:${easting}, N:${northing}] -> output [${transformed[0]}, ${transformed[1]}]`);
 
             return {
                 success: true,
-                lat: transformed[1],
-                lon: transformed[0],
+                lat: transformed[1],  // Second value = latitude
+                lon: transformed[0],  // First value = longitude
                 zone: def.zone,
                 unit: def.unit
             };
