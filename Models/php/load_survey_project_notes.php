@@ -133,11 +133,19 @@ try {
                 'needs_monuments' => 'needs_monuments'
             ];
 
+            // Numeric fields: convert empty strings to NULL
+            $numericFields = ['scale_factor', 'needs_monuments'];
+
             // Check which fields are being updated
             foreach ($fieldMapping as $jsField => $dbField) {
                 if (isset($_POST[$jsField])) {
+                    $value = $_POST[$jsField];
+                    // Convert empty strings to NULL for numeric fields
+                    if (in_array($dbField, $numericFields, true) && $value === '') {
+                        $value = null;
+                    }
                     $updateFields[] = "$dbField = :$dbField";
-                    $params[":$dbField"] = $_POST[$jsField];
+                    $params[":$dbField"] = $value;
                 }
             }
 
