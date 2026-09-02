@@ -545,3 +545,10 @@ function copyTimesheetForVantagepoint() {
     });
 }
 
+// Close timesheet modal on outside click
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'timesheetModal') {
+        closeTimesheetModal();
+    }
+});
+
