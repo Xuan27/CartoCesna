@@ -1053,11 +1053,16 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 return;
             }
 
+            // Debug: Log available systems and selected system
+            console.log('Selected coordinate system:', coordSystem);
+            console.log('Available systems:', CoordinateTransformer.getAvailableSystems());
+
             const result = CoordinateTransformer.transformToWGS84(coordSystem, northingNum, eastingNum);
 
             if (!result.success) {
                 msgDiv.textContent = `❌ Transform failed: ${result.message}`;
                 msgDiv.style.color = '#dc2626';
+                console.error('Transform error details:', result);
                 return;
             }
 
