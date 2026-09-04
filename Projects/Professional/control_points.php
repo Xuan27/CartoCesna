@@ -485,11 +485,11 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         // Same curated geodetic pick lists as Field Data QC, kept in sync by hand —
         // this app has no shared JS module, each page owns its own copy.
         const COORD_SYSTEMS = [
-            'NAD83(2011) TX State Plane North (4201)',
-            'NAD83(2011) TX State Plane North Central (4202)',
-            'NAD83(2011) TX State Plane Central (4203)',
-            'NAD83(2011) TX State Plane South Central (4204)',
-            'NAD83(2011) TX State Plane South (4205)',
+            'NAD83 / Texas Central (EPSG:2277)',
+            'NAD83 / Texas North (EPSG:2273)',
+            'NAD83 / Texas North Central (EPSG:2276)',
+            'NAD83 / Texas South Central (EPSG:2278)',
+            'NAD83 / Texas South (EPSG:2275)',
             'NAD83(2011) UTM Zone 13N',
             'NAD83(2011) UTM Zone 14N',
             'NAD83(2011) UTM Zone 15N',

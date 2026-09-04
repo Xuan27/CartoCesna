@@ -6,36 +6,37 @@
 
 const CoordinateTransformer = (() => {
     // Projection definitions for Texas coordinate systems
+    // EPSG definitions from https://epsg.io/ (authoritative source)
     const PROJ_DEFINITIONS = {
-        'NAD83(2011) TX State Plane North (4201)': {
-            proj: '+proj=lcc +lat_1=36.11666666666667 +lat_2=34.65 +lat_0=34.00 +lon_0=-101.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
-            zone: 4201,
-            unit: 'US Survey Feet',
-            bounds: { minN: 3000000, maxN: 11000000, minE: 1500000, maxE: 3500000 }
+        'NAD83 / Texas North (EPSG:2273)': {
+            proj: '+proj=lcc +lat_0=31.8333333333333 +lon_0=-81 +lat_1=34.8333333333333 +lat_2=32.5 +x_0=609600 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs',
+            zone: 2273,
+            unit: 'US Foot',
+            bounds: { minN: 1000000, maxN: 3500000, minE: 400000, maxE: 1200000 }
         },
-        'NAD83(2011) TX State Plane North Central (4202)': {
-            proj: '+proj=lcc +lat_1=33.96666666666667 +lat_2=32.13333333333333 +lat_0=31.66666666666667 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
-            zone: 4202,
+        'NAD83 / Texas North Central (EPSG:2276)': {
+            proj: '+proj=lcc +lat_0=31.6666666666667 +lon_0=-98.5 +lat_1=33.9666666666667 +lat_2=32.1333333333333 +x_0=600000 +y_0=2000000.0001016 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs',
+            zone: 2276,
             unit: 'US Survey Feet',
-            bounds: { minN: 2800000, maxN: 10500000, minE: 1500000, maxE: 3500000 }
+            bounds: { minN: 2000000, maxN: 4000000, minE: 300000, maxE: 1200000 }
         },
-        'NAD83(2011) TX State Plane Central (4203)': {
-            proj: '+proj=lcc +lat_1=31.88333333333333 +lat_2=30.11666666666667 +lat_0=29.66666666666667 +lon_0=-100.3333333333333 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
-            zone: 4203,
+        'NAD83 / Texas Central (EPSG:2277)': {
+            proj: '+proj=lcc +lat_0=29.6666666666667 +lon_0=-100.333333333333 +lat_1=31.8833333333333 +lat_2=30.1166666666667 +x_0=699999.999898399 +y_0=3000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs',
+            zone: 2277,
             unit: 'US Survey Feet',
-            bounds: { minN: 2600000, maxN: 10200000, minE: 2000000, maxE: 3500000 }
+            bounds: { minN: 2000000, maxN: 4500000, minE: 300000, maxE: 1200000 }
         },
-        'NAD83(2011) TX State Plane South Central (4204)': {
-            proj: '+proj=lcc +lat_1=30.28333333333333 +lat_2=28.38333333333333 +lat_0=27.83333333333333 +lon_0=-99 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
-            zone: 4204,
+        'NAD83 / Texas South Central (EPSG:2278)': {
+            proj: '+proj=lcc +lat_0=27.8333333333333 +lon_0=-99 +lat_1=30.2833333333333 +lat_2=28.3833333333333 +x_0=600000 +y_0=3999999.9998984 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs',
+            zone: 2278,
             unit: 'US Survey Feet',
-            bounds: { minN: 2400000, maxN: 10000000, minE: 2000000, maxE: 3500000 }
+            bounds: { minN: 2500000, maxN: 4500000, minE: 300000, maxE: 1200000 }
         },
-        'NAD83(2011) TX State Plane South (4205)': {
-            proj: '+proj=lcc +lat_1=27.83333333333333 +lat_2=26.16666666666667 +lat_0=25.5 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
-            zone: 4205,
+        'NAD83 / Texas South (EPSG:2275)': {
+            proj: '+proj=lcc +lat_0=34 +lon_0=-101.5 +lat_1=36.1833333333333 +lat_2=34.65 +x_0=200000.0001016 +y_0=999999.999898399 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=us-ft +no_defs',
+            zone: 2275,
             unit: 'US Survey Feet',
-            bounds: { minN: 2200000, maxN: 9800000, minE: 2000000, maxE: 3500000 }
+            bounds: { minN: 2000000, maxN: 5000000, minE: 100000, maxE: 1000000 }
         },
         'NAD83(2011) UTM Zone 13N': {
             proj: '+proj=utm +zone=13 +datum=NAD83 +units=m +no_defs',
