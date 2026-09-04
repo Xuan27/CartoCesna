@@ -303,7 +303,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
     <!-- Add/Edit Control Point Modal -->
     <div class="checklist-modal" id="pointModal">
-        <div class="checklist-modal-content" style="max-width: 640px; max-height: 92vh;">
+        <div class="checklist-modal-content" style="max-width: 950px; max-height: 92vh;">
             <div class="checklist-modal-header" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
                 <div class="checklist-modal-header-top">
                     <h3><i class="fas fa-crosshairs"></i> <span id="pointModalTitle">Add Control Point</span></h3>
@@ -381,6 +381,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                             <label class="form-label">Longitude</label>
                             <input type="number" class="form-input" id="pointLongitude" step="any" placeholder="optional">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="calculateWGS84Coordinates()" title="Auto-calculate WGS84 coordinates from State Plane">
+                            <i class="fas fa-calculator"></i> Calculate WGS84 from State Plane
+                        </button>
+                        <div id="calcMessage" style="font-size: 0.8rem; margin-top: 0.4rem; color: var(--gray-600);"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Coordinate System</label>
@@ -1016,6 +1022,50 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
             // Setup auto-calculation of lat/lon from State Plane coordinates
             setupCoordinateAutoCalculation();
+        }
+
+        function calculateWGS84Coordinates() {
+            const coordSystem = document.getElementById('pointCoordSystem')?.value;
+            const northing = document.getElementById('pointNorthing')?.value;
+            const easting = document.getElementById('pointEasting')?.value;
+            const latInput = document.getElementById('pointLatitude');
+            const lonInput = document.getElementById('pointLongitude');
+            const msgDiv = document.getElementById('calcMessage');
+
+            if (!coordSystem || !northing || !easting) {
+                msgDiv.textContent = '❌ Please fill in Coordinate System, Northing, and Easting first';
+                msgDiv.style.color = '#dc2626';
+                return;
+            }
+
+            const northingNum = parseFloat(northing);
+            const eastingNum = parseFloat(easting);
+
+            if (isNaN(northingNum) || isNaN(eastingNum)) {
+                msgDiv.textContent = '❌ Northing and Easting must be valid numbers';
+                msgDiv.style.color = '#dc2626';
+                return;
+            }
+
+            if (typeof CoordinateTransformer === 'undefined') {
+                msgDiv.textContent = '❌ CoordinateTransformer module not loaded';
+                msgDiv.style.color = '#dc2626';
+                return;
+            }
+
+            const result = CoordinateTransformer.transformToWGS84(coordSystem, northingNum, eastingNum);
+
+            if (!result.success) {
+                msgDiv.textContent = `❌ Transform failed: ${result.message}`;
+                msgDiv.style.color = '#dc2626';
+                return;
+            }
+
+            latInput.value = result.lat.toFixed(7);
+            lonInput.value = result.lon.toFixed(7);
+            msgDiv.textContent = `✅ Calculated: ${result.lat.toFixed(7)}°N, ${result.lon.toFixed(7)}°W`;
+            msgDiv.style.color = '#16a34a';
+            console.log(`WGS84 calculated: ${result.lat.toFixed(7)}, ${result.lon.toFixed(7)}`);
         }
 
         function setupCoordinateAutoCalculation() {

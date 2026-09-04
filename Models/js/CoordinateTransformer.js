@@ -7,6 +7,7 @@
 const CoordinateTransformer = (() => {
     // Projection definitions for Texas coordinate systems
     // EPSG definitions from https://epsg.io/ (authoritative source)
+    // Includes both new EPSG-based names and legacy NAD83(2011) names for backward compatibility
     const PROJ_DEFINITIONS = {
         'NAD83 / Texas North (EPSG:2273)': {
             proj: '+proj=lcc +lat_0=31.8333333333333 +lon_0=-81 +lat_1=34.8333333333333 +lat_2=32.5 +x_0=609600 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=ft +no_defs',
@@ -37,6 +38,37 @@ const CoordinateTransformer = (() => {
             zone: 2275,
             unit: 'US Survey Feet',
             bounds: { minN: 2000000, maxN: 5000000, minE: 100000, maxE: 1000000 }
+        },
+        // Legacy names from earlier versions (for backward compatibility with existing database records)
+        'NAD83(2011) TX State Plane North (4201)': {
+            proj: '+proj=lcc +lat_1=36.11666666666667 +lat_2=34.65 +lat_0=34.00 +lon_0=-101.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
+            zone: 4201,
+            unit: 'US Survey Feet',
+            bounds: { minN: 3000000, maxN: 11000000, minE: 1500000, maxE: 3500000 }
+        },
+        'NAD83(2011) TX State Plane North Central (4202)': {
+            proj: '+proj=lcc +lat_1=33.96666666666667 +lat_2=32.13333333333333 +lat_0=31.66666666666667 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
+            zone: 4202,
+            unit: 'US Survey Feet',
+            bounds: { minN: 2800000, maxN: 10500000, minE: 1500000, maxE: 3500000 }
+        },
+        'NAD83(2011) TX State Plane Central (4203)': {
+            proj: '+proj=lcc +lat_1=31.88333333333333 +lat_2=30.11666666666667 +lat_0=29.66666666666667 +lon_0=-100.3333333333333 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
+            zone: 4203,
+            unit: 'US Survey Feet',
+            bounds: { minN: 2600000, maxN: 10200000, minE: 2000000, maxE: 3500000 }
+        },
+        'NAD83(2011) TX State Plane South Central (4204)': {
+            proj: '+proj=lcc +lat_1=30.28333333333333 +lat_2=28.38333333333333 +lat_0=27.83333333333333 +lon_0=-99 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
+            zone: 4204,
+            unit: 'US Survey Feet',
+            bounds: { minN: 2400000, maxN: 10000000, minE: 2000000, maxE: 3500000 }
+        },
+        'NAD83(2011) TX State Plane South (4205)': {
+            proj: '+proj=lcc +lat_1=27.83333333333333 +lat_2=26.16666666666667 +lat_0=25.5 +lon_0=-98.5 +x_0=2000000 +y_0=0 +datum=NAD83 +units=us-ft +no_defs',
+            zone: 4205,
+            unit: 'US Survey Feet',
+            bounds: { minN: 2200000, maxN: 9800000, minE: 2000000, maxE: 3500000 }
         },
         'NAD83(2011) UTM Zone 13N': {
             proj: '+proj=utm +zone=13 +datum=NAD83 +units=m +no_defs',
