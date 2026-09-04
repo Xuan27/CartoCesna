@@ -1,0 +1,3 @@
+# Private/ holds server-side config and data (db_config.php, crews.json).
+# Never serve anything from here over HTTP.
+Require all denied

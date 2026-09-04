@@ -572,7 +572,7 @@ function toggleControlPoints() {
     btn.classList.add('active');
 
     if (controlPtsLayer) { controlPtsLayer.addTo(map); return; }
-    if (!arcgisToken)    { openArcGISLogin(); return; }
+    // Load control points from local database (no ArcGIS login required)
     loadControlPoints();
 }
 
@@ -581,98 +581,67 @@ async function loadControlPoints() {
     try {
         if (controlPtsLayer) map.removeLayer(controlPtsLayer);
 
-        // Create a feature group for all control points (local + ArcGIS)
-        const featureGroup = L.featureGroup();
+        // Load locally-imported control points from database
+        const res = await fetch('../../Models/php/control_points_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'action=get_points'
+        });
+        const data = await res.json();
 
-        // First, load locally-imported control points from database
-        try {
-            const res = await fetch('../../Models/php/control_points_api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=get_points'
-            });
-            const data = await res.json();
+        console.log('Control points API response:', data);
 
-            console.log('Control points API response:', data);
+        if (data.success && data.points && data.points.length > 0) {
+            console.log(`Loading ${data.points.length} control points from database`);
+            const featureGroup = L.featureGroup();
+            let pointsWithCoords = 0;
 
-            if (data.success && data.points) {
-                console.log(`Loading ${data.points.length} control points from database`);
-                let pointsWithCoords = 0;
-                data.points.forEach(point => {
-                    // Only add points with latitude/longitude
-                    if (point.latitude && point.longitude) {
-                        pointsWithCoords++;
-                        console.log(`Adding point ${point.point_number} at [${point.latitude}, ${point.longitude}]`);
-                        const marker = L.circleMarker([parseFloat(point.latitude), parseFloat(point.longitude)], {
-                            radius: 5,
-                            fillColor: '#3b82f6',
-                            color: '#1d4ed8',
-                            weight: 1.5,
-                            fillOpacity: 0.85
-                        });
+            data.points.forEach(point => {
+                // Only add points with latitude/longitude
+                if (point.latitude && point.longitude) {
+                    pointsWithCoords++;
+                    console.log(`Adding point ${point.point_number} at [${point.latitude}, ${point.longitude}]`);
 
-                        marker.bindPopup(`
-                            <div class="cp-popup">
-                                <div class="cp-popup-title">${esc(point.point_number)}</div>
-                                ${point.point_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Name:</strong> ${esc(point.point_name)}</div>` : ''}
-                                <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Type:</strong> ${esc(point.point_type || 'Control')}</div>
-                                <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Status:</strong> ${esc(point.status || 'Unknown')}</div>
-                                ${point.latitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lat:</strong> ${parseFloat(point.latitude).toFixed(7)}</div>` : ''}
-                                ${point.longitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lon:</strong> ${parseFloat(point.longitude).toFixed(7)}</div>` : ''}
-                                ${point.elevation ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Elev:</strong> ${parseFloat(point.elevation).toFixed(2)}</div>` : ''}
-                            </div>
-                        `, { maxWidth: 300 });
+                    const marker = L.circleMarker([parseFloat(point.latitude), parseFloat(point.longitude)], {
+                        radius: 5,
+                        fillColor: '#3b82f6',
+                        color: '#1d4ed8',
+                        weight: 1.5,
+                        fillOpacity: 0.85
+                    });
 
-                        featureGroup.addLayer(marker);
-                    }
-                });
-                console.log(`Added ${pointsWithCoords} points with coordinates to map`);
-            } else {
-                console.log('No valid points returned from API');
-            }
-        } catch (err) {
-            console.log('Could not load local control points:', err);
-        }
+                    marker.bindPopup(`
+                        <div class="cp-popup">
+                            <div class="cp-popup-title">${esc(point.point_number)}</div>
+                            ${point.point_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Name:</strong> ${esc(point.point_name)}</div>` : ''}
+                            <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Type:</strong> ${esc(point.point_type || 'Control')}</div>
+                            <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Status:</strong> ${esc(point.status || 'Unknown')}</div>
+                            ${point.latitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lat:</strong> ${parseFloat(point.latitude).toFixed(7)}</div>` : ''}
+                            ${point.longitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lon:</strong> ${parseFloat(point.longitude).toFixed(7)}</div>` : ''}
+                            ${point.elevation ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Elev:</strong> ${parseFloat(point.elevation).toFixed(2)}</div>` : ''}
+                        </div>
+                    `, { maxWidth: 300 });
 
-        // Then, try to load from ArcGIS if available
-        if (arcgisToken) {
-            try {
-                const url = `${CONTROL_PTS_QUERY}?service=WFS&version=2.0.0&request=GetFeature` +
-                            `&typeNames=SurveyControl&outputFormat=application%2Fjson&token=${arcgisToken}`;
-                const res  = await fetch(url);
-
-                if (res.status !== 401 && res.status !== 403) {
-                    const geojson = await res.json();
-
-                    L.geoJSON(geojson, {
-                        pointToLayer(feature, latlng) {
-                            return L.circleMarker(latlng, {
-                                radius: 6,
-                                fillColor: '#f59e0b',
-                                color: '#92400e',
-                                weight: 1.5,
-                                fillOpacity: 0.9,
-                            });
-                        },
-                        onEachFeature(feature, layer) {
-                            layer.bindPopup(buildControlPopup(feature), { maxWidth: 300 });
-                        }
-                    }).eachLayer(layer => featureGroup.addLayer(layer));
+                    featureGroup.addLayer(marker);
                 }
-            } catch (err) {
-                console.log('Could not load ArcGIS control points:', err);
-            }
-        }
+            });
 
-        // Add all points to map
-        if (featureGroup.getLayers().length > 0) {
-            controlPtsLayer = featureGroup.addTo(map);
+            console.log(`Added ${pointsWithCoords} points with coordinates to map`);
+
+            if (pointsWithCoords > 0) {
+                controlPtsLayer = featureGroup.addTo(map);
+            } else {
+                console.warn('No control points have latitude/longitude values - check if CSV transform succeeded');
+                showToast('No points with coordinates found', 'error');
+            }
         } else {
-            console.log('No control points found');
+            console.log('No control points found in database');
+            showToast('No control points in database', 'info');
         }
 
     } catch (err) {
         console.error('Control points error:', err);
+        showToast('Error loading control points', 'error');
         document.getElementById('toggleControlPtsBtn').classList.remove('active');
         controlPtsVisible = false;
     }
