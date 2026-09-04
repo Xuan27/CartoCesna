@@ -1025,12 +1025,17 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         }
 
         function calculateWGS84Coordinates() {
-            const coordSystem = document.getElementById('pointCoordSystem')?.value;
+            let coordSystem = document.getElementById('pointCoordSystem')?.value;
             const northing = document.getElementById('pointNorthing')?.value;
             const easting = document.getElementById('pointEasting')?.value;
             const latInput = document.getElementById('pointLatitude');
             const lonInput = document.getElementById('pointLongitude');
             const msgDiv = document.getElementById('calcMessage');
+
+            // If "Other..." is selected, use the custom input value
+            if (coordSystem === OTHER_VALUE) {
+                coordSystem = document.getElementById('pointCoordSystemOther')?.value;
+            }
 
             if (!coordSystem || !northing || !easting) {
                 msgDiv.textContent = '❌ Please fill in Coordinate System, Northing, and Easting first';
