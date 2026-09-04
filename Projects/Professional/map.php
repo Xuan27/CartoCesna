@@ -13,8 +13,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <!-- Esri Leaflet -->
-    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
 
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -172,75 +170,6 @@
         .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
         .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: #f59e0b; }
 
-        /* ArcGIS login modal */
-        #arcgisLoginOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        #arcgisLoginOverlay.open { display: flex; }
-        #arcgisLoginBox {
-            background: white;
-            border-radius: 12px;
-            padding: 1.75rem 2rem;
-            width: 320px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
-        #arcgisLoginBox h3 {
-            margin: 0 0 0.25rem;
-            font-size: 1rem;
-            color: var(--gray-900);
-        }
-        #arcgisLoginBox p {
-            margin: 0 0 1.25rem;
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-        #arcgisLoginBox label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 0.25rem;
-        }
-        #arcgisLoginBox input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-        #arcgisLoginBox input:focus { outline: none; border-color: #f59e0b; }
-        #arcgisLoginError {
-            font-size: 0.8rem;
-            color: var(--danger-color);
-            margin-bottom: 0.75rem;
-            display: none;
-        }
-        .arcgis-login-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
-        .arcgis-login-actions button {
-            padding: 0.45rem 1rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid var(--gray-300);
-            background: white;
-            color: var(--gray-700);
-        }
-        .arcgis-login-actions button.primary {
-            background: #f59e0b;
-            border-color: #f59e0b;
-            color: white;
-        }
-        .arcgis-login-actions button.primary:hover { background: #d97706; }
-        .arcgis-login-actions button.primary:disabled { opacity: 0.6; cursor: default; }
 
         /* Loading overlay */
         #mapLoading {
@@ -442,25 +371,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ArcGIS Login Modal -->
-    <div id="arcgisLoginOverlay">
-        <div id="arcgisLoginBox">
-            <h3><i class="fas fa-crosshairs" style="color:#f59e0b;margin-right:6px;"></i>ArcGIS Sign In</h3>
-            <p>Sign in with your Westwood ArcGIS account to load survey control points.</p>
-            <label for="arcgisUsername">Username</label>
-            <input type="text" id="arcgisUsername" placeholder="ArcGIS username" autocomplete="username">
-            <label for="arcgisPassword">Password</label>
-            <input type="password" id="arcgisPassword" placeholder="ArcGIS password" autocomplete="current-password">
-            <div id="arcgisLoginError"></div>
-            <div class="arcgis-login-actions">
-                <button onclick="closeArcGISLogin()">Cancel</button>
-                <button class="primary" id="arcgisLoginBtn" onclick="submitArcGISLogin()">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -484,80 +394,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// ── ArcGIS Survey Control Points layer ─────────────────────────────────────
-const CONTROL_PTS_QUERY = 'https://dservices.arcgis.com/FqQ2BQIKVGpUWqAa/arcgis/services/SurveyControl/WFSServer';
-const ARCGIS_TOKEN_API  = '../../Models/php/arcgis_token.php';
+// ── Control Points layer (from local database) ──────────────────────────────
 let controlPtsLayer  = null;
 let controlPtsVisible = false;
-let arcgisToken      = null;
-
-// ── Login modal ─────────────────────────────────────────────────────────────
-function openArcGISLogin() {
-    document.getElementById('arcgisLoginOverlay').classList.add('open');
-    document.getElementById('arcgisLoginError').style.display = 'none';
-    document.getElementById('arcgisUsername').focus();
-}
-function closeArcGISLogin() {
-    document.getElementById('arcgisLoginOverlay').classList.remove('open');
-    document.getElementById('arcgisLoginBtn').disabled = false;
-    document.getElementById('arcgisLoginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-    // If user cancelled and layer wasn't loaded, reset button
-    if (!arcgisToken) {
-        document.getElementById('toggleControlPtsBtn').classList.remove('active');
-        controlPtsVisible = false;
-    }
-}
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && document.getElementById('arcgisLoginOverlay').classList.contains('open')) {
-        submitArcGISLogin();
-    }
-});
-
-async function submitArcGISLogin() {
-    const username = document.getElementById('arcgisUsername').value.trim();
-    const password = document.getElementById('arcgisPassword').value;
-    const errEl    = document.getElementById('arcgisLoginError');
-    const btn      = document.getElementById('arcgisLoginBtn');
-
-    if (!username || !password) {
-        errEl.textContent = 'Please enter username and password.';
-        errEl.style.display = 'block';
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in…';
-    errEl.style.display = 'none';
-
-    try {
-        const res  = await fetch(ARCGIS_TOKEN_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-
-        if (!data.success) {
-            errEl.textContent = data.message || 'Sign in failed.';
-            errEl.style.display = 'block';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-            return;
-        }
-
-        arcgisToken = data.token;
-        document.getElementById('arcgisPassword').value = '';
-        closeArcGISLogin();
-        loadControlPoints();
-
-    } catch (err) {
-        errEl.textContent = 'Network error. Please try again.';
-        errEl.style.display = 'block';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-    }
-}
 
 // ── Toggle & load control points ────────────────────────────────────────────
 function toggleControlPoints() {
