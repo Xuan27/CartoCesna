@@ -286,6 +286,31 @@
         /* Hide labels when inside a cluster */
         .leaflet-marker-icon .marker-label { display: none; }
 
+        /* Stacked marker (multiple projects at the same coordinate) */
+        .stack-marker-icon {
+            border-radius: 50%;
+            background: #7c3aed;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .stack-popup { min-width: 230px; max-width: 280px; }
+        .stack-popup-header {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .stack-popup-item { padding: 0.3rem 0; }
+        .stack-popup-divider { border: none; border-top: 1px solid var(--gray-200); margin: 0.5rem 0; }
+
         /* Strip default Leaflet tooltip chrome from marker labels */
         .marker-label-tooltip {
             background: transparent !important;
@@ -737,10 +762,26 @@ async function loadProjects() {
 function plotProjects(projects) {
     clusterGroup.clearLayers();
     markers = {};
-    projects.forEach(p => { if (p.lat !== null && p.lon !== null) addMarker(p); });
+    const groups = groupByCoordinate(projects.filter(p => p.lat !== null && p.lon !== null));
+    groups.forEach(group => {
+        if (group.length === 1) addMarker(group[0]);
+        else addStackMarker(group);
+    });
     if (clusterGroup.getLayers().length) {
         map.fitBounds(clusterGroup.getBounds().pad(0.25));
     }
+}
+
+// Group projects that sit on (or effectively on) the same coordinate so we
+// plot one marker per point instead of stacking overlapping labels.
+function groupByCoordinate(projects) {
+    const byKey = new Map();
+    projects.forEach(p => {
+        const key = `${Number(p.lat).toFixed(6)},${Number(p.lon).toFixed(6)}`;
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(p);
+    });
+    return Array.from(byKey.values());
 }
 
 function addMarker(p) {
@@ -763,6 +804,61 @@ function addMarker(p) {
     });
     clusterGroup.addLayer(marker);
     markers[p.projectId] = marker;
+}
+
+// A single marker representing multiple projects that share one coordinate.
+// Avoids plotting overlapping circle markers + overlapping name labels.
+function addStackMarker(group) {
+    const lat   = group[0].lat, lon = group[0].lon;
+    const count = group.length;
+    const size  = count < 10 ? 30 : 38;
+
+    const marker = L.marker([lat, lon], {
+        icon: L.divIcon({
+            html: `<div class="stack-marker-icon" style="width:${size}px;height:${size}px;font-size:${size < 34 ? 13 : 15}px;">${count}</div>`,
+            className: '',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+        })
+    });
+
+    marker.bindPopup(buildStackPopup(group), { maxWidth: 300 });
+    marker.bindTooltip(
+        `<div class="marker-label">
+            <span class="marker-label-name">${count} projects here</span>
+         </div>`,
+        { permanent: true, direction: 'right', offset: [size / 2 + 4, 0], className: 'marker-label-tooltip' }
+    );
+    marker.on('click', () => {
+        map.flyTo([lat, lon], Math.max(map.getZoom(), 14), { duration: 0.6, animate: true });
+    });
+
+    clusterGroup.addLayer(marker);
+    group.forEach(p => { markers[p.projectId] = marker; });
+}
+
+function buildStackPopup(group) {
+    const items = group.map(p => {
+        const color = statusColor(p.projectStatus);
+        const bg    = statusBg(p.projectStatus);
+        const loc   = p.location ? `<div class="map-popup-row"><i class="fas fa-location-dot"></i> ${esc(p.location)}</div>` : '';
+        return `
+            <div class="stack-popup-item">
+                <div class="map-popup-id">${esc(p.projectId)}</div>
+                <div class="map-popup-name">${esc(p.projectName)}</div>
+                <span class="map-popup-status" style="background:${bg};color:${color};">${esc(p.projectStatus)}</span>
+                ${loc}
+                <a class="map-popup-link" href="survey_projects.php?project=${esc(p.projectId)}">
+                    <i class="fas fa-external-link-alt"></i> View in Dashboard
+                </a>
+            </div>`;
+    }).join('<hr class="stack-popup-divider">');
+
+    return `
+        <div class="map-popup stack-popup">
+            <div class="stack-popup-header"><i class="fas fa-layer-group"></i> ${group.length} projects at this location</div>
+            ${items}
+        </div>`;
 }
 
 function buildPopup(p) {
