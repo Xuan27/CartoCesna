@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Transformation</title>
+    <script src="http://localhost/CartoCesna/Models/js/proj4.min.js?v=1"></script>
+    <script src="http://localhost/CartoCesna/Models/js/CoordinateTransformer.js?v=4"></script>
+    <script src="http://localhost/CartoCesna/Models/js/CSVParser.js?v=1"></script>
+</head>
+<body>
+    <h1>Debug: Transform Test Point</h1>
+    <p>Testing the exact point you imported</p>
+    
+    <div id="result"></div>
+    
+    <script>
+        const testData = `Point ID,Northing,Easting,Elevation,Description
+1,10173352.78,3167553.81,677.95,Hutto benchmark`;
+
+        const result = CSVParser.parseText(testData, 'NAD83 / Texas Central (EPSG:2277)');
+        
+        console.log('Parse result:', result);
+        
+        let html = '<h2>Points Parsed:</h2>';
+        if (result.points.length > 0) {
+            result.points.forEach(p => {
+                html += `<div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                    <p><strong>Point ID:</strong> ${p.pointId}</p>
+                    <p><strong>Northing:</strong> ${p.northing} → Lat: ${p.latitude}</p>
+                    <p><strong>Easting:</strong> ${p.easting} → Lon: ${p.longitude}</p>
+                    <p><strong>Elevation:</strong> ${p.elevation}</p>
+                    <p><strong>Source System:</strong> ${p.sourceSystem}</p>
+                </div>`;
+            });
+        } else {
+            html += '<p>No points parsed</p>';
+        }
+        
+        if (result.errors.length > 0) {
+            html += '<h2>Errors:</h2>';
+            result.errors.forEach(e => {
+                html += `<div style="border: 1px solid red; padding: 10px; margin: 10px 0;">
+                    <p><strong>Row ${e.row}:</strong> ${e.message}</p>
+                </div>`;
+            });
+        }
+        
+        document.getElementById('result').innerHTML = html;
+    </script>
+</body>
+</html>

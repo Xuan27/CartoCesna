@@ -1013,6 +1013,46 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             document.querySelectorAll('.cp-geo-select').forEach(sel => {
                 sel.addEventListener('change', () => handleOtherSelect(sel));
             });
+
+            // Setup auto-calculation of lat/lon from State Plane coordinates
+            setupCoordinateAutoCalculation();
+        }
+
+        function setupCoordinateAutoCalculation() {
+            const coordSystemSelect = document.getElementById('pointCoordSystem');
+            const northingInput = document.getElementById('pointNorthing');
+            const eastingInput = document.getElementById('pointEasting');
+            const latInput = document.getElementById('pointLatitude');
+            const lonInput = document.getElementById('pointLongitude');
+
+            const autoCalculateWGS84 = () => {
+                const coordSystem = coordSystemSelect?.value;
+                const northing = northingInput?.value;
+                const easting = eastingInput?.value;
+
+                if (!coordSystem || !northing || !easting) return;
+
+                const northingNum = parseFloat(northing);
+                const eastingNum = parseFloat(easting);
+
+                if (isNaN(northingNum) || isNaN(eastingNum)) return;
+
+                // Only calculate if not already manually filled
+                if (latInput?.value && lonInput?.value) return;
+
+                if (typeof CoordinateTransformer !== 'undefined') {
+                    const result = CoordinateTransformer.transformToWGS84(coordSystem, northingNum, eastingNum);
+                    if (result.success) {
+                        latInput.value = result.lat.toFixed(7);
+                        lonInput.value = result.lon.toFixed(7);
+                        console.log(`Auto-calculated WGS84: ${result.lat.toFixed(7)}, ${result.lon.toFixed(7)}`);
+                    }
+                }
+            };
+
+            if (coordSystemSelect) coordSystemSelect.addEventListener('change', autoCalculateWGS84);
+            if (northingInput) northingInput.addEventListener('change', autoCalculateWGS84);
+            if (eastingInput) eastingInput.addEventListener('change', autoCalculateWGS84);
         }
 
         function fillGeoSelect(selectId, options) {
