@@ -187,6 +187,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             text-decoration: line-through;
         }
         .qc-stage-label { font-size: 0.85rem; }
+        .qc-stage-extra {
+            padding: 0 0.5rem 0.5rem 2.25rem;
+        }
+        .qc-stage-extra .btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+        }
         .qc-stage-meta {
             margin-left: auto;
             font-size: 0.7rem;
@@ -1208,10 +1215,17 @@ $currentUsername = $_SESSION['username'] ?? 'User';
              .map(r => `<div class="qc-geo-row"><span class="k">${r[0]}</span><span class="v">${escapeHtml(r[1])}</span></div>`)
              .join('') || '<div style="font-size:0.83rem; color:var(--gray-400);">No geodetic settings recorded — edit the session to add them.</div>';
 
+            const surveyPathHref = projectSurveyFolderHref(session.project_id);
             const stageRows = Object.entries(qcStages).map(([key, label]) => {
                 const info = session.stages && session.stages[key];
                 const done = !!(info && info.done);
                 const meta = done ? `${info.by} · ${(info.at || '').substring(0, 10)}` : '';
+                const copySurveyPathBtn = (key === 'points_exported' && surveyPathHref) ? `
+                    <div class="qc-stage-extra">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); copyPath(${jsAttr(surveyPathHref)})" title="Copy this project's survey folder path">
+                            <i class="fas fa-copy"></i> Copy Survey Path
+                        </button>
+                    </div>` : '';
                 return `
                     <div class="qc-stage-row ${done ? 'done' : ''}"
                          onclick="toggleStage(${session.session_id}, '${key}', ${done ? 0 : 1})"
@@ -1219,7 +1233,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         <span class="qc-stage-check">${done ? '<i class="fas fa-check"></i>' : ''}</span>
                         <span class="qc-stage-label">${escapeHtml(label)}</span>
                         <span class="qc-stage-meta">${escapeHtml(meta)}</span>
-                    </div>`;
+                    </div>${copySurveyPathBtn}`;
             }).join('');
 
             const findingsBlock = findings === undefined
