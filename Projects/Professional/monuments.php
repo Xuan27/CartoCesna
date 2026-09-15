@@ -152,6 +152,9 @@
             <a href="control_points.php" class="nav-item">
                 <i class="fas fa-crosshairs"></i> Control Points
             </a>
+            <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
+                <i class="fas fa-clock"></i> Timesheet
+            </a>
             <a href="#" class="nav-item">
                 <i class="fas fa-cog"></i> Settings
             </a>
@@ -365,5 +368,30 @@ function showToast(msg, type = 'success') {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 </script>
+
+<script src="../../Models/js/survey_projects/timer.js"></script>
+<script src="../../Models/js/survey_projects/timesheet.js"></script>
+
+<!-- Timesheet Modal -->
+<div id="timesheetModal" class="modal">
+    <div class="modal-content timesheet-modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-clock" style="color:var(--primary-color);margin-right:0.5rem;"></i> Weekly Timesheet</h2>
+            <button class="close-button" onclick="closeTimesheetModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="timesheet-week-nav">
+                <button onclick="navigateWeek(-1)"><i class="fas fa-chevron-left"></i> Prev</button>
+                <span id="timesheetWeekLabel">Week of ...</span>
+                <button onclick="navigateWeek(1)">Next <i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div id="timesheetContent">
+                <!-- rendered table injected by JS -->
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
