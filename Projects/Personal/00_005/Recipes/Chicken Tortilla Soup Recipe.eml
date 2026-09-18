@@ -1,0 +1,259 @@
+Delivered-To: garciavanessa1@gmail.com
+Received: by 2002:ac0:ea43:0:b0:3b9:f9d6:1036 with SMTP id l3csp5464imu;
+        Thu, 16 Apr 2026 08:41:13 -0700 (PDT)
+X-Received: by 2002:a17:903:3c47:b0:2ae:5ab4:f4c0 with SMTP id d9443c01a7336-2b5f0272071mr21813545ad.13.1776354072732;
+        Thu, 16 Apr 2026 08:41:12 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1776354072; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=iNdqgHyEAU3otoQoUUxr2ST0w8VkwJ8vultB1anzfLuIndXbRPWyMMgzmhVDoIITlb
+         EhNHFRzNWZgvnaqLqD7wnqgamXZKsBdUzU9FsBA8dsyDuZkF/8ohyQJUWrot2fzICnz2
+         nRiLM+sZynk+hKvwDqQ3YWE2O4x7Y2KwiIWBlBgK3bXe4cXLqVQ8SkrDpqMh8EBKsG3U
+         UHDaYI2xL4xwqenQN58Y5X2/DJ5x5YqtEK5F3qvLqxq994v/rYvYnDqtmRAetJw+//Z0
+         U35liQlFHP+jPI88744/ukvzAQ8Z8jt34iX1LJYmp14qJwTLWDKya23QYQHma6exEoV7
+         NTvg==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=mime-version:msip_labels:content-language:accept-language
+         :message-id:date:thread-index:thread-topic:subject:to:from
+         :dkim-signature;
+        bh=mW37vk8zh2jYcTrdrwN15Sztrg2NMencxWcfdT/RzcY=;
+        fh=Uj2yEgIF4EzsaCFpgRAWRet8YdQXHPKIg74PX89TtKo=;
+        b=MZ/XmFL8L3+ZbLr7KVJIuXTo11WqGQL4xvoa6yepmEZME8Asz3RaiHghrVftKEGgRj
+         ftiGtXhzEYcDtvXdRJvDMeGY4kEcPPJs+mwSMGXbtLm1RFK7l0F80c/TLKL00fLifF0t
+         X4UJj5IvDdzyuSSDc9j1IlBMx592gtx0nhVncHr+Hi9oiEeAY4nzcgJ2TXX9QUzD8NUe
+         4mx13Prde4xWWhPEzQoB0q3ZZ0EKVGybezwKv0ICOz9HlU59taFPDTGWt9vXV00K7WHl
+         pwShDXypYEdY7mVK4T3pM/ogedGHBfwCqd/5ffMdXfx6U0lKtCjnO7B+z/E3WJRsySX5
+         08DQ==;
+        dara=google.com
+ARC-Authentication-Results: i=2; mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=goGSMTbg;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:c112::7 as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+Return-Path: <Vanessa.Garcia@epicor.com>
+Received: from CY3PR05CU001.outbound.protection.outlook.com (mail-westcentralusazlp170130007.outbound.protection.outlook.com. [2a01:111:f403:c112::7])
+        by mx.google.com with ESMTPS id d9443c01a7336-2b4782f66e3si96325985ad.122.2026.04.16.08.41.12
+        for <garciavanessa1@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 16 Apr 2026 08:41:12 -0700 (PDT)
+Received-SPF: pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:c112::7 as permitted sender) client-ip=2a01:111:f403:c112::7;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=goGSMTbg;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:c112::7 as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=R1Xy9HMiiiBdoB6uchILTLlVoo3vi0++0ddmgZkyyb6CpgqoKBnchT3Zo974TZUhE89whPPL7NJZGczeMSTjOeAxnCPi/spPuTXjcU6JhuoIOQdwSqjquSAo9YxPgupjIhcOik9FA0/SBH1qjJolDa+M2xZh2QjjIdRx/kJwe9ZUj0Ho5PnQAAldK9Ab6ozzS/knsW39ujAJHJeIevbEIbD9PGNtxxP5k7g9FIQkSMexmBRIkBGf6Mem9pQpIixP3gD0r6My4GVkDbIrxGQhBhKUlta8he7mB5kRDO5WsOAJNiV8FvMloc6NWV8RIGCi0vDVZYX2bMIzVY0X8d86FQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=mW37vk8zh2jYcTrdrwN15Sztrg2NMencxWcfdT/RzcY=;
+ b=sPkP73lftp+9nem8oodX9tWuoACrA0mzHtS0nnIkRfCIeUxehmSc1SnXnxqrAgFhrC18KoMLiC1RVDT5NgTClzeNycmW1UYwZuBeRX8+zXsOV+hjkf4TtFGozi2B+vo9zGOnBbQzGY9VUWFhtWo9T91kjTjwMMgTeuZSF8pJpma3iGt72udF7cV89bcsTx8eI2LNbkoZ4e/7g43mVQFb1dknugNON9NqiU4OCBh+99bGkqiA90MAqmD46E7uNTxvZ7ZHbaJhcEKiCAvcDVo8aeRPhm9h9kFd+Jd1777unnfwGEU5BHP/f9PJJsEDcLhcW4FumvmfP73iAK/sQvRXig==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=epicor.com; dmarc=pass action=none header.from=epicor.com;
+ dkim=pass header.d=epicor.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=epicor.com;
+ s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=mW37vk8zh2jYcTrdrwN15Sztrg2NMencxWcfdT/RzcY=;
+ b=goGSMTbgz0zt3+5deI00yQtCUiPgRyZK1RTSYBO5/UOQDfq3QucNCMV46Yqv9FMfM6zpKB9iFYWIkXnLD/V5ghrKAC12/XYsc/9+tU/kMNYt6+aZ2leFQi0TiTX/kkOF3VV0tdnsRKuMXukzftKQ3iYkyW6wB7SAaPRkjI5RMIVcdrmDWtpqZFZ+KqhC8MN7slk2Wv7SS9R5uuadn3ezsULWwaWtY7Afcsf8b6xZ/b8BZ9FcKRyMFfJqzR+xdkbAHyN7jriV7cVl48mHNYgJDEzkweC/qRunB5K8LdSSbp7o8TWNBZxVwjPqUS2UWD4rrRNEpfEwmhDk6PU9sLCnCA==
+Received: from IA3PR18MB6310.namprd18.prod.outlook.com (2603:10b6:208:529::6)
+ by SJ2PR18MB5588.namprd18.prod.outlook.com (2603:10b6:a03:55f::7) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.9818.25; Thu, 16 Apr
+ 2026 15:41:09 +0000
+Received: from IA3PR18MB6310.namprd18.prod.outlook.com
+ ([fe80::5c61:efe8:aa51:d1be]) by IA3PR18MB6310.namprd18.prod.outlook.com
+ ([fe80::5c61:efe8:aa51:d1be%5]) with mapi id 15.20.9769.046; Thu, 16 Apr 2026
+ 15:41:07 +0000
+From: Vanessa Garcia Martinez <Vanessa.Garcia@epicor.com>
+To: Vanessa Garcia Martinez <garciavanessa1@gmail.com>
+Subject: Chicken Tortilla Soup Recipe
+Thread-Topic: Chicken Tortilla Soup Recipe
+Thread-Index: AdzNt257/kE+bb0kTnawB8pBOeO5yg==
+Date: Thu, 16 Apr 2026 15:41:07 +0000
+Message-ID:
+ <IA3PR18MB63109C2E7C79EE921CD19ED9FB232@IA3PR18MB6310.namprd18.prod.outlook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+msip_labels:
+ MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_Enabled=True;MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_SiteId=4f4f4c56-a772-461a-967e-7890c3960b3a;MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_SetDate=2026-04-16T15:40:39.0000000Z;MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_Name=Epicor-Internal;MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_ContentBits=3;MSIP_Label_ec83a517-66fc-4dee-aa07-591daa2c380c_Method=Standard
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=epicor.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: IA3PR18MB6310:EE_|SJ2PR18MB5588:EE_
+x-ms-office365-filtering-correlation-id: d2744e3b-4d91-45c3-9809-08de9bce93af
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam:
+ BCL:0;ARA:13230040|366016|376014|1800799024|56012099003|18002099003|38070700021|8096899003;
+x-microsoft-antispam-message-info:
+ KYzFVApX62QsXCxXy67HQDk8sV2h6vB5nWadR1O/rteOYgup/cUyZsY/QDg1PHhN4TT3hIXHOChgU+PwrKio3bnoZYgaG8vy4H/Lp+AJUhdRIp6hpv0kyWpagYyJ4tS0C89S+tkzc9zCogqlCtUZiSbHSLIpKnqeZfUdLpq99UBzJuJcjvXw1AUD/QpUOQMCg7VIjwbZlPkDZYgp51nPQL+rMKedB/GOQ83xjJtxLwYEDV6agtVTSfju2ntp6YBNqVCF9kIjkbvUGaTB2UtcBfHcR4bzYcPs0nSINzpSJ0CcRu4X1hHh5eXpKpirROli08QL0sTUbT9p4T74dpmp3xlygt/TpVwJ1R0WJdtFSctKqW7g3I2HHr6sPSK5d5C9xFQDzcgTmrBLZcMgixmQ+r7/aqBcz05aXut1mM6TNWuY0O4dOgRCTm28f0dB2suFauLx5rUpANi6YN8ePIrTTxh52ksb0J3jOoy53rm2w8mi+h4SHcP7cplEKk+xJS5yzY2qKklkaiDDWiJS02SeTIxSalGlWkd2wTh9JoeQHOo2EbvCTjUAFGMUqF0757SBy5W6QxF4PL+C5BHzEDPpE8bjHMf82thukeLMORLn/9puIPayYydCamQrLp2W5G2GdJOk9Xz6lX0j+wsHMnBVfHPnkixp70tqfmPudnZqR6NYHuysQoM1bGGAKDeWYrgsUgcBJPTbbZo1Dt2UZFeFPsRY/k0ofUzEKMVrSwHjydHa9H9lBCSb1Jsv1z+gE0b3aWebZ/QWj79j6EdU4qRIGRRGMUoY2Wq1cEBEmUYSG1M=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:IA3PR18MB6310.namprd18.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(376014)(1800799024)(56012099003)(18002099003)(38070700021)(8096899003);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?us-ascii?Q?HBvrHnMmn8SQuss27s+63+594DVwpobcX7S+fRGQOq4igDOnXxENbOjJ1Tsy?=
+ =?us-ascii?Q?smxSixgz+8WG1CLNIg8ySeVJVVFzBS9uC1KHCBmWnU7fm4sFryZ6RItaYCUa?=
+ =?us-ascii?Q?90hWy1yb1wr3fhdTn9F3IdKnrtIDPHJT2Vt0K4ZCb9Py8LwF6yMqkFtpX76r?=
+ =?us-ascii?Q?f8PRPn6SH9ZJWMOi6Sut1E5f4ceqS3ZpydAZnJykprxISntIvJ3qd9W9haZ5?=
+ =?us-ascii?Q?gdfoUE6+/mCG22PDpjiqAGOx+ckj/K2Ff5KA8+utb0DkKFYYi/DmhigDLTSH?=
+ =?us-ascii?Q?kXdlW6FbXR9i/9wAhcEGlmLe+W8P9p6Rtq3QcJ+C6gWcsrnNGGG2+vhXMz4D?=
+ =?us-ascii?Q?srvYL0de2NrLXDiaQkrtBwbFYia0EKgivWjOECEyk88OzVsMIEQ+pJ974L7v?=
+ =?us-ascii?Q?KHB/lP5UINn8moH5euLje7vEYHTf2dLW86h5uIC43REJJjX3Vj2pVkyZksH9?=
+ =?us-ascii?Q?67tudnAHOgSDva+VrSy1cy1ZLP1aCpFMmcRmLXm9LcUl+0khgGUITzSoDgFv?=
+ =?us-ascii?Q?ohqfj0ldZJQ0SxqxQuAX/EUjRPZpg6A+P4ON4F6pEfJoc1Ur9GyxOOJplm2n?=
+ =?us-ascii?Q?VQeilwc7uVybhSOtba33l/ucdRjSlK7kc3RlnbaGvkUriuzgMQDQahvUiL0V?=
+ =?us-ascii?Q?dpSHi+HpRazAkkdvA5iMiEYG6jj/YBUafWDBY6CO8qdmxQqX3t9ZyvaA1eYA?=
+ =?us-ascii?Q?yeGYsehcIzWRi8F4Hzs+a3dxF/kJxXxze0ktsWvwq0X9EPeCYoxRwAj8xh11?=
+ =?us-ascii?Q?ISWOCGCCqf32FwnckS0QbRF+fc9Irhw39Rmuf5tvkQa2xDtCMuXiON2Q8Mag?=
+ =?us-ascii?Q?3IuUh05chBeSFNdA1rykQNJTlgQF8Tgnzzs98QtWZCLWEl9Pwxl0B7At1Eya?=
+ =?us-ascii?Q?e34lilBiREwaUnxSJociA8ke7C/7w3bIamq9VpBy5y+NOL1piRIhPY1MZiCz?=
+ =?us-ascii?Q?2h8kAy9AmEAZTwwE+yOWiiUhArEK0l/D9qtlG5xPfIVFLGTXWrkkvRyGw8Qc?=
+ =?us-ascii?Q?kADIy8sZRNAM0GYdKzMbRR3xpFpxa3J/+soczqASxsOL8Aq5vfnmYSpu2SYi?=
+ =?us-ascii?Q?jI7cYZft9QvSm0j3TBcDSmkLgZbmHo2SMccf2lfgR7UrDJMnyPhpLn85wnpY?=
+ =?us-ascii?Q?i0RLDeek0Z4YRAF2AyZr14GiKI9yjeInYf31dL52krRXmyyaSDFc+ztAHTQw?=
+ =?us-ascii?Q?RVSkk5hUp3JziRY17qCTOa7R+42zEFVIOCEIHoEDuJ/dAb0WZQe9U/dYRfht?=
+ =?us-ascii?Q?+ndF/PO+tqPpSRviiDXv1JKBRWQ/H34ydCH5qx6f5LJQZxszzwCtIdglWSgB?=
+ =?us-ascii?Q?KAcTBQLQmZDswBm381ue9uSSfeHa+WjX6ONgbgdnHvtVtwgRRmHLuVyv6n+R?=
+ =?us-ascii?Q?/y9QKrOnL8v3YtY4BE5PrVehpKNO2+ZHuOYcEkeKZIvpH25K4nOWzqeeZuZV?=
+ =?us-ascii?Q?jvg02TBufAiQkfQ6Mcp++tKggJLbontFtAPwgP0xsf7ExQ/gx2qsB6RGZepM?=
+ =?us-ascii?Q?JSW+CyZG8wN3w4bBEXW7kWYzigMq0+OZdLZRtPpt2U18PWZu1yjvhcusEaXP?=
+ =?us-ascii?Q?nStPkaLUUAFA8wK+xM1eHmBBefdSmwOEkskbqJ7m8KeskbsNnWnAsvyGoEMw?=
+ =?us-ascii?Q?lkEa1Jl9E3Ougoc5ZuqNGX+L5pGL0/uSfUXWu85a02Q9sKLKXmi+D5E8TRw6?=
+ =?us-ascii?Q?Be/1bmW4JZUJlBMUt4LnG5yK2Wx0JvMM3G4P4pDodjUgl+04kDX2VKv2SbOW?=
+ =?us-ascii?Q?i0+maFZ8Vw=3D=3D?=
+Content-Type: multipart/alternative;
+	boundary="_000_IA3PR18MB63109C2E7C79EE921CD19ED9FB232IA3PR18MB6310namp_"
+MIME-Version: 1.0
+X-OriginatorOrg: epicor.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: IA3PR18MB6310.namprd18.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: d2744e3b-4d91-45c3-9809-08de9bce93af
+X-MS-Exchange-CrossTenant-originalarrivaltime: 16 Apr 2026 15:41:07.6408
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 4f4f4c56-a772-461a-967e-7890c3960b3a
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: bhX13uEkOYG4PHY725qFhDynWI9wlOLPZzzmXvfngfUT7jeK/LvCysVO3c3MNbG+2gm1K93O1mzK8lFD/fMn/8GHSwWhkmzEhNXqjNgIgi8=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ2PR18MB5588
+
+--_000_IA3PR18MB63109C2E7C79EE921CD19ED9FB232IA3PR18MB6310namp_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Epicor General
+
+Chichen Tortilla Sour<https://natashaskitchen.com/chicken-tortilla-soup-rec=
+ipe/>
+
+Vanessa Garcia Martinez
+Legal Department
+
+Epicor Software Corporation
+Ph: (512) 278-5235
+E: vanessa.garcia@epicor.com<mailto:vanessa.garcia@epicor.com>
+
+
+
+Epicor General
+
+--_000_IA3PR18MB63109C2E7C79EE921CD19ED9FB232IA3PR18MB6310namp_
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http:=
+//www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dus-ascii"=
+>
+<meta name=3D"Generator" content=3D"Microsoft Word 15 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:Aptos;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ligatures:standardcontextual;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:#467886;
+	text-decoration:underline;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Aptos",sans-serif;
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"#467886" vlink=3D"#96607D" style=3D"word-wrap:=
+break-word">
+<p style=3D"font-family:Calibri;font-size:12pt;color:#000000;margin:5pt;fon=
+t-style:normal;font-weight:normal;text-decoration:none;" align=3D"Center">
+Epicor General<br>
+</p>
+<br>
+<div>
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt"><a href=3D"https://=
+natashaskitchen.com/chicken-tortilla-soup-recipe/"><span lang=3D"ES-MX">Chi=
+chen Tortilla Sour</span></a></span><span lang=3D"ES-MX" style=3D"font-size=
+:11.0pt"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span lang=3D"ES-MX" style=3D"font-size:11.0pt"><o:p=
+>&nbsp;</o:p></span></p>
+<p class=3D"MsoNormal"><b><span lang=3D"ES-MX" style=3D"font-size:10.0pt;fo=
+nt-family:&quot;Arial&quot;,sans-serif;color:black;mso-ligatures:none">Vane=
+ssa Garcia Martinez</span></b><span lang=3D"ES-MX" style=3D"font-size:11.0p=
+t;font-family:&quot;Calibri&quot;,sans-serif;mso-ligatures:none"><o:p></o:p=
+></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,sans-serif;color:#025064;mso-ligatures:none">Legal Department<=
+/span></b><span style=3D"font-family:&quot;Calibri&quot;,sans-serif;mso-lig=
+atures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Calibri&quot;,sans-=
+serif;mso-ligatures:none">&nbsp;<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-family:&quot;Calibri&quot;,sa=
+ns-serif;mso-ligatures:none">Epicor Software Corporation</span></b><span st=
+yle=3D"font-family:&quot;Calibri&quot;,sans-serif;mso-ligatures:none"><o:p>=
+</o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Calibri&quot;,sans-=
+serif;mso-ligatures:none">Ph: (512) 278-5235<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-family:&quot;Calibri&quot;,sans-=
+serif;mso-ligatures:none">E:
+<a href=3D"mailto:vanessa.garcia@epicor.com">vanessa.garcia@epicor.com</a><=
+o:p></o:p></span></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</div>
+<br>
+<p style=3D"font-family:Calibri;font-size:12pt;color:#000000;margin:5pt;fon=
+t-style:normal;font-weight:normal;text-decoration:none;" align=3D"Center">
+Epicor General<br>
+</p>
+</body>
+</html>
+
+--_000_IA3PR18MB63109C2E7C79EE921CD19ED9FB232IA3PR18MB6310namp_--

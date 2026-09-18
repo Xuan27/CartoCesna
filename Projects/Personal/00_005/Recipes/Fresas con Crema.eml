@@ -1,0 +1,385 @@
+Delivered-To: garciavanessa1@gmail.com
+Received: by 2002:a05:6e04:10ca:b0:348:4d84:95fa with SMTP id i10csp278905imd;
+        Thu, 24 Apr 2025 07:19:11 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IHzbWBSAcuo0lpMXFm7Sh2g9gOjvTJRUvkTkdI7FRaeCtVCZrgutF3Lz7atRIVppe9svPMQ
+X-Received: by 2002:a17:90b:1f91:b0:2ee:8430:b831 with SMTP id 98e67ed59e1d1-309ed26d0d6mr4095003a91.2.1745504350879;
+        Thu, 24 Apr 2025 07:19:10 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1745504350; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=DkFsuyKi/t1nOHc82Qm8tK1+TLen08gZkEvEY+rnLYuKlCWXSbQ1fCiGxEdGegXYfP
+         TWxNdURwQkqF6HXyBFVNX60t7xDH/Wj2dnqtPBBq+8VPweM0/e75i5LJKKi9yoIfH4yq
+         yXd929DzYj3+0zfKQH4/CRkO0Gff7wJYXbHEtrGCoc/UosinkdTjj+y0leR3tWHqlEEo
+         xG61kvZCwg1cKwC6YEKodIOBq4J09SR2Y7hsHaJ+lEZGn/7H/exKGdjuKvoLKj5B6le1
+         Y1qC4rVbyywRQ6P4d5MPLkmcPb1MOXMDO+k5yVztL1FRJyOTvr76lJUU1UD2fY15XLNd
+         v2tw==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=mime-version:content-language:accept-language:message-id:date
+         :thread-index:thread-topic:subject:to:from:dkim-signature;
+        bh=wZwFsCrqm+X63rIjxMdQWqGp1z6mn4+lC5NBGkqdgS0=;
+        fh=T14fzR+GU9trpfjr7xop9Lfu/4l9zHJKgRhpxOG7p98=;
+        b=MUzjX0fvjtqcIWDVACKpVcGH9RLIwc2ImCdmJkVu0H2hfvkN6Ib2To3mCzcyHkNzNP
+         yCwfaMs6wB70XshUxAh6g386uNPN2Ah5UYZuMJNs1B+OTMVT5Lx/d4zOPIWKgXEiCu51
+         keYVvxtrf5mT+qofstuBMt9pfhBFjszWNRw/9USNTq4ZqgvJSC/iPkpc/qg+E/wenX4U
+         xsLa6B9rFSRqUK3A+KaguH0s+g3DMSFilrZ6cp++5IsvgpsDGZr6wvFumkebRu6f7KjE
+         8UlzzPgeUOszhLA4FhGmz4sueWzq4FLOi1A57mtEPf7HnR3J9NEhdYsnvuz5ifFJcr9D
+         IB7Q==;
+        dara=google.com
+ARC-Authentication-Results: i=2; mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=R0eJyk8F;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:200a::61b as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+Return-Path: <Vanessa.Garcia@epicor.com>
+Received: from NAM12-MW2-obe.outbound.protection.outlook.com (mail-mw2nam12on2061b.outbound.protection.outlook.com. [2a01:111:f403:200a::61b])
+        by mx.google.com with ESMTPS id 98e67ed59e1d1-309ef0b2843si1750936a91.106.2025.04.24.07.19.10
+        for <garciavanessa1@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 24 Apr 2025 07:19:10 -0700 (PDT)
+Received-SPF: pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:200a::61b as permitted sender) client-ip=2a01:111:f403:200a::61b;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=R0eJyk8F;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:200a::61b as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=JTBS3EQLu4QyR+ykEkxBS74p0IXjSzlyCQAUdWVzcQX95HiafNYho5xC2XgaAW2IEMRcMxZudJmNjQdNh4E2Rog9jpRDTfU6ddpBNJgGyzUbJgI1WzoOwKz5veICWdl3yD6S5kV3l34nvlTP/e+rwIdQZl2v+UjlMuQvaKSZSNtGOWvTjois6sEMdWL7OcTsh52rZKE8LIw/VGXfD1q+FT9lBvmXEuQsJNYNiPGomto2fSh3VmAh2F5EIWb9aKxk5duSBT5FVH/m8YQI85Yh9PsOtVSOFRjw9q6KBtGfsmCWesKVgwNeplotdlTfduFnRYBmeHKZ4ALAT1dIwV3eHQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=wZwFsCrqm+X63rIjxMdQWqGp1z6mn4+lC5NBGkqdgS0=;
+ b=TbDwi/2qrVGVv6WED81nGtS7GZwyQErq0UcZzo7cy0f5+U4wgDvWGVktbTi/5y9o3+wz5ToOp9oC5Mg7l51LEpBg5WvmIhjUvzGWnINpxt97gFMcQV6ITuWqFzXdm8MOkoyeuqQpfRQegrVcDOGwwCtPpYZZGjBWdRrrQOGyqpfQYuieVPGHm1ZxK4lT67SsuSRHZjQ8UCrMNosPZy7E5Yt2vcWULv46zyTjhndcoGT8I9UipksHlO0sC/V15ZeCVndo+lY311x1EhqDmDH0FDMM01gPdMvQPCa6Ww4Jt/l5o5S/hpBksR5RsMdcAMpH6VGn3vDAkpilWWz3q9+oIA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=epicor.com; dmarc=pass action=none header.from=epicor.com;
+ dkim=pass header.d=epicor.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=epicor.com;
+ s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=wZwFsCrqm+X63rIjxMdQWqGp1z6mn4+lC5NBGkqdgS0=;
+ b=R0eJyk8F0a/NASz+wz7X2J6S7HrbzhXGqnGq0fKrlemhoL5aPuf7inmkemUKnOQTQMPTmd6nsIS4zRE63WAxsluf5nzRde/zbF2W/X+1bcyKH5yyuqKEeos+TfVQPnFaMa4Bc48hzaEWpJEjTyvlzcQcVxbpJCXFiWOQDxQydk0n3obE+UbMRoZfoEyXbUq5Xm0CO/uwLo01z2g4q/wITYU1B2RNgkRGcPJrmbKWKXNfPd7mVmjzCsLcabOkrTV/D8a5Mzqt2QzpbyAtPyiua9UkEtzXEQfmXdRNkKwiYOjqTCJnjlXYqUJqmpRm7Tume/lAD4fnjLi+Z0HltCVrmg==
+Received: from BN7PR18MB3731.namprd18.prod.outlook.com (2603:10b6:406:b8::25)
+ by PH0PR18MB4389.namprd18.prod.outlook.com (2603:10b6:510:3::6) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8678.26; Thu, 24 Apr
+ 2025 14:19:04 +0000
+Received: from BN7PR18MB3731.namprd18.prod.outlook.com
+ ([fe80::a465:e4bc:aa9a:1607]) by BN7PR18MB3731.namprd18.prod.outlook.com
+ ([fe80::a465:e4bc:aa9a:1607%2]) with mapi id 15.20.8655.038; Thu, 24 Apr 2025
+ 14:19:04 +0000
+From: Vanessa Garcia <Vanessa.Garcia@epicor.com>
+To: "garciavanessa1@gmail.com" <garciavanessa1@gmail.com>
+Subject: Fresas con Crema
+Thread-Topic: Fresas con Crema
+Thread-Index: Adu1I6VPunpUgZI2Q4q0vamWDyIyew==
+Date: Thu, 24 Apr 2025 14:19:04 +0000
+Message-ID:
+ <BN7PR18MB3731554E4CBBD874AC2F963DFB852@BN7PR18MB3731.namprd18.prod.outlook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=epicor.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: BN7PR18MB3731:EE_|PH0PR18MB4389:EE_
+x-ms-office365-filtering-correlation-id: 64802d26-4308-40ba-84bc-08dd833af792
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam:
+ BCL:0;ARA:13230040|366016|1800799024|376014|38070700018|8096899003;
+x-microsoft-antispam-message-info:
+ =?us-ascii?Q?1AGQDcURAza2Gnr2nuc7nGWWMHWIPpe/W40MRbQJlZ919vTpKTu6ykBxkulT?=
+ =?us-ascii?Q?f5f6PyqeAMBzbiEYfM9zBrUDTW5nmav+WfOtxJu9UGVpMCjhK3VZ7ZIz6cMp?=
+ =?us-ascii?Q?dgj2h9G6230xjPWs1P+0EE4OlsTiQFAUCwI103Ei2mocIA4Lnf9BpTxvngOg?=
+ =?us-ascii?Q?v6cNbqxUygCubx2IKU9KOg31dSYg1JhI6ALwB8XCXtEJTxHQoeomitLNQynE?=
+ =?us-ascii?Q?AjxLWJ2s1ZilKfujliLT/Wz+lWXcWd2UxRT31JF1iO/Wwd9c7e5mh0C5685M?=
+ =?us-ascii?Q?jesC/RznzEpn8DPm0yj4nwuGFwQqSCtJ44JY82/6MbhNz9KlGHM/KF2jsXzG?=
+ =?us-ascii?Q?w6ixwIRG3w3nbJ55XxcO/zmtsvptgIC6C2nHtVT4z31H4L1FXUiPh34k1Y94?=
+ =?us-ascii?Q?Wy6KLzl3EaFVvX5WLqJSWQDhs72tYPwBUIQ56VHpkFtx6xOqTLmGa/XXJynF?=
+ =?us-ascii?Q?uMQBMLsHfxKjzG5ObZPQvI85wOSlbm5R8wih7pKQL3/EqRFglvFswFCGVEno?=
+ =?us-ascii?Q?ZbJ/1/ks8+/dmYYIjqzu1V68Kt1TsRUQ870L3lFp2JUb3DezEWQcalLzc5H6?=
+ =?us-ascii?Q?xvxi9310pX3n68+4acdbmZN6a00ou+dCQ4qcmUfO1M9EVoiEu8TfP27PWZFY?=
+ =?us-ascii?Q?N/mwP3yHFZKYFButMIF0+9pUqhVGtO/8pgVb99V7EBCaRjeCX/jYqgFA8qND?=
+ =?us-ascii?Q?xvT4pFxyoJFFexOEmNDlXMF0UkYdqQc13cfHIhjif4zAYOu43HGncm7+jzAv?=
+ =?us-ascii?Q?wa51vEGOfeHUM4vEceyEUfSNQFGr8fy0LsAQCYJUUAXpj3e8h5J9sbUOy6L8?=
+ =?us-ascii?Q?agmYoVmQdaeJYI+R40+bM8QBtnkwxr9IfOyusPCzknwLkkZ98FGbHpPfo4co?=
+ =?us-ascii?Q?gHu9ymiQ7lc+Vue/Spe7t6sgI8tZuWXP6potEtbta0sPU5ykAR1oIJK8Nhg2?=
+ =?us-ascii?Q?+x+HUcIGBtxZcOfRCbwesoV3xQSS1Yf/l/j2I5YiuuZiMxffV1Cln7p12iwK?=
+ =?us-ascii?Q?98vZ89g7pMiyI0FukM+4rsiOvqvvOivjy+lDzuR4tspxgHIT5QM1KJxI4IKH?=
+ =?us-ascii?Q?E4ZRHF3PZ0rzN7j8S8hogy2ocHui0LmS+eqjTC1y0bw50EwK6N+U2pDZVxsD?=
+ =?us-ascii?Q?fWUpSa5MtoWUGFJLyLQxbQuNi+9Pr4m6u9sYoUO7Ux85JepLsHS0Ah0f6D5Q?=
+ =?us-ascii?Q?HoJRHfZtW1BdcqwwmlrH7D+NSY1jDiyX4cpFd38RoZ62Esy7qy97/mWLgO2u?=
+ =?us-ascii?Q?A0APffOZ/e9sODBRyo4IuHw1Q2PZUjoZ6lKLZDIFB+XoReg4JEt3Opy8/Y7w?=
+ =?us-ascii?Q?2nNlGpN/TnqEsn5qooWfxOuzBa5G+AUqidHU9t59u3EdWqjgzK3OC4KdOPzg?=
+ =?us-ascii?Q?E11+94GqNRZ+v6+GhimQkGqG1PVYPYKMQB5Ig6jF+8vlSaruDiJNJ6GAEjI2?=
+ =?us-ascii?Q?fPeiyCl8Co8=3D?=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BN7PR18MB3731.namprd18.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(1800799024)(376014)(38070700018)(8096899003);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?us-ascii?Q?OXT+RRyD5KKp0wPSfbVWtXSqir+EYCUrgoGZiA6b2peOeuNCPh503baIS3E3?=
+ =?us-ascii?Q?DalxIt8b/W2dcSbegWfW1zKawje3spUmtV0DwadWaD+kULGyxOXgdVaV6/LL?=
+ =?us-ascii?Q?qeqY/LmtyCV5eB+E7OdIpTUF7aAe3/rpaXqfAXzRXdVxwAzGgdAmx79kOPGN?=
+ =?us-ascii?Q?w7/0JC1QUm0B4H0hf64Lb150J/VMINzlReuM8G6rsekPjFzmNCE7XjkqTv9r?=
+ =?us-ascii?Q?9ZAiBNlxbz2b4acKhbM+5VZeDsioYcCKtHinrAInIE8lik3fMiFahXKG6dMB?=
+ =?us-ascii?Q?oUBLHxmRZ5yhauP7UdqdCruVgMpb/3H3ZXr8kS7EYY2NJ2s3NJarGBYwph7r?=
+ =?us-ascii?Q?2GQTmnI3DiJ8NkM8bfS+21MOyIhI598FGhLedsRFf8y3iLGOP9h3hziyTrfG?=
+ =?us-ascii?Q?DXzYfmA0SVi9Zt627NC583wtTYBCLQD7AfYzjcc2+NXhTDP5q1NyLEEy2jbX?=
+ =?us-ascii?Q?FkiyaZ5KSxZnHnfCGCAjLiDX84L+Ho5XSeqtlAGy368yqdsJdLrNCHl50/Kx?=
+ =?us-ascii?Q?OedGTlp3Vj+cAcDdnkEu/d2VJHP9ZNkJnSPxHleOU3UHaXTQGE/r89WajQ2A?=
+ =?us-ascii?Q?biC6xtp9atSCBHGgvtJeOexihYELR8hKOiQHtDCtXENV+i59rz3fXHIbpwZR?=
+ =?us-ascii?Q?6/CFTTNNLQILCUKxjUzrd8jf84tAk8QIPR3j86OoyV7rArFrZjeCCmQAKO8y?=
+ =?us-ascii?Q?pZeW4py67zb4Mc7eEA472dMQTqdUz9VpzCSOjQyQWV7k7N11kMgXRNrl3Xyu?=
+ =?us-ascii?Q?J4XUimFLc0R6As4/BqjGkAl1PB7fQROBlS0G2ixIN8Q9rIcN6NOY11JypoQs?=
+ =?us-ascii?Q?2w6A3S41RhGxbYB9f6hYVkaKfl0yrlSIJhtRezH3fRI3vCy/KdLwAcOgWVrG?=
+ =?us-ascii?Q?DVHcB2PELnv5RmGqyV38m8Zxl9GMAWW+nIRTPJaXDAJL2w1i5uy0wSp8bH1Z?=
+ =?us-ascii?Q?sYyu/jdBDv/NnIOOLm+hYP7eLSICY8HynfutMNJ0Pip3DUSFPL1Ktzd+eNhU?=
+ =?us-ascii?Q?xKeQi7SfFh8UihQiuzsb90g0kqSekMX+SDK206yiKbp+Y79wHBHXxhtqqX1T?=
+ =?us-ascii?Q?vlDQ6t3w4CZWRYGX1pF1QYkkQhuDqC4G/o0GSmXcWsliiBbJSUSFOk+X8wtk?=
+ =?us-ascii?Q?JgbRl+zjn5W+Zjg1LoqAd52AuyGrGS88x323FxazuE5pyRQU1YmfhcPH7cqJ?=
+ =?us-ascii?Q?TmLoTZJPsWbOjfmgZO1EaSOU/iElVZc9/No1iHc/K4tf+PM8L55CHtqJiYqc?=
+ =?us-ascii?Q?SM6u6bW5a1u268EnZqZzRXze+LGDIKUFpvimQb2TBCMKwaq5IGcMMyhfFaNz?=
+ =?us-ascii?Q?qn5MhGJ4jyXg79sE0tTPj1hEGLmxITwx3u0smmy5a2Je5LdCRFh1FR+bV04i?=
+ =?us-ascii?Q?+VmAQce3iLK6JAK1OrOf4eeYVWd5GxmOmTE42HPtymyxd1YgOKjVklu1NBcj?=
+ =?us-ascii?Q?9LFPVW5ap3Q1/L5XsgrLE5pSyseoYrQVhHRdNkXg6zhqw7Z5Xg7Lfc2XH37C?=
+ =?us-ascii?Q?cNDbVxr0H0W60ReOwiRrbnJmHpuImFB2H0UrH+1IAv4+jLonq2QBxjNNeBEz?=
+ =?us-ascii?Q?5GFMcsQeTM52OqlugeGPIBPfqaL05CCVQR1pBwGT?=
+Content-Type: multipart/alternative;
+	boundary="_000_BN7PR18MB3731554E4CBBD874AC2F963DFB852BN7PR18MB3731namp_"
+MIME-Version: 1.0
+X-OriginatorOrg: epicor.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: BN7PR18MB3731.namprd18.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 64802d26-4308-40ba-84bc-08dd833af792
+X-MS-Exchange-CrossTenant-originalarrivaltime: 24 Apr 2025 14:19:04.0908
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 4f4f4c56-a772-461a-967e-7890c3960b3a
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: Aw2fNRXX9OSUAacuIStOLWy4yXbF9SfgcyU+vFPRNAavSvvdJ2N/xJPNX7lTz2bRcY9MgmfItjNwg2ZU0GfZdLX6vi++6TmBHiwBsZwLqyA=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR18MB4389
+
+--_000_BN7PR18MB3731554E4CBBD874AC2F963DFB852BN7PR18MB3731namp_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Ingredients
+
+  *   Approx. 40 strawberries
+  *   300 grams of sugar
+  *   100 ml of vanilla extract
+  *   1000 ml of whipping cream
+  *   4 tablespoons (60 ml) of chopped pistachios
+Preparation
+
+  1.  Cut the strawberries into quarters.
+  2.  Whip the cream with the sugar and vanilla until it doubles in volume.
+  3.  Add the strawberries and mix carefully with a spoon.
+  4.  When serving, decorate with the pistachios.
+
+This doubled recipe should serve approximately 8 people. Enjoy making this =
+delicious dessert! If you have any other questions or need further assistan=
+ce, feel free to ask.
+https://www.cocinafacil.com.mx/recetas/fresas-con-crema
+
+Vanessa Garcia
+Legal Department
+
+Epicor Software Corporation
+Ph: (512) 278-5235
+E: vanessa.garcia@epicor.com<mailto:vanessa.garcia@epicor.com>
+
+
+--_000_BN7PR18MB3731554E4CBBD874AC2F963DFB852BN7PR18MB3731namp_
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http:=
+//www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dus-ascii"=
+>
+<meta name=3D"Generator" content=3D"Microsoft Word 15 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:Aptos;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ligatures:standardcontextual;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Aptos",sans-serif;
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+/* List Definitions */
+@list l0
+	{mso-list-id:120349840;
+	mso-list-template-ids:2117398994;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level2
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level3
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level4
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level5
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level6
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level7
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level8
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l0:level9
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1
+	{mso-list-id:2092000957;
+	mso-list-template-ids:2112406158;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"#467886" vlink=3D"#96607D" style=3D"word-wrap:=
+break-word">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt">Ingredients<o:p>=
+</o:p></span></b></p>
+<ul style=3D"margin-top:0in" type=3D"disc">
+<li class=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo1"><span style=3D"fo=
+nt-size:11.0pt">Approx. 40 strawberries<o:p></o:p></span></li><li class=3D"=
+MsoNormal" style=3D"mso-list:l0 level1 lfo1"><span style=3D"font-size:11.0p=
+t">300 grams of sugar<o:p></o:p></span></li><li class=3D"MsoNormal" style=
+=3D"mso-list:l0 level1 lfo1"><span style=3D"font-size:11.0pt">100 ml of van=
+illa extract<o:p></o:p></span></li><li class=3D"MsoNormal" style=3D"mso-lis=
+t:l0 level1 lfo1"><span style=3D"font-size:11.0pt">1000 ml of whipping crea=
+m<o:p></o:p></span></li><li class=3D"MsoNormal" style=3D"mso-list:l0 level1=
+ lfo1"><span style=3D"font-size:11.0pt">4 tablespoons (60 ml) of chopped pi=
+stachios<o:p></o:p></span></li></ul>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt">Preparation<o:p>=
+</o:p></span></b></p>
+<ol style=3D"margin-top:0in" start=3D"1" type=3D"1">
+<li class=3D"MsoNormal" style=3D"mso-list:l1 level1 lfo2"><span style=3D"fo=
+nt-size:11.0pt">Cut the strawberries into quarters.<o:p></o:p></span></li><=
+li class=3D"MsoNormal" style=3D"mso-list:l1 level1 lfo2"><span style=3D"fon=
+t-size:11.0pt">Whip the cream with the sugar and vanilla until it doubles i=
+n volume.<o:p></o:p></span></li><li class=3D"MsoNormal" style=3D"mso-list:l=
+1 level1 lfo2"><span style=3D"font-size:11.0pt">Add the strawberries and mi=
+x carefully with a spoon.<o:p></o:p></span></li><li class=3D"MsoNormal" sty=
+le=3D"mso-list:l1 level1 lfo2"><span style=3D"font-size:11.0pt">When servin=
+g, decorate with the pistachios.<o:p></o:p></span></li></ol>
+<p class=3D"MsoNormal" style=3D"margin-left:.5in"><span style=3D"font-size:=
+11.0pt"><o:p>&nbsp;</o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt">This doubled recipe=
+ should serve approximately&nbsp;<b>8 people</b>. Enjoy making this delicio=
+us dessert! If you have any other questions or need further assistance, fee=
+l free to ask.<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt">https://www.cocinaf=
+acil.com.mx/recetas/fresas-con-crema<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt"><o:p>&nbsp;</o:p></=
+span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,sans-serif;color:black;mso-ligatures:none">Vanessa Garcia</spa=
+n></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-=
+serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,sans-serif;color:#025064;mso-ligatures:none">Legal Department<=
+/span></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,s=
+ans-serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">&nbsp;<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt;font-family:&quot=
+;Calibri&quot;,sans-serif;mso-ligatures:none">Epicor Software Corporation</=
+span></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,sa=
+ns-serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">Ph: (512) 278-5235<o:p></o:p></s=
+pan></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">E:
+<a href=3D"mailto:vanessa.garcia@epicor.com">vanessa.garcia@epicor.com</a><=
+o:p></o:p></span></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</body>
+</html>
+
+--_000_BN7PR18MB3731554E4CBBD874AC2F963DFB852BN7PR18MB3731namp_--
