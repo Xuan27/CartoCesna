@@ -10,15 +10,13 @@ database — so the printed book is never the only editable copy.
 
 ## Setup (fresh checkout)
 
-1. Create the database and load the schema:
+1. Load the schema into the existing `cartocesna` database (this app's
+   `categories` and `recipes` tables live alongside the rest of the app's
+   tables, using the same DB connection as everything else — see
+   `config/db.php`):
    ```
-   mysql -u root -p vanessa_recipes < schema.sql   # create the DB first if it doesn't exist:
-   #   CREATE DATABASE vanessa_recipes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   mysql -u root -p cartocesna < schema.sql
    ```
-   This app deliberately uses its own database (`vanessa_recipes`), separate
-   from the main `cartocesna` business database, even though it reuses the
-   same DB host/user/password from the shared `.env` file
-   (see `config/db.php`).
 
 2. Make sure `uploads/` is writable by the web server user (it has no group
    in common with the file owner on this host, so it's `chmod 777`):
@@ -45,4 +43,4 @@ database — so the printed book is never the only editable copy.
   via `?id=`) from the database and streams a PDF.
 - `includes/pdf_render.php` — PHP port of the print template shared by the
   full-book export and the single-recipe export.
-- `config/db.php` — connection to the dedicated `vanessa_recipes` database.
+- `config/db.php` — connection to `cartocesna` (same database as the rest of the app).

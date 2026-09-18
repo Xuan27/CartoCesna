@@ -2,10 +2,9 @@
 /**
  * Database connection for Vanessa's Recipe Book.
  *
- * Reuses the CartoCesna app's DB host/user/password from the shared .env file
- * (so credentials live in exactly one place), but talks to its OWN dedicated
- * database — 'vanessa_recipes' — which is completely separate from the
- * survey-project business data in 'cartocesna'.
+ * Lives in the same 'cartocesna' database as the rest of the app (the
+ * `categories` and `recipes` tables), using the shared .env credentials via
+ * the same Env/Database convention as the rest of the codebase.
  */
 require_once __DIR__ . '/../../../../../classes/Env.php';
 
@@ -22,7 +21,7 @@ class RecipeDB {
         $host = Env::get('DB_HOST', 'localhost');
         $username = Env::get('DB_USER', 'root');
         $password = Env::get('DB_PASS', '');
-        $dbName = 'vanessa_recipes';
+        $dbName = Env::get('DB_NAME', 'cartocesna');
 
         try {
             $dsn = "mysql:host={$host};dbname={$dbName};charset=utf8mb4";
