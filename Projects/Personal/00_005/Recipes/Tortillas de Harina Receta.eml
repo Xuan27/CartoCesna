@@ -1,0 +1,385 @@
+Delivered-To: garciavanessa1@gmail.com
+Received: by 2002:a05:6e04:10ca:b0:348:4d84:95fa with SMTP id i10csp2579483imd;
+        Mon, 28 Apr 2025 11:41:34 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IEWTwTxbBykOsK5volwmW8m00LVW1pfnhHScbamn7V4/Ep7y9O5aKEuY0Qi27IsdXQ55Dd+
+X-Received: by 2002:a05:6e02:3811:b0:3d6:cb9b:cbd6 with SMTP id e9e14a558f8ab-3d942d824bdmr83068895ab.13.1745865694454;
+        Mon, 28 Apr 2025 11:41:34 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1745865694; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=MM0hRbkEI3//EhP79oREZTYbyKnZA5H7/Ddk4J4qmj0jMtsiNXbn1tfbkHH1wjxNrz
+         XV4TAmrolFvZXFpQvRTbvpJHSnXN5h/6TRKYBIrbdFA+5VFTyDf4YtENK6CFm8kF0r7b
+         30NUmZJ+2JZatMrk43nj1Me+CnR/NAk4cC/fL8wUzapAYCP9uDHOQoZPCOqDAx/jXdgR
+         MhHGv40SuOe/ekcflkrr2uZJPOuLsqaBGOwH+Z5IbN4AOwacdEa3VA1xnfF4k2cI/HTj
+         gxrmtPVYIArJvVzzS8TMRa6zH1lQKlEPq517pxTEEl2qIGjAe8DIGJCRnbc+JjaJ9LBi
+         X8SQ==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=mime-version:content-language:accept-language:message-id:date
+         :thread-index:thread-topic:subject:to:from:dkim-signature;
+        bh=K8RSiKYbZy+Q2uPKxdw7ETSuDSmRd96yyKoKSjYOyZA=;
+        fh=T14fzR+GU9trpfjr7xop9Lfu/4l9zHJKgRhpxOG7p98=;
+        b=aqqzQPssw5eMzsP7sNo+WVECJiRc7SzWqrEDA+zdF2zXlotPoC6205L7sw1FcHzV0D
+         0LRZkMm7ukVKE8x1EkNAtlSf04jRGcIzW/BOM54aY8grOYM/LuawM0w2plUOxEkJGxuO
+         mN2qsG/MigalRFS3St2jOe1x/Oz0yfy3lW2BHpneOVsgBfw25SWJAU56fyhLxori/krz
+         +a/RgiLayWMscdcNHHEoiCfUrsuXe8RzCe6WApcAmq12gOJBbBCkm6GdEeEoDqZD/+3o
+         oKgVOjh1XreErYVeM8+eQ+lFEsSc5tIsnYh9YpodeSbJczhSxd4C6fm1caf4ESbJX8tr
+         EcAQ==;
+        dara=google.com
+ARC-Authentication-Results: i=2; mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=ImoEzpN5;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:2415::615 as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+Return-Path: <Vanessa.Garcia@epicor.com>
+Received: from NAM11-DM6-obe.outbound.protection.outlook.com (mail-dm6nam11on20615.outbound.protection.outlook.com. [2a01:111:f403:2415::615])
+        by mx.google.com with ESMTPS id 8926c6da1cb9f-4f8249ee2b5si7976951173.19.2025.04.28.11.41.34
+        for <garciavanessa1@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 28 Apr 2025 11:41:34 -0700 (PDT)
+Received-SPF: pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:2415::615 as permitted sender) client-ip=2a01:111:f403:2415::615;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@epicor.com header.s=selector1 header.b=ImoEzpN5;
+       arc=pass (i=1 spf=pass spfdomain=epicor.com dkim=pass dkdomain=epicor.com dmarc=pass fromdomain=epicor.com);
+       spf=pass (google.com: domain of vanessa.garcia@epicor.com designates 2a01:111:f403:2415::615 as permitted sender) smtp.mailfrom=Vanessa.Garcia@epicor.com;
+       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=epicor.com
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=wda55lRJXoMSM+2GwFIaX/Tiyc0W+/lKTV17X9xZc69zdaHgPb3Z0OrK8Qcg4WCyTTiw4zuvKnuSY4cJ3pYvaBJwXLH0WCylgncN3B9L0volqRXqd72C73fgeRllQpuO/HFwq1Q3iVXZSKwJ70AUWGrqFgd6BpzWAG6kBZgD6aAtvAEORYusG9Lt0ZaDZxp0LSgcUiQoP3vatSciq6JOnSOlxuHuL3Q2GMdoTfynmy0XpNdhlKNAP+PB/LgnDcnSdSDalX/88sP09DIUY1VesX/7gYSmyzXrqbqmQc0YTJ2ByZlP044IUYGEPoxlVwkIcv88sNtdWVHzwDX4AoX84g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=K8RSiKYbZy+Q2uPKxdw7ETSuDSmRd96yyKoKSjYOyZA=;
+ b=dX0pfyy1j9tjRwlUMPM72bS6rlbzJAlszz523yluyGqU+LAERKI775/eTgDadHsuaLifgSzk9Y/nv0URB3y/BGMXp9jNNunXlpTMS6DlKD3eQei3NNbgNADpcgFBSRTPUCtxS4dioOZ9vxsJun1F1MJVlIHqkDjSMyUxSyzInq1CaWBVxbN3DRzoVW3hOnxGDpYvQV2piiVpKvkVY9U2i7zidF2jDC6t4EKGo7w3yRTC8VzbqtjG4FbrFd877KRe48XDLDNXa81VG70EcDlGruvYOrC7hEYaFK6uLlYlJ5sh57FrC+aCzDVWtIkL2Au3SWGxStJcTBhoBbtuUsS4AA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=epicor.com; dmarc=pass action=none header.from=epicor.com;
+ dkim=pass header.d=epicor.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=epicor.com;
+ s=selector1;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=K8RSiKYbZy+Q2uPKxdw7ETSuDSmRd96yyKoKSjYOyZA=;
+ b=ImoEzpN5w0N9vIEB4eHYRol0CLSUVEJb/KsTKWFRDjSRwoMA+AUbgYeVD6zJU3sHYlgTbZ3hWrSsiScHg7MOtkiteXqcjWcQThj1PRHhEmdB3D/7F2cbNpiLev+/px/ewoE6XFx1UYlKvE+/Het3obuBHn8PKggbCrHhaRJRISo1KZ//xRirn8AbwXclb+f/XTTfelnBRkiMHHxNLSDB76gGV3bfoZsBfNaYAk+1/rI6kSgPRjsBgnKWve3eOgdy3czxMlXvTo0f5lCLBx15zW1TClJSpC2ZvGtVk1JFJwBFGdP/PHkv7ZTyytj6ObsFGYmlrdgw58MrC9d/blX+kQ==
+Received: from BN7PR18MB3731.namprd18.prod.outlook.com (2603:10b6:406:b8::25)
+ by MW4PR18MB5243.namprd18.prod.outlook.com (2603:10b6:303:1e0::22) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.8678.33; Mon, 28 Apr
+ 2025 18:41:29 +0000
+Received: from BN7PR18MB3731.namprd18.prod.outlook.com
+ ([fe80::a465:e4bc:aa9a:1607]) by BN7PR18MB3731.namprd18.prod.outlook.com
+ ([fe80::a465:e4bc:aa9a:1607%2]) with mapi id 15.20.8678.028; Mon, 28 Apr 2025
+ 18:41:28 +0000
+From: Vanessa Garcia <Vanessa.Garcia@epicor.com>
+To: "garciavanessa1@gmail.com" <garciavanessa1@gmail.com>
+Subject: Tortillas de Harina Receta
+Thread-Topic: Tortillas de Harina Receta
+Thread-Index: Adu4bJEBtwgG/Y2vRsy0mnMrBS/1ZQ==
+Date: Mon, 28 Apr 2025 18:41:28 +0000
+Message-ID:
+ <BN7PR18MB3731C7D30DFB7709237A5C7BFB812@BN7PR18MB3731.namprd18.prod.outlook.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=epicor.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: BN7PR18MB3731:EE_|MW4PR18MB5243:EE_
+x-ms-office365-filtering-correlation-id: 9c1d87e7-a611-4da3-90af-08dd868449bc
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam:
+ BCL:0;ARA:13230040|1800799024|376014|366016|8096899003|38070700018;
+x-microsoft-antispam-message-info:
+ =?us-ascii?Q?DPcakpzNaHRkI31c9B/ey3HmdKMbMTN8foOb3hnr8iVofJ39sRbQFyu/gL8N?=
+ =?us-ascii?Q?01BlX8i4POpsRHECzxRGdnTP3+v0Od04E9xrC72g+GP8ey5FEbzH8zVycs7Q?=
+ =?us-ascii?Q?ssPjid8M8RFD8NhDXErg7qMaaukeut3C8ExeEyuTCFhFyC5ZQkAqjtsUzsJw?=
+ =?us-ascii?Q?c36bOZElBkcjxXZ3Rdo6A7yalht/VhtKFuolm+IS0txQyryvPz7cozoL/3aY?=
+ =?us-ascii?Q?TQvffGuw3C30eGG4AbQ3MvXX8HTNw7ZjGMGnYq1j1Hzz78umHGDj/UnWFusj?=
+ =?us-ascii?Q?tFJMpezQFNQz1QRUDEZSJQv87HXoamuBJ6/jXXexnIdRxJVwKcs+ESXUEwlD?=
+ =?us-ascii?Q?W4tytF6dpDGQ62mzqLms+w39N528RiliYCbFkE01UHeeube7v8NnaxH5dfeV?=
+ =?us-ascii?Q?BNy9WkSYteCl+3xt6ifiUdp22r/ShGxZKNT5Lu9RlBux4KimuqnBkfUNJPEL?=
+ =?us-ascii?Q?osi6UZ9m4TMaFsMS5NLxwyOWfIakZCXUY52/bMH7/j1Z5zy9gQVr3N/YDsNZ?=
+ =?us-ascii?Q?TOX6bdI0JKU1sugynm7YXRA1dr/dUr1TNsny3Q+b0kAZCEkvs8k/sFBnVyEF?=
+ =?us-ascii?Q?vC0dYBWD5q/mkQxLObG0Au5qLSGtIwW3vW2kdVpObePc7LQKaXXXNP0acRq2?=
+ =?us-ascii?Q?UTmVk2UZK30axWrO2Kg3tV0JWWhAnKXFaP2pC/etwACsl1e4gmoJsJUujGL9?=
+ =?us-ascii?Q?iGFPvOSOIAXdg/OyJBsa70J20BwCyhxiZEfx/8Ab8YkBTTyhESyYFa16SsSn?=
+ =?us-ascii?Q?o8zfhlq6pbed71FhW6U7ADj6bHUGWFzoFjcIR3iAsIV4eejbnkByltoZQeMu?=
+ =?us-ascii?Q?TmFZw+0QKCZLCE/HokV9QuLcs6i3QVSWHLvvAjTarD2beZQ58Ea3/fR9E6Bd?=
+ =?us-ascii?Q?bF6fbXS96IHtVbfx+By4CvJEe+och3SUAcPk2sRgFO7mkzUplKeKqrSBtqL6?=
+ =?us-ascii?Q?/tKDjCz1rd1Vc+rU4MI2e2CMYopwwZZ70MU0KiqOSYHNMITHMBR6Foz0wc+h?=
+ =?us-ascii?Q?LnrpWaVw5VXxBL7XYGu+/X0/x9op0UejZHyQJ1H/UydDxqx43L7D9ye5FWc7?=
+ =?us-ascii?Q?qZP/7LEv7lSvXQlwkhYQIi5NiW+/q9vjkOKoyypetxqA39flifed71WByjow?=
+ =?us-ascii?Q?qUMfUg2Owbvfq4pkf/LGtJUeFS73lQnSGj3EgPnSBkXazkhlWxTYviaikxvb?=
+ =?us-ascii?Q?xspexTo7ICtWXNaRmi1NooZdzzIdAQ15zAm5rw3cQcs33/ljMrHQFj9o4dSj?=
+ =?us-ascii?Q?QaJk/BDId6d1D+5mmZVSh55HsHXzgqHyn79VyrA6uJ9240ics5SWx4GpUpJw?=
+ =?us-ascii?Q?PLsjAVD9X0IA9heVRRN4pDGBze0529bwIfCxqfcuPbmM9IKn0XIaXKmdSLLX?=
+ =?us-ascii?Q?Mt/1E4bXOtl6vGxcXedpFXfYjHFQSX0eCbN1KqkVsDLDGOxurPagwcPX8VdR?=
+ =?us-ascii?Q?5B7muBYMDyPbsR1cJOO/J+TE9iZMlujc+tLrAxkKY8x0n9kVaeGSqQ=3D=3D?=
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:es;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BN7PR18MB3731.namprd18.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(1800799024)(376014)(366016)(8096899003)(38070700018);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?us-ascii?Q?xTsdbim4WL3CikiRo/YI3xoFBtjiuwH69YSF1iH0blc9vVIx64x4xfRC8Wr7?=
+ =?us-ascii?Q?3io4clv+5vDq/nyqfDF/RXvHzSCvlPO4gzkjwxw+OP8rAvxjY9wgUVpPMIHh?=
+ =?us-ascii?Q?jUX4a1odZrg7y6pNFysyL22G4SgdTEa7AECmu1BYXWWNA2aqkVPLWBCABRzK?=
+ =?us-ascii?Q?Bn1Wks9ddY/OcUnp3KKiC1w2Jj37wPmZSwNxjFJGVMTFm7Pqfy5SPSF3PO3+?=
+ =?us-ascii?Q?C5z+nONLHFiTeSDkiJGTlOVp2Sc1TdInBtmjKYTIt5kinBHDRPIdRJX0/kTZ?=
+ =?us-ascii?Q?EzQk1tJefBgiYyRsfWj1PWnd01XihMR0fifAB8iatfEak+CM0+TPzByfKH7n?=
+ =?us-ascii?Q?wBXTCSScbDqf69p5ZpuuhWRdar1yVJhmMUlNamIZGnpDG8VVC6IsDko0osPM?=
+ =?us-ascii?Q?GEmuMk0IfkbkEs2q+oqHIPkuazGMge9uvwjFbuDgBdcxmyes1b5B/URBqq6R?=
+ =?us-ascii?Q?ho/87hoYlJkqNTr5fZ+zRLKqJBtdUi1FQ3BDJEHSeAjNUgKYdtegHlrqQJcu?=
+ =?us-ascii?Q?rXB6yKKB5RjO+cZ6qFzAsYhal8N64en9rr3qfV40E847JzeGnqftlhNyKvA4?=
+ =?us-ascii?Q?s5BUdRbny1stf3e0Q+Gpm0IQial0eRJzunkm7VKYy44Td/EJJwPivqodU6eZ?=
+ =?us-ascii?Q?jyE1Wg3+dngTmO7dsGDlWODbPIrwDPRH5oKznNYOa3xs4Tigtkff57lA5Dxm?=
+ =?us-ascii?Q?XdPIlip5Oih4bJa1VG7cTSkxCxDWwruUMoJAYYhPKwzxQk2ocoCbuv1E0FFS?=
+ =?us-ascii?Q?am7fADaSWu0GnBymRdjQXQS6mzutAmz7jLSAUtbREaRQXdfqHSLv9a5SMmGu?=
+ =?us-ascii?Q?qCgLhHT45SURv8GHiUfU5MMZ+gUC50Mta3SPKTIqMD4zEoDsGf1fId8lEz2W?=
+ =?us-ascii?Q?DiTSgY7MA7vYfNbA4gIxArNFgptlFRjvlyXcpEU5y8+OExvrCpMnl+OR/ouV?=
+ =?us-ascii?Q?6aqRaDY3spk8UGwQngV3Rio+iGvIHVNQQXsdldTKbMH1AekYLujMZ3+h1QS+?=
+ =?us-ascii?Q?R2MOZarJ0y3hkgEPy8lmwzseyjgMWkoKxWTlBw5HdHqk0GS8O4QHhwbWIPih?=
+ =?us-ascii?Q?dRkeaarDMjLla2iegnHcGC56ylC95l38o/3cmaLKAEgYMIz9p+pRBbPPbecS?=
+ =?us-ascii?Q?oNy4VulBZKplf7uatmUjAQuAyx09AQAhorlpKrP0qqbbwaNcej9258tR/bGY?=
+ =?us-ascii?Q?cE8pGAO/ZA5NuUfQwjRH4pk3Pp19YOCAeKhJShKCK2ioNkTzXOUOQTvVyNUt?=
+ =?us-ascii?Q?75P6stI9xZOWlH/ZMDkOmcYRDOhRwwUd/29e0c7GBUA4VAYyxGeEEROSsTUV?=
+ =?us-ascii?Q?pMN2Zy0xqS3Nd+01ozZaE2L2upsUtadObF80fotWqBuCd3K/DsyIG3T3tll+?=
+ =?us-ascii?Q?YoJmq4IMGsQtHe684cFq3CTq0GK3vhRvhG7Vc26erbZYgsYaHG/TxyExyu0x?=
+ =?us-ascii?Q?Coo9SIbXLgsa8M3RVfeHx5dF85Hj1KwqyGAGuhLgQBoNURUlrXyS0oYK7PwP?=
+ =?us-ascii?Q?sXQWQ3mcuQ+hwxVZwo+9GS3VZH4Twtf8UTvG9PuSIE4KIQUGVoALTAQsb8HN?=
+ =?us-ascii?Q?mAt1sGuIhy6RQ53yFbwcmruQdJ+BYEo99bXpMka8?=
+Content-Type: multipart/alternative;
+	boundary="_000_BN7PR18MB3731C7D30DFB7709237A5C7BFB812BN7PR18MB3731namp_"
+MIME-Version: 1.0
+X-OriginatorOrg: epicor.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: BN7PR18MB3731.namprd18.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 9c1d87e7-a611-4da3-90af-08dd868449bc
+X-MS-Exchange-CrossTenant-originalarrivaltime: 28 Apr 2025 18:41:28.7287
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: 4f4f4c56-a772-461a-967e-7890c3960b3a
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: AwPx9zw6XERm+5Z99dBu7rnrGOwjjnb35SFi45G+KaCoUsdmHynn3pq6CBtT7myMzkbf5G9rcsJUnaC5292firbYFXYvMcg5wzJImpH1V0o=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MW4PR18MB5243
+
+--_000_BN7PR18MB3731C7D30DFB7709237A5C7BFB812BN7PR18MB3731namp_
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Ingredientes:
+
+  *   1 kilo de harina
+  *   180 gramos de manteca de res
+  *   3.5 tazas de agua caliente (justo antes de hervir)
+  *   2 cucharadas de sal
+  *   1/2 cucharada de polvo para hornear
+Instrucciones:
+
+  1.  Mezclar los ingredientes en la batidora de pie (standing mixer) a vel=
+ocidad media durante 8-12 minutos.
+  2.  Sacar la mezcla y amasarla un poco durante 1-3 minutos.
+  3.  Dejar reposar la masa al aire libre durante 5 minutos.
+  4.  Formar bolitas para tortillas.
+  5.  Hacer las tortillas.
+
+Vanessa Garcia
+Legal Department
+
+Epicor Software Corporation
+Ph: (512) 278-5235
+E: vanessa.garcia@epicor.com<mailto:vanessa.garcia@epicor.com>
+
+
+--_000_BN7PR18MB3731C7D30DFB7709237A5C7BFB812BN7PR18MB3731namp_
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" =
+xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D"http:=
+//www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dus-ascii"=
+>
+<meta name=3D"Generator" content=3D"Microsoft Word 15 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+@font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:Aptos;}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	font-size:12.0pt;
+	font-family:"Aptos",sans-serif;
+	mso-ligatures:standardcontextual;}
+span.EmailStyle17
+	{mso-style-type:personal-compose;
+	font-family:"Aptos",sans-serif;
+	color:windowtext;}
+.MsoChpDefault
+	{mso-style-type:export-only;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+/* List Definitions */
+@list l0
+	{mso-list-id:933589266;
+	mso-list-template-ids:617891966;}
+@list l1
+	{mso-list-id:1608000961;
+	mso-list-template-ids:846374634;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1:level2
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:"Courier New";
+	mso-bidi-font-family:"Times New Roman";}
+@list l1:level3
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:1.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level4
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:2.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level5
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:2.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level6
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:3.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level7
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:3.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level8
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:4.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+@list l1:level9
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0A7;
+	mso-level-tab-stop:4.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Wingdings;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"EN-US" link=3D"#467886" vlink=3D"#96607D" style=3D"word-wrap:=
+break-word">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt">Ingredientes:<o:=
+p></o:p></span></b></p>
+<ul style=3D"margin-top:0in" type=3D"disc">
+<li class=3D"MsoNormal" style=3D"mso-list:l1 level1 lfo1"><span style=3D"fo=
+nt-size:11.0pt">1 kilo de harina<o:p></o:p></span></li><li class=3D"MsoNorm=
+al" style=3D"mso-list:l1 level1 lfo1"><span style=3D"font-size:11.0pt">180 =
+gramos de manteca de res<o:p></o:p></span></li><li class=3D"MsoNormal" styl=
+e=3D"mso-list:l1 level1 lfo1"><span lang=3D"ES-MX" style=3D"font-size:11.0p=
+t">3.5 tazas de agua caliente (justo antes de hervir)<o:p></o:p></span></li=
+><li class=3D"MsoNormal" style=3D"mso-list:l1 level1 lfo1"><span style=3D"f=
+ont-size:11.0pt">2 cucharadas de sal<o:p></o:p></span></li><li class=3D"Mso=
+Normal" style=3D"mso-list:l1 level1 lfo1"><span style=3D"font-size:11.0pt">=
+1/2 cucharada de polvo para hornear<o:p></o:p></span></li></ul>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt">Instrucciones:<o=
+:p></o:p></span></b></p>
+<ol style=3D"margin-top:0in" start=3D"1" type=3D"1">
+<li class=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo2"><b><span lang=3D"=
+ES-MX" style=3D"font-size:11.0pt">Mezclar los ingredientes</span></b><span =
+lang=3D"ES-MX" style=3D"font-size:11.0pt"> en la batidora de pie (standing =
+mixer) a velocidad media durante 8-12 minutos.<o:p></o:p></span></li><li cl=
+ass=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo2"><b><span lang=3D"ES-MX"=
+ style=3D"font-size:11.0pt">Sacar la mezcla</span></b><span lang=3D"ES-MX" =
+style=3D"font-size:11.0pt"> y amasarla un poco durante 1-3 minutos.<o:p></o=
+:p></span></li><li class=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo2"><b=
+><span lang=3D"ES-MX" style=3D"font-size:11.0pt">Dejar reposar</span></b><s=
+pan lang=3D"ES-MX" style=3D"font-size:11.0pt"> la masa al aire libre durant=
+e 5 minutos.<o:p></o:p></span></li><li class=3D"MsoNormal" style=3D"mso-lis=
+t:l0 level1 lfo2"><b><span style=3D"font-size:11.0pt">Formar bolitas</span>=
+</b><span style=3D"font-size:11.0pt"> para tortillas.<o:p></o:p></span></li=
+><li class=3D"MsoNormal" style=3D"mso-list:l0 level1 lfo2"><b><span style=
+=3D"font-size:11.0pt">Hacer las tortillas</span></b><span style=3D"font-siz=
+e:11.0pt">.<o:p></o:p></span></li></ol>
+<p class=3D"MsoNormal"><span lang=3D"ES-MX" style=3D"font-size:11.0pt"><o:p=
+>&nbsp;</o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,sans-serif;color:black;mso-ligatures:none">Vanessa Garcia</spa=
+n></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,sans-=
+serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:10.0pt;font-family:&quot=
+;Arial&quot;,sans-serif;color:#025064;mso-ligatures:none">Legal Department<=
+/span></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,s=
+ans-serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">&nbsp;<o:p></o:p></span></p>
+<p class=3D"MsoNormal"><b><span style=3D"font-size:11.0pt;font-family:&quot=
+;Calibri&quot;,sans-serif;mso-ligatures:none">Epicor Software Corporation</=
+span></b><span style=3D"font-size:11.0pt;font-family:&quot;Calibri&quot;,sa=
+ns-serif;mso-ligatures:none"><o:p></o:p></span></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">Ph: (512) 278-5235<o:p></o:p></s=
+pan></p>
+<p class=3D"MsoNormal"><span style=3D"font-size:11.0pt;font-family:&quot;Ca=
+libri&quot;,sans-serif;mso-ligatures:none">E:
+<a href=3D"mailto:vanessa.garcia@epicor.com">vanessa.garcia@epicor.com</a><=
+o:p></o:p></span></p>
+<p class=3D"MsoNormal"><o:p>&nbsp;</o:p></p>
+</div>
+</body>
+</html>
+
+--_000_BN7PR18MB3731C7D30DFB7709237A5C7BFB812BN7PR18MB3731namp_--
