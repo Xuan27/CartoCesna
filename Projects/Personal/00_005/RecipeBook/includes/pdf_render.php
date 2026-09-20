@@ -47,9 +47,15 @@ function pr_noteHtml(array $r): string {
     return '<div class="note-box"><div class="note-label">NOTE</div><div class="note-body">' . implode('<br>', $parts) . '</div></div>';
 }
 
+// 'file' for WeasyPrint (absolute path), 'web' for the browser print page.
+$GLOBALS['pr_photo_mode'] = 'file';
+function pr_setPhotoMode(string $mode): void { $GLOBALS['pr_photo_mode'] = $mode; }
+
 function pr_photoBox(array $r): string {
     if (!empty($r['photo_path'])) {
-        $src = 'file://' . $r['photo_path'];
+        $src = ($GLOBALS['pr_photo_mode'] === 'web')
+            ? '../uploads/' . rawurlencode(basename($r['photo_path']))
+            : 'file://' . $r['photo_path'];
         return '<div class="photo-box photo-filled"><img src="' . pr_esc($src) . '" alt=""></div>';
     }
     return '<div class="photo-box"><span>PHOTO</span></div>';

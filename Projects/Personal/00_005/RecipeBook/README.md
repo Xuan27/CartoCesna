@@ -24,15 +24,14 @@ database — so the printed book is never the only editable copy.
    chmod 777 uploads
    ```
 
-3. PDF export shells out to `python3 -m weasyprint`. WeasyPrint here is only
-   installed in one user's local Python site-packages, not system-wide, so
-   `api/export_pdf.php` sets `PYTHONPATH` explicitly when invoking it. If
-   exports start failing with `ModuleNotFoundError: No module named
-   'weasyprint'`, the web server user can no longer traverse into that
-   user's `~/.local/lib/pythonX.Y/site-packages` directory — check that
-   `~/.local` and `~/.local/lib` still have the execute (`x`) bit for
-   "other" (`chmod o+x`), and that the `PYTHONPATH` in `export_pdf.php`
-   still points at the right Python version's site-packages.
+3. PDF export has two modes, chosen automatically by `api/export_pdf.php`:
+   - **WeasyPrint** (this dev machine): shells out to `python3 -m weasyprint`
+     with an explicit `PYTHONPATH`. If it fails with `ModuleNotFoundError`,
+     check `~/.local` and `~/.local/lib` still have `o+x`.
+   - **Browser print** (shared hosting such as Hostinger, where `exec` is
+     disabled or WeasyPrint isn't installed): the same template is served as
+     a web page that opens the print dialog; choose "Save as PDF", Letter,
+     headers/footers off. Force it anywhere with `?mode=print`.
 
 ## Structure
 
