@@ -198,17 +198,6 @@ const CSVParser = (() => {
                 continue;
             }
 
-            // Validate coordinate system bounds
-            const boundsCheck = CoordinateTransformer.validateSystemBounds(northing, easting, coordSystem);
-            if (!boundsCheck.withinBounds) {
-                errors.push({
-                    row: rowNumber,
-                    pointId,
-                    message: boundsCheck.message
-                });
-                continue;
-            }
-
             // Transform to WGS84
             const transform = CoordinateTransformer.transformToWGS84(coordSystem, northing, easting);
             if (!transform.success) {
