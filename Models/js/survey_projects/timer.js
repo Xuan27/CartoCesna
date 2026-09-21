@@ -125,6 +125,13 @@ async function openStopTimerModal() {
     if (!timerState.isRunning) return;
     document.getElementById('stopTimerModal').style.display = 'block';
 
+    // "Mark complete" only makes sense for a real task — category timers
+    // (Admin/Training) use taskId 0 and have no task to complete.
+    const completeRow = document.getElementById('stopTimerCompleteRow');
+    const completeCheckbox = document.getElementById('stopTimerMarkComplete');
+    completeCheckbox.checked = false;
+    completeRow.style.display = timerState.taskId ? 'flex' : 'none';
+
     // Fetch recent notes and populate dropdown
     try {
         const fd = new FormData();
@@ -162,15 +169,57 @@ function cancelStopTimer() {
     document.getElementById('stopTimerNotes').value = '';
     document.getElementById('recentNotesRow').style.display = 'none';
     document.getElementById('recentNotesSelect').innerHTML = '<option value="">— Select a recent note —</option>';
+    document.getElementById('stopTimerMarkComplete').checked = false;
 }
 
 async function confirmStopTimer() {
     const notes = document.getElementById('stopTimerNotes').value.trim();
+    const markComplete = document.getElementById('stopTimerMarkComplete').checked;
+    // _doStopTimer() clears timerState once it runs, so grab these first.
+    const taskId = timerState.taskId;
+    const projectId = timerState.projectId;
+
     document.getElementById('stopTimerModal').style.display = 'none';
     document.getElementById('stopTimerNotes').value = '';
     document.getElementById('recentNotesRow').style.display = 'none';
     document.getElementById('recentNotesSelect').innerHTML = '<option value="">— Select a recent note —</option>';
+    document.getElementById('stopTimerMarkComplete').checked = false;
+
     await _doStopTimer(notes);
+
+    if (markComplete && taskId) {
+        await markTaskCompleteFromTimer(taskId, projectId);
+    }
+}
+
+// Mark the task complete with today's date as the completion date — the date
+// the "mark complete" checkbox was confirmed in the Stop Timer modal.
+async function markTaskCompleteFromTimer(taskId, projectId) {
+    const completionDate = new Date().toISOString().split('T')[0];
+    try {
+        const fd = new FormData();
+        fd.append('action', 'update_task_status');
+        fd.append('taskId', taskId);
+        fd.append('taskStatus', 'Completed');
+        fd.append('completionDate', completionDate);
+
+        const resp = await fetch('../../Models/php/save_task.php', { method: 'POST', body: fd });
+        const data = await resp.json();
+
+        if (data.success) {
+            showToast('Task marked complete', 'success');
+            if (projectId && typeof refreshTasksForProject === 'function') {
+                const tasks = await refreshTasksForProject(projectId);
+                const tasksListElement = document.getElementById(`tasks-list-${projectId}`);
+                if (tasksListElement) tasksListElement.innerHTML = createTasksHTML(tasks);
+            }
+        } else {
+            showToast(data.message || 'Could not mark task complete', 'error');
+        }
+    } catch (err) {
+        console.error('markTaskCompleteFromTimer error:', err);
+        showToast('Network error marking task complete', 'error');
+    }
 }
 
 // Perform the actual stop API call with optional notes

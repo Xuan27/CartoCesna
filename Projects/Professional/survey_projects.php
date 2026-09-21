@@ -625,6 +625,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <label style="font-size:0.8rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:0.3rem;">Note</label>
                 <textarea id="stopTimerNotes" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.875rem;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="e.g. Completed boundary research, reviewed deeds..."></textarea>
+                <label id="stopTimerCompleteRow" style="display:none;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--gray-700, #374151);margin-top:0.85rem;cursor:pointer;">
+                    <input type="checkbox" id="stopTimerMarkComplete">
+                    Mark task as complete (sets completion date to today)
+                </label>
             </div>
             <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #f1f5f9;">
                 <button class="btn btn-secondary" onclick="cancelStopTimer()">Cancel</button>
