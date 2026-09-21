@@ -13,6 +13,12 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <script src="../../Models/js/proj4.min.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <link rel="stylesheet" href="../../Models/css/bulk-import.css">
+    <!-- Leaflet (map view for the points list) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <!-- Module scripts can defer since proj4 is already loaded -->
     <!-- Cache-busted with filemtime so browsers pick up edits immediately instead of serving a stale cached copy -->
     <script src="../../Models/js/CoordinateTransformer.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/CoordinateTransformer.js'); ?>" defer></script>
@@ -38,6 +44,59 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         .cp-filters .form-select,
         .cp-filters .form-input {
             max-width: 260px;
+        }
+        .cp-view-toggle {
+            display: inline-flex;
+            margin-left: auto;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            height: fit-content;
+        }
+        .cp-view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.9rem;
+            border: none;
+            background: white;
+            color: var(--gray-600, #4b5563);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cp-view-btn:hover { background: var(--gray-50, #f9fafb); }
+        .cp-view-btn.active { background: var(--primary-color, #2563eb); color: white; }
+        .cp-view-btn + .cp-view-btn { border-left: 1px solid var(--gray-200, #e5e7eb); }
+        #pointsMapContainer { margin-bottom: 1.25rem; }
+        #pointsMap {
+            height: 65vh;
+            min-height: 420px;
+            border-radius: 10px;
+            border: 1px solid var(--gray-200, #e5e7eb);
+        }
+        .cp-map-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.82rem;
+            color: var(--gray-500);
+        }
+        .cp-map-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+        .cp-map-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .cp-map-legend i { font-size: 0.6rem; }
+        /* Control point popup (mirrors map.php's) */
+        .cp-popup { min-width: 200px; font-size: 0.82rem; }
+        .cp-popup-title { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); margin-bottom: 0.4rem; }
+        .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
+        .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: var(--primary-color, #2563eb); }
+        .cp-popup-edit-btn {
+            margin-top: 0.6rem;
+            width: 100%;
+            justify-content: center;
         }
         .cp-project-group {
             margin-bottom: 1.75rem;
@@ -295,6 +354,28 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <option value="">All Statuses</option>
                 </select>
                 <input type="text" class="form-input" id="searchInput" placeholder="Search point #, name, monument..." oninput="renderPoints()">
+                <div class="cp-view-toggle">
+                    <button type="button" class="cp-view-btn active" id="viewTableBtn" onclick="setView('table')">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                    <button type="button" class="cp-view-btn" id="viewMapBtn" onclick="setView('map')">
+                        <i class="fas fa-map"></i> Map
+                    </button>
+                </div>
+            </div>
+
+            <div id="pointsMapContainer" style="display:none;">
+                <div class="cp-map-meta">
+                    <span id="mapPointCount"></span>
+                    <div class="cp-map-legend">
+                        <span><i class="fas fa-circle" style="color:#6b7280;"></i> Proposed</span>
+                        <span><i class="fas fa-circle" style="color:#1d4ed8;"></i> Set</span>
+                        <span><i class="fas fa-circle" style="color:#047857;"></i> Verified</span>
+                        <span><i class="fas fa-circle" style="color:#c2410c;"></i> Lost</span>
+                        <span><i class="fas fa-circle" style="color:#b91c1c;"></i> Destroyed</span>
+                    </div>
+                </div>
+                <div id="pointsMap"></div>
             </div>
 
             <div id="pointsContainer">
@@ -528,6 +609,17 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         let projectTasksCache = {};    // project_id -> tasks[]
         let projectSessionsCache = {}; // project_id -> QC sessions[]
 
+        let currentView = 'table';     // 'table' | 'map'
+        let pointsMap = null;
+        let pointsMapCluster = null;
+        const STATUS_MARKER_COLOR = {
+            Proposed:  '#6b7280',
+            Set:       '#1d4ed8',
+            Verified:  '#047857',
+            Destroyed: '#b91c1c',
+            Lost:      '#c2410c'
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
             setupGeoSelects();
@@ -741,8 +833,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
         // ── Rendering ────────────────────────────────────────────────────────
 
-        function renderPoints() {
-            const container = document.getElementById('pointsContainer');
+        // Shared by both views so Table and Map always agree on what's showing.
+        function getFilteredPoints() {
             const projectFilter = document.getElementById('projectFilter').value.trim().toLowerCase();
             const taskFilter = document.getElementById('taskFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
@@ -764,11 +856,94 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         .some(v => (v || '').toLowerCase().includes(search)));
             }
 
+            const filtersActive = !!(projectFilter || taskFilter || typeFilter || statusFilter || search);
+            return { points, filtersActive };
+        }
+
+        function renderPoints() {
+            const { points, filtersActive } = getFilteredPoints();
+            if (currentView === 'map') {
+                renderPointsMap(points, filtersActive);
+            } else {
+                renderPointsTable(points, filtersActive);
+            }
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('viewTableBtn').classList.toggle('active', view === 'table');
+            document.getElementById('viewMapBtn').classList.toggle('active', view === 'map');
+            document.getElementById('pointsContainer').style.display = view === 'table' ? '' : 'none';
+            document.getElementById('pointsMapContainer').style.display = view === 'map' ? 'block' : 'none';
+            renderPoints();
+            if (view === 'map') {
+                // Leaflet computes tile layout from the container's size at init time —
+                // if that happened while the container was display:none it renders blank
+                // until this runs, since only now does the container have real dimensions.
+                setTimeout(() => pointsMap && pointsMap.invalidateSize(), 0);
+            }
+        }
+
+        function initPointsMap() {
+            if (pointsMap) return;
+            pointsMap = L.map('pointsMap', { zoomControl: true }).setView([31.0, -98.0], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19
+            }).addTo(pointsMap);
+            pointsMapCluster = L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true });
+            pointsMap.addLayer(pointsMapCluster);
+        }
+
+        function renderPointsMap(points, filtersActive) {
+            initPointsMap();
+            pointsMapCluster.clearLayers();
+
+            const withCoords = points.filter(p => p.latitude && p.longitude);
+            const countLabel = document.getElementById('mapPointCount');
+            countLabel.textContent = points.length === 0
+                ? `No control points${filtersActive ? ' match your filters' : ' yet'}`
+                : `${withCoords.length} of ${points.length} point(s) shown` +
+                  (withCoords.length < points.length ? ' — the rest have no latitude/longitude on record' : '');
+
+            withCoords.forEach(p => {
+                const color = STATUS_MARKER_COLOR[p.status] || '#6b7280';
+                const marker = L.circleMarker([parseFloat(p.latitude), parseFloat(p.longitude)], {
+                    radius: 6,
+                    color,
+                    weight: 1.5,
+                    fillColor: color,
+                    fillOpacity: 0.85
+                });
+                marker.bindPopup(`
+                    <div class="cp-popup">
+                        <div class="cp-popup-title">${escapeHtml(p.point_number)}</div>
+                        ${p.point_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.point_name)}</div>` : ''}
+                        <div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.point_type || 'Control')} · ${escapeHtml(p.status || 'Unknown')}</div>
+                        ${p.project_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.project_name)}</div>` : ''}
+                        ${p.monument_type ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.monument_type)}</div>` : ''}
+                        <div class="cp-popup-row"><i class="fas fa-circle-dot"></i>Elev ${fmtCoord(p.elevation)}</div>
+                        <button type="button" class="btn btn-secondary btn-sm cp-popup-edit-btn" onclick="openPointModal(${p.control_point_id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                `, { maxWidth: 280 });
+                pointsMapCluster.addLayer(marker);
+            });
+
+            if (withCoords.length > 0) {
+                pointsMap.fitBounds(pointsMapCluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
+            }
+        }
+
+        function renderPointsTable(points, filtersActive) {
+            const container = document.getElementById('pointsContainer');
+
             if (points.length === 0) {
                 container.innerHTML = `
                     <div class="cp-empty-state">
                         <i class="fas fa-crosshairs"></i>
-                        <h3>No control points${projectFilter || taskFilter || typeFilter || statusFilter || search ? ' match your filters' : ' yet'}</h3>
+                        <h3>No control points${filtersActive ? ' match your filters' : ' yet'}</h3>
                         <p>Log control set or verified in the field so it's on record for the next crew</p>
                     </div>`;
                 return;
