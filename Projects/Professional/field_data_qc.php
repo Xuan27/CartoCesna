@@ -2182,9 +2182,18 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             return div.innerHTML;
         }
 
-        // Safely embed a string value inside an inline onclick attribute
+        // Safely embed a string value inside an inline onclick attribute.
+        // escapeHtml() escapes for *text content* (browsers don't escape bare
+        // quotes there), but this sits inside a double-quoted HTML attribute,
+        // where an unescaped " in the value terminates the attribute early and
+        // truncates/corrupts the handler — the button silently does nothing on
+        // click. Escape quotes (and < > for defense-in-depth) explicitly.
         function jsAttr(value) {
-            return escapeHtml(JSON.stringify(value || ''));
+            return JSON.stringify(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
         }
 
         function trimScaleFactor(value) {
