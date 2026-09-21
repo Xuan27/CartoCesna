@@ -1,16 +1,28 @@
-// Weekly timesheet modal for survey_projects.php: week navigation,
-// inline editing of phase/project/notes/hours per cell, and the
-// Vantagepoint clipboard export.
+// Weekly timesheet modal, shared across the Survey Project Manager tab
+// pages: week navigation, inline editing of phase/project/notes/hours per
+// cell, and the Vantagepoint clipboard export.
 //
-// Depends on globals defined by survey_projects.php's main script and by
-// timer.js (both loaded before this file): showToast, esc, roundToHalf,
-// TIME_API.
+// Depends on globals defined by the host page's main script and by
+// timer.js (both loaded before this file): showToast, TIME_API.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIMESHEET — modal and rendering
 // ═══════════════════════════════════════════════════════════════════════════
 
 let timesheetCurrentWeekStart = null;
+
+// Round hours to the nearest 0.5 increment using threshold rules:
+//   fraction ≤ 0.01  → keep whole hours (e.g. 1.005 → 1.0)
+//   fraction > 0.01  → round up to next half  (e.g. 1.03 → 1.5)
+//   fraction > 0.51  → round up to next whole (e.g. 1.52 → 2.0)
+function roundToHalf(value) {
+    if (!value || value <= 0) return 0;
+    const whole    = Math.floor(value);
+    const fraction = value - whole;
+    if (fraction > 0.51) return whole + 1;
+    if (fraction > 0.01) return whole + 0.5;
+    return whole;
+}
 
 function getWeekStart(date) {
     const d = new Date(date);

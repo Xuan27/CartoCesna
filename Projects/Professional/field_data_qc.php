@@ -187,6 +187,13 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             text-decoration: line-through;
         }
         .qc-stage-label { font-size: 0.85rem; }
+        .qc-stage-extra {
+            padding: 0 0.5rem 0.5rem 2.25rem;
+        }
+        .qc-stage-extra .btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+        }
         .qc-stage-meta {
             margin-left: auto;
             font-size: 0.7rem;
@@ -522,6 +529,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 <a href="./control_points.php" class="nav-item">
                     <i class="fas fa-crosshairs"></i>
                     Control Points
+                </a>
+                <a href="#" class="nav-item" onclick="openTimesheetModal(); return false;" data-tooltip="Timesheet">
+                    <i class="fas fa-clock"></i>
+                    Timesheet
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-cog"></i>
@@ -1208,10 +1219,17 @@ $currentUsername = $_SESSION['username'] ?? 'User';
              .map(r => `<div class="qc-geo-row"><span class="k">${r[0]}</span><span class="v">${escapeHtml(r[1])}</span></div>`)
              .join('') || '<div style="font-size:0.83rem; color:var(--gray-400);">No geodetic settings recorded — edit the session to add them.</div>';
 
+            const surveyPathHref = projectSurveyFolderHref(session.project_id);
             const stageRows = Object.entries(qcStages).map(([key, label]) => {
                 const info = session.stages && session.stages[key];
                 const done = !!(info && info.done);
                 const meta = done ? `${info.by} · ${(info.at || '').substring(0, 10)}` : '';
+                const copySurveyPathBtn = (key === 'points_exported' && surveyPathHref) ? `
+                    <div class="qc-stage-extra">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); copyPath(${jsAttr(surveyPathHref)})" title="Copy this project's survey folder path">
+                            <i class="fas fa-copy"></i> Copy Survey Path
+                        </button>
+                    </div>` : '';
                 return `
                     <div class="qc-stage-row ${done ? 'done' : ''}"
                          onclick="toggleStage(${session.session_id}, '${key}', ${done ? 0 : 1})"
@@ -1219,7 +1237,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         <span class="qc-stage-check">${done ? '<i class="fas fa-check"></i>' : ''}</span>
                         <span class="qc-stage-label">${escapeHtml(label)}</span>
                         <span class="qc-stage-meta">${escapeHtml(meta)}</span>
-                    </div>`;
+                    </div>${copySurveyPathBtn}`;
             }).join('');
 
             const findingsBlock = findings === undefined
@@ -2227,5 +2245,30 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
     </script>
+
+    <script src="../../Models/js/survey_projects/timer.js"></script>
+    <script src="../../Models/js/survey_projects/timesheet.js"></script>
+
+    <!-- Timesheet Modal -->
+    <div id="timesheetModal" class="modal">
+        <div class="modal-content timesheet-modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-clock" style="color:var(--primary-color);margin-right:0.5rem;"></i> Weekly Timesheet</h2>
+                <button class="close-button" onclick="closeTimesheetModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="timesheet-week-nav">
+                    <button onclick="navigateWeek(-1)"><i class="fas fa-chevron-left"></i> Prev</button>
+                    <span id="timesheetWeekLabel">Week of ...</span>
+                    <button onclick="navigateWeek(1)">Next <i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div id="timesheetContent">
+                    <!-- rendered table injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
