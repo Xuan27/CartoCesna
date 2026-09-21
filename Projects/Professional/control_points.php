@@ -14,9 +14,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <link rel="stylesheet" href="../../Models/css/bulk-import.css">
     <!-- Module scripts can defer since proj4 is already loaded -->
-    <script src="../../Models/js/CoordinateTransformer.js" defer></script>
-    <script src="../../Models/js/CSVParser.js" defer></script>
-    <script src="../../Models/js/BulkImportUI.js" defer></script>
+    <!-- Cache-busted with filemtime so browsers pick up edits immediately instead of serving a stale cached copy -->
+    <script src="../../Models/js/CoordinateTransformer.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/CoordinateTransformer.js'); ?>" defer></script>
+    <script src="../../Models/js/CSVParser.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/CSVParser.js'); ?>" defer></script>
+    <script src="../../Models/js/BulkImportUI.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/BulkImportUI.js'); ?>" defer></script>
     <style>
         .cp-empty-state {
             text-align: center;
