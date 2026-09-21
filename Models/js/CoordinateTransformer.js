@@ -55,6 +55,12 @@ const CoordinateTransformer = (() => {
             zone: '15N',
             unit: 'Meters',
             bounds: { minN: 2500000, maxN: 4500000, minE: 200000, maxE: 900000 }
+        },
+        // Already geographic WGS84 — Northing/Easting columns are read as Latitude/Longitude.
+        'WGS84 (G2139)': {
+            proj: '+proj=longlat +datum=WGS84 +no_defs',
+            zone: null,
+            unit: 'Degrees'
         }
     };
 
