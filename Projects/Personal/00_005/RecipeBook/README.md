@@ -1,0 +1,45 @@
+# Vanessa's Recipe Book — web app
+
+A small PHP/MySQL/vanilla-JS app to search, edit, and add recipes for
+Vanessa's family recipe catalog, with a "Download Full Book" button that
+regenerates the entire printable cookbook (the same page/card template as
+`../Recipes/Vanessa's Recipe Book.pdf`) live from whatever is in the
+database — so the printed book is never the only editable copy.
+
+**URL:** `http://localhost/CartoCesna/Projects/Personal/00_005/RecipeBook/index.php`
+
+## Setup (fresh checkout)
+
+1. Load the schema into the existing `cartocesna` database (this app's
+   `categories` and `recipes` tables live alongside the rest of the app's
+   tables, using the same DB connection as everything else — see
+   `config/db.php`):
+   ```
+   mysql -u root -p cartocesna < schema.sql
+   ```
+
+2. Make sure `uploads/` is writable by the web server user (it has no group
+   in common with the file owner on this host, so it's `chmod 777`):
+   ```
+   chmod 777 uploads
+   ```
+
+3. PDF export has two modes, chosen automatically by `api/export_pdf.php`:
+   - **WeasyPrint** (this dev machine): shells out to `python3 -m weasyprint`
+     with an explicit `PYTHONPATH`. If it fails with `ModuleNotFoundError`,
+     check `~/.local` and `~/.local/lib` still have `o+x`.
+   - **Browser print** (shared hosting such as Hostinger, where `exec` is
+     disabled or WeasyPrint isn't installed): the same template is served as
+     a web page that opens the print dialog; choose "Save as PDF", Letter,
+     headers/footers off. Force it anywhere with `?mode=print`.
+
+## Structure
+
+- `index.php` / `assets/` — the single-page front end.
+- `api/recipes_api.php` — action-based JSON API (categories, list, get,
+  create, update, delete, toggle_favorite).
+- `api/export_pdf.php` — rebuilds the book (or one category, or one recipe
+  via `?id=`) from the database and streams a PDF.
+- `includes/pdf_render.php` — PHP port of the print template shared by the
+  full-book export and the single-recipe export.
+- `config/db.php` — connection to `cartocesna` (same database as the rest of the app).
