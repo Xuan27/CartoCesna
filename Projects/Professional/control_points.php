@@ -282,9 +282,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             </div>
 
             <div class="cp-filters">
-                <select class="form-select" id="projectFilter" onchange="onProjectFilterChange()">
-                    <option value="">All Projects</option>
-                </select>
+                <input type="text" class="form-input" id="projectFilter" list="projectFilterList"
+                       placeholder="Search project…" autocomplete="off" oninput="onProjectFilterInput()">
+                <datalist id="projectFilterList"></datalist>
                 <select class="form-select" id="taskFilter" onchange="renderPoints()">
                     <option value="">All Tasks</option>
                 </select>
@@ -538,6 +538,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         async function init() {
             await Promise.all([loadProjects(), loadPoints(), loadCrews()]);
             populateCrewSelect('');
+            populateProjectFilterList();
 
             // Initialize bulk import UI with coordinate systems
             BulkImportUI.init(COORD_SYSTEMS, DATUM_EPOCHS);
@@ -549,7 +550,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
             if (projectId) {
                 document.getElementById('projectFilter').value = projectId;
-                await onProjectFilterChange();
+                await loadTasksForProjectFilter(projectId);
                 if (taskId) document.getElementById('taskFilter').value = taskId;
             }
             renderPoints();
@@ -654,20 +655,26 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         }
 
         function populateProjectSelects() {
-            const filter = document.getElementById('projectFilter');
             const modal = document.getElementById('pointProject');
-            const filterValue = filter.value;
+            modal.innerHTML = '<option value="">— Select Project —</option>' +
+                allProjects.map(p => {
+                    const label = `${p.projectId} — ${p.projectName || ''}`;
+                    return `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`;
+                }).join('');
+        }
 
-            filter.innerHTML = '<option value="">All Projects</option>';
-            modal.innerHTML = '<option value="">— Select Project —</option>';
-            allProjects.forEach(p => {
-                const label = `${p.projectId} — ${p.projectName || ''}`;
-                filter.insertAdjacentHTML('beforeend',
-                    `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`);
-                modal.insertAdjacentHTML('beforeend',
-                    `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`);
+        // Only projects that actually have a control point on record — typing a
+        // few letters of the name (not just the ID) narrows the suggestions.
+        function populateProjectFilterList() {
+            const seen = new Map();
+            allPoints.forEach(p => {
+                if (!seen.has(p.project_id)) seen.set(p.project_id, p.project_name || '');
             });
-            filter.value = filterValue;
+            const labels = [...seen.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([id, name]) => `${id} — ${name}`);
+            document.getElementById('projectFilterList').innerHTML =
+                labels.map(label => `<option value="${escapeHtml(label)}">`).join('');
         }
 
         function populateTypeStatusSelects() {
@@ -701,18 +708,33 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             }
         }
 
-        async function onProjectFilterChange() {
-            const projectId = document.getElementById('projectFilter').value;
+        // The Task dropdown only makes sense once a single project is identified —
+        // resolve the typed text against a known project_id (either typed directly
+        // or picked from the datalist, which fills the input as "ID — Name").
+        function resolveTypedProject(raw) {
+            const idPart = raw.trim().split(' — ')[0].trim().toLowerCase();
+            if (!idPart) return null;
+            return allProjects.find(p => p.projectId.toLowerCase() === idPart) || null;
+        }
+
+        async function loadTasksForProjectFilter(projectId) {
             const taskFilter = document.getElementById('taskFilter');
             taskFilter.innerHTML = '<option value="">All Tasks</option>';
-            if (projectId) {
-                if (!projectTasksCache[projectId]) {
-                    projectTasksCache[projectId] = await fetchProjectTasks(projectId);
-                }
-                projectTasksCache[projectId].forEach(t => {
-                    taskFilter.insertAdjacentHTML('beforeend',
-                        `<option value="${t.task_id}">${escapeHtml(t.task_name)}</option>`);
-                });
+            if (!projectTasksCache[projectId]) {
+                projectTasksCache[projectId] = await fetchProjectTasks(projectId);
+            }
+            projectTasksCache[projectId].forEach(t => {
+                taskFilter.insertAdjacentHTML('beforeend',
+                    `<option value="${t.task_id}">${escapeHtml(t.task_name)}</option>`);
+            });
+        }
+
+        async function onProjectFilterInput() {
+            const match = resolveTypedProject(document.getElementById('projectFilter').value);
+            if (match) {
+                await loadTasksForProjectFilter(match.projectId);
+            } else {
+                document.getElementById('taskFilter').innerHTML = '<option value="">All Tasks</option>';
             }
             renderPoints();
         }
@@ -721,14 +743,18 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
         function renderPoints() {
             const container = document.getElementById('pointsContainer');
-            const projectFilter = document.getElementById('projectFilter').value;
+            const projectFilter = document.getElementById('projectFilter').value.trim().toLowerCase();
             const taskFilter = document.getElementById('taskFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
             let points = allPoints;
-            if (projectFilter) points = points.filter(p => p.project_id === projectFilter);
+            if (projectFilter) {
+                points = points.filter(p =>
+                    (p.project_id || '').toLowerCase().includes(projectFilter) ||
+                    (p.project_name || '').toLowerCase().includes(projectFilter));
+            }
             if (taskFilter) points = points.filter(p => String(p.task_id || '') === taskFilter);
             if (typeFilter) points = points.filter(p => p.point_type === typeFilter);
             if (statusFilter) points = points.filter(p => p.status === statusFilter);
