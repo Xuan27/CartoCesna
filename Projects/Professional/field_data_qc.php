@@ -9,6 +9,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Field Data QC - Survey Project Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="../../Models/js/path-templates.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <style>
         .qc-empty-state {
@@ -1905,9 +1906,11 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             const projectId = document.getElementById('sessionProject').value;
             const pathInput = document.getElementById('sessionRawPath');
 
-            // Suggest the conventional downloads path unless the user typed their own
+            // Suggest the conventional downloads path (editable in Settings on
+            // survey_projects.php) unless the user typed their own
             if (projectId && (pathInput.value === '' || pathInput.classList.contains('auto-filled'))) {
-                pathInput.value = `N:\\${projectId}\\05 Service Groups\\Survey\\Downloads`;
+                const templates = await PathTemplates.get();
+                pathInput.value = PathTemplates.fill(templates.rawDataPathGuess, projectId);
                 pathInput.classList.add('auto-filled');
             }
 

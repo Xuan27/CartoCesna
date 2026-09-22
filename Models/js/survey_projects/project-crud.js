@@ -310,18 +310,19 @@ async function lookupLocationFromPlusCode() {
 // Set up auto-fill functionality
 function setupAutoFill() {
     // Function to update dependent fields based on project ID
-    function updateDependentFields() {
+    async function updateDependentFields() {
         const projectId = projectIdInput.value.trim();
-        
+
         if (projectId) {
-            // Update all folder links
-            projectFolderLinkInput.value = `N:\\\\${projectId}`;
-            projectSurveyFolderLinkInput.value = `N:\\\\${projectId}\\\\05 Service Groups\\\\Survey`;
-            projectDrawingFolderLinkInput.value = `N:\\\\${projectId}\\\\06 CAD\\\\DWG\\\\Survey C3D`;
-            projectContractLinkInput.value = `N:\\\\${projectId}\\\\01 Administration\\\\Contracts`;
-            projectQAQCLinkInput.value = `N:\\\\${projectId}\\\\07 QA-QC\\\\5 - Plan and Report Markups\\\\Land Surveying`;
-            projectResearchLinkInput.value = `N:\\\\${projectId}\\\\09 Research\\\\Survey Research`;
-            
+            // Update all folder links from the Settings-panel-editable templates
+            const templates = await PathTemplates.get();
+            projectFolderLinkInput.value = PathTemplates.fill(templates.projectFolderLink, projectId);
+            projectSurveyFolderLinkInput.value = PathTemplates.fill(templates.surveyFolderLink, projectId);
+            projectDrawingFolderLinkInput.value = PathTemplates.fill(templates.drawingFolderLink, projectId);
+            projectContractLinkInput.value = PathTemplates.fill(templates.contractLink, projectId);
+            projectQAQCLinkInput.value = PathTemplates.fill(templates.qaQcFolderLink, projectId);
+            projectResearchLinkInput.value = PathTemplates.fill(templates.researchFolderLink, projectId);
+
             // Add auto-filled class
             [projectFolderLinkInput, projectSurveyFolderLinkInput, projectDrawingFolderLinkInput,
              projectContractLinkInput, projectQAQCLinkInput, projectResearchLinkInput].forEach(input => {
