@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- Shared control-point marker/popup builder (also used by control_points.php) -->
+    <script src="../../Models/js/control-point-marker.js"></script>
 
     <style>
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
@@ -169,6 +171,10 @@
         .cp-popup-title { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); margin-bottom: 0.4rem; }
         .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
         .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: #f59e0b; }
+        .cp-popup-project-link { color: var(--primary-color, #2563eb); font-weight: 600; text-decoration: none; }
+        .cp-popup-project-link:hover { text-decoration: underline; }
+        /* Leaflet's default div-icon box (white bg + border) would hide the triangle shape */
+        .cp-triangle-icon { background: transparent !important; border: none !important; }
 
 
         /* Loading overlay */
@@ -442,29 +448,8 @@ async function loadControlPoints() {
                 // Only add points with latitude/longitude
                 if (point.latitude && point.longitude) {
                     pointsWithCoords++;
-                    console.log(`Adding point ${point.point_number} at [${point.latitude}, ${point.longitude}]`);
-
-                    const marker = L.circleMarker([parseFloat(point.latitude), parseFloat(point.longitude)], {
-                        radius: 5,
-                        fillColor: '#3b82f6',
-                        color: '#1d4ed8',
-                        weight: 1.5,
-                        fillOpacity: 0.85
-                    });
-
-                    marker.bindPopup(`
-                        <div class="cp-popup">
-                            <div class="cp-popup-title">${esc(point.point_number)}</div>
-                            ${point.point_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Name:</strong> ${esc(point.point_name)}</div>` : ''}
-                            <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Type:</strong> ${esc(point.point_type || 'Control')}</div>
-                            <div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Status:</strong> ${esc(point.status || 'Unknown')}</div>
-                            ${point.latitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lat:</strong> ${parseFloat(point.latitude).toFixed(7)}</div>` : ''}
-                            ${point.longitude ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Lon:</strong> ${parseFloat(point.longitude).toFixed(7)}</div>` : ''}
-                            ${point.elevation ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i><strong>Elev:</strong> ${parseFloat(point.elevation).toFixed(2)}</div>` : ''}
-                        </div>
-                    `, { maxWidth: 300 });
-
-                    featureGroup.addLayer(marker);
+                    // map.php has no openPointModal(), so editable is left off.
+                    featureGroup.addLayer(ControlPointMarker.createMarker(point, { projectHref: './control_points.php' }));
                 }
             });
 

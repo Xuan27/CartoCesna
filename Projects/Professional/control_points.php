@@ -19,6 +19,8 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- Shared control-point marker/popup builder (also used by map.php) -->
+    <script src="../../Models/js/control-point-marker.js"></script>
     <!-- Module scripts can defer since proj4 is already loaded -->
     <!-- Cache-busted with filemtime so browsers pick up edits immediately instead of serving a stale cached copy -->
     <script src="../../Models/js/CoordinateTransformer.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/CoordinateTransformer.js'); ?>" defer></script>
@@ -93,11 +95,15 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         .cp-popup-title { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); margin-bottom: 0.4rem; }
         .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
         .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: var(--primary-color, #2563eb); }
+        .cp-popup-project-link { color: var(--primary-color, #2563eb); font-weight: 600; text-decoration: none; }
+        .cp-popup-project-link:hover { text-decoration: underline; }
         .cp-popup-edit-btn {
             margin-top: 0.6rem;
             width: 100%;
             justify-content: center;
         }
+        /* Leaflet's default div-icon box (white bg + border) would hide the triangle shape */
+        .cp-triangle-icon { background: transparent !important; border: none !important; }
         .cp-project-group {
             margin-bottom: 1.75rem;
         }
@@ -368,11 +374,11 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                 <div class="cp-map-meta">
                     <span id="mapPointCount"></span>
                     <div class="cp-map-legend">
-                        <span><i class="fas fa-circle" style="color:#6b7280;"></i> Proposed</span>
-                        <span><i class="fas fa-circle" style="color:#1d4ed8;"></i> Set</span>
-                        <span><i class="fas fa-circle" style="color:#047857;"></i> Verified</span>
-                        <span><i class="fas fa-circle" style="color:#c2410c;"></i> Lost</span>
-                        <span><i class="fas fa-circle" style="color:#b91c1c;"></i> Destroyed</span>
+                        <span><i class="fas fa-caret-up" style="color:#6b7280;"></i> Proposed</span>
+                        <span><i class="fas fa-caret-up" style="color:#1d4ed8;"></i> Set</span>
+                        <span><i class="fas fa-caret-up" style="color:#047857;"></i> Verified</span>
+                        <span><i class="fas fa-caret-up" style="color:#c2410c;"></i> Lost</span>
+                        <span><i class="fas fa-caret-up" style="color:#b91c1c;"></i> Destroyed</span>
                     </div>
                 </div>
                 <div id="pointsMap"></div>
@@ -612,13 +618,6 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         let currentView = 'table';     // 'table' | 'map'
         let pointsMap = null;
         let pointsMapCluster = null;
-        const STATUS_MARKER_COLOR = {
-            Proposed:  '#6b7280',
-            Set:       '#1d4ed8',
-            Verified:  '#047857',
-            Destroyed: '#b91c1c',
-            Lost:      '#c2410c'
-        };
 
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
@@ -907,28 +906,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                   (withCoords.length < points.length ? ' — the rest have no latitude/longitude on record' : '');
 
             withCoords.forEach(p => {
-                const color = STATUS_MARKER_COLOR[p.status] || '#6b7280';
-                const marker = L.circleMarker([parseFloat(p.latitude), parseFloat(p.longitude)], {
-                    radius: 6,
-                    color,
-                    weight: 1.5,
-                    fillColor: color,
-                    fillOpacity: 0.85
-                });
-                marker.bindPopup(`
-                    <div class="cp-popup">
-                        <div class="cp-popup-title">${escapeHtml(p.point_number)}</div>
-                        ${p.point_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.point_name)}</div>` : ''}
-                        <div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.point_type || 'Control')} · ${escapeHtml(p.status || 'Unknown')}</div>
-                        ${p.project_name ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.project_name)}</div>` : ''}
-                        ${p.monument_type ? `<div class="cp-popup-row"><i class="fas fa-circle-dot"></i>${escapeHtml(p.monument_type)}</div>` : ''}
-                        <div class="cp-popup-row"><i class="fas fa-circle-dot"></i>Elev ${fmtCoord(p.elevation)}</div>
-                        <button type="button" class="btn btn-secondary btn-sm cp-popup-edit-btn" onclick="openPointModal(${p.control_point_id})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                    </div>
-                `, { maxWidth: 280 });
-                pointsMapCluster.addLayer(marker);
+                pointsMapCluster.addLayer(ControlPointMarker.createMarker(p, {
+                    projectHref: './control_points.php',
+                    editable: true
+                }));
             });
 
             if (withCoords.length > 0) {
