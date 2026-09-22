@@ -13,6 +13,14 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <script src="../../Models/js/proj4.min.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <link rel="stylesheet" href="../../Models/css/bulk-import.css">
+    <!-- Leaflet (map view for the points list) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <!-- Shared control-point marker/popup builder (also used by map.php) -->
+    <script src="../../Models/js/control-point-marker.js"></script>
     <!-- Module scripts can defer since proj4 is already loaded -->
     <!-- Cache-busted with filemtime so browsers pick up edits immediately instead of serving a stale cached copy -->
     <script src="../../Models/js/CoordinateTransformer.js?v=<?php echo filemtime(__DIR__ . '/../../Models/js/CoordinateTransformer.js'); ?>" defer></script>
@@ -39,6 +47,63 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         .cp-filters .form-input {
             max-width: 260px;
         }
+        .cp-view-toggle {
+            display: inline-flex;
+            margin-left: auto;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            height: fit-content;
+        }
+        .cp-view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.9rem;
+            border: none;
+            background: white;
+            color: var(--gray-600, #4b5563);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cp-view-btn:hover { background: var(--gray-50, #f9fafb); }
+        .cp-view-btn.active { background: var(--primary-color, #2563eb); color: white; }
+        .cp-view-btn + .cp-view-btn { border-left: 1px solid var(--gray-200, #e5e7eb); }
+        #pointsMapContainer { margin-bottom: 1.25rem; }
+        #pointsMap {
+            height: 65vh;
+            min-height: 420px;
+            border-radius: 10px;
+            border: 1px solid var(--gray-200, #e5e7eb);
+        }
+        .cp-map-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.82rem;
+            color: var(--gray-500);
+        }
+        .cp-map-legend { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+        .cp-map-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .cp-map-legend i { font-size: 0.6rem; }
+        /* Control point popup (mirrors map.php's) */
+        .cp-popup { min-width: 200px; font-size: 0.82rem; }
+        .cp-popup-title { font-weight: 700; font-size: 0.9rem; color: var(--gray-900); margin-bottom: 0.4rem; }
+        .cp-popup-row { color: var(--gray-600); display: flex; gap: 0.4rem; margin-top: 0.2rem; align-items: flex-start; }
+        .cp-popup-row i { margin-top: 2px; flex-shrink: 0; color: var(--primary-color, #2563eb); }
+        .cp-popup-project-link { color: var(--primary-color, #2563eb); font-weight: 600; text-decoration: none; }
+        .cp-popup-project-link:hover { text-decoration: underline; }
+        .cp-popup-edit-btn {
+            margin-top: 0.6rem;
+            width: 100%;
+            justify-content: center;
+        }
+        /* Leaflet's default div-icon box (white bg + border) would hide the triangle shape */
+        .cp-triangle-icon { background: transparent !important; border: none !important; }
         .cp-project-group {
             margin-bottom: 1.75rem;
         }
@@ -282,9 +347,9 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             </div>
 
             <div class="cp-filters">
-                <select class="form-select" id="projectFilter" onchange="onProjectFilterChange()">
-                    <option value="">All Projects</option>
-                </select>
+                <input type="text" class="form-input" id="projectFilter" list="projectFilterList"
+                       placeholder="Search project…" autocomplete="off" oninput="onProjectFilterInput()">
+                <datalist id="projectFilterList"></datalist>
                 <select class="form-select" id="taskFilter" onchange="renderPoints()">
                     <option value="">All Tasks</option>
                 </select>
@@ -295,6 +360,28 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <option value="">All Statuses</option>
                 </select>
                 <input type="text" class="form-input" id="searchInput" placeholder="Search point #, name, monument..." oninput="renderPoints()">
+                <div class="cp-view-toggle">
+                    <button type="button" class="cp-view-btn active" id="viewTableBtn" onclick="setView('table')">
+                        <i class="fas fa-table"></i> Table
+                    </button>
+                    <button type="button" class="cp-view-btn" id="viewMapBtn" onclick="setView('map')">
+                        <i class="fas fa-map"></i> Map
+                    </button>
+                </div>
+            </div>
+
+            <div id="pointsMapContainer" style="display:none;">
+                <div class="cp-map-meta">
+                    <span id="mapPointCount"></span>
+                    <div class="cp-map-legend">
+                        <span><i class="fas fa-caret-up" style="color:#6b7280;"></i> Proposed</span>
+                        <span><i class="fas fa-caret-up" style="color:#1d4ed8;"></i> Set</span>
+                        <span><i class="fas fa-caret-up" style="color:#047857;"></i> Verified</span>
+                        <span><i class="fas fa-caret-up" style="color:#c2410c;"></i> Lost</span>
+                        <span><i class="fas fa-caret-up" style="color:#b91c1c;"></i> Destroyed</span>
+                    </div>
+                </div>
+                <div id="pointsMap"></div>
             </div>
 
             <div id="pointsContainer">
@@ -528,6 +615,10 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         let projectTasksCache = {};    // project_id -> tasks[]
         let projectSessionsCache = {}; // project_id -> QC sessions[]
 
+        let currentView = 'table';     // 'table' | 'map'
+        let pointsMap = null;
+        let pointsMapCluster = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             setupSidebar();
             setupGeoSelects();
@@ -538,6 +629,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         async function init() {
             await Promise.all([loadProjects(), loadPoints(), loadCrews()]);
             populateCrewSelect('');
+            populateProjectFilterList();
 
             // Initialize bulk import UI with coordinate systems
             BulkImportUI.init(COORD_SYSTEMS, DATUM_EPOCHS);
@@ -549,7 +641,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
 
             if (projectId) {
                 document.getElementById('projectFilter').value = projectId;
-                await onProjectFilterChange();
+                await loadTasksForProjectFilter(projectId);
                 if (taskId) document.getElementById('taskFilter').value = taskId;
             }
             renderPoints();
@@ -654,20 +746,26 @@ $currentUsername = $_SESSION['username'] ?? 'User';
         }
 
         function populateProjectSelects() {
-            const filter = document.getElementById('projectFilter');
             const modal = document.getElementById('pointProject');
-            const filterValue = filter.value;
+            modal.innerHTML = '<option value="">— Select Project —</option>' +
+                allProjects.map(p => {
+                    const label = `${p.projectId} — ${p.projectName || ''}`;
+                    return `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`;
+                }).join('');
+        }
 
-            filter.innerHTML = '<option value="">All Projects</option>';
-            modal.innerHTML = '<option value="">— Select Project —</option>';
-            allProjects.forEach(p => {
-                const label = `${p.projectId} — ${p.projectName || ''}`;
-                filter.insertAdjacentHTML('beforeend',
-                    `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`);
-                modal.insertAdjacentHTML('beforeend',
-                    `<option value="${escapeHtml(p.projectId)}">${escapeHtml(label)}</option>`);
+        // Only projects that actually have a control point on record — typing a
+        // few letters of the name (not just the ID) narrows the suggestions.
+        function populateProjectFilterList() {
+            const seen = new Map();
+            allPoints.forEach(p => {
+                if (!seen.has(p.project_id)) seen.set(p.project_id, p.project_name || '');
             });
-            filter.value = filterValue;
+            const labels = [...seen.entries()]
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([id, name]) => `${id} — ${name}`);
+            document.getElementById('projectFilterList').innerHTML =
+                labels.map(label => `<option value="${escapeHtml(label)}">`).join('');
         }
 
         function populateTypeStatusSelects() {
@@ -701,34 +799,53 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             }
         }
 
-        async function onProjectFilterChange() {
-            const projectId = document.getElementById('projectFilter').value;
+        // The Task dropdown only makes sense once a single project is identified —
+        // resolve the typed text against a known project_id (either typed directly
+        // or picked from the datalist, which fills the input as "ID — Name").
+        function resolveTypedProject(raw) {
+            const idPart = raw.trim().split(' — ')[0].trim().toLowerCase();
+            if (!idPart) return null;
+            return allProjects.find(p => p.projectId.toLowerCase() === idPart) || null;
+        }
+
+        async function loadTasksForProjectFilter(projectId) {
             const taskFilter = document.getElementById('taskFilter');
             taskFilter.innerHTML = '<option value="">All Tasks</option>';
-            if (projectId) {
-                if (!projectTasksCache[projectId]) {
-                    projectTasksCache[projectId] = await fetchProjectTasks(projectId);
-                }
-                projectTasksCache[projectId].forEach(t => {
-                    taskFilter.insertAdjacentHTML('beforeend',
-                        `<option value="${t.task_id}">${escapeHtml(t.task_name)}</option>`);
-                });
+            if (!projectTasksCache[projectId]) {
+                projectTasksCache[projectId] = await fetchProjectTasks(projectId);
+            }
+            projectTasksCache[projectId].forEach(t => {
+                taskFilter.insertAdjacentHTML('beforeend',
+                    `<option value="${t.task_id}">${escapeHtml(t.task_name)}</option>`);
+            });
+        }
+
+        async function onProjectFilterInput() {
+            const match = resolveTypedProject(document.getElementById('projectFilter').value);
+            if (match) {
+                await loadTasksForProjectFilter(match.projectId);
+            } else {
+                document.getElementById('taskFilter').innerHTML = '<option value="">All Tasks</option>';
             }
             renderPoints();
         }
 
         // ── Rendering ────────────────────────────────────────────────────────
 
-        function renderPoints() {
-            const container = document.getElementById('pointsContainer');
-            const projectFilter = document.getElementById('projectFilter').value;
+        // Shared by both views so Table and Map always agree on what's showing.
+        function getFilteredPoints() {
+            const projectFilter = document.getElementById('projectFilter').value.trim().toLowerCase();
             const taskFilter = document.getElementById('taskFilter').value;
             const typeFilter = document.getElementById('typeFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             const search = document.getElementById('searchInput').value.trim().toLowerCase();
 
             let points = allPoints;
-            if (projectFilter) points = points.filter(p => p.project_id === projectFilter);
+            if (projectFilter) {
+                points = points.filter(p =>
+                    (p.project_id || '').toLowerCase().includes(projectFilter) ||
+                    (p.project_name || '').toLowerCase().includes(projectFilter));
+            }
             if (taskFilter) points = points.filter(p => String(p.task_id || '') === taskFilter);
             if (typeFilter) points = points.filter(p => p.point_type === typeFilter);
             if (statusFilter) points = points.filter(p => p.status === statusFilter);
@@ -738,11 +855,76 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                         .some(v => (v || '').toLowerCase().includes(search)));
             }
 
+            const filtersActive = !!(projectFilter || taskFilter || typeFilter || statusFilter || search);
+            return { points, filtersActive };
+        }
+
+        function renderPoints() {
+            const { points, filtersActive } = getFilteredPoints();
+            if (currentView === 'map') {
+                renderPointsMap(points, filtersActive);
+            } else {
+                renderPointsTable(points, filtersActive);
+            }
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('viewTableBtn').classList.toggle('active', view === 'table');
+            document.getElementById('viewMapBtn').classList.toggle('active', view === 'map');
+            document.getElementById('pointsContainer').style.display = view === 'table' ? '' : 'none';
+            document.getElementById('pointsMapContainer').style.display = view === 'map' ? 'block' : 'none';
+            renderPoints();
+            if (view === 'map') {
+                // Leaflet computes tile layout from the container's size at init time —
+                // if that happened while the container was display:none it renders blank
+                // until this runs, since only now does the container have real dimensions.
+                setTimeout(() => pointsMap && pointsMap.invalidateSize(), 0);
+            }
+        }
+
+        function initPointsMap() {
+            if (pointsMap) return;
+            pointsMap = L.map('pointsMap', { zoomControl: true }).setView([31.0, -98.0], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19
+            }).addTo(pointsMap);
+            pointsMapCluster = L.markerClusterGroup({ maxClusterRadius: 50, spiderfyOnMaxZoom: true });
+            pointsMap.addLayer(pointsMapCluster);
+        }
+
+        function renderPointsMap(points, filtersActive) {
+            initPointsMap();
+            pointsMapCluster.clearLayers();
+
+            const withCoords = points.filter(p => p.latitude && p.longitude);
+            const countLabel = document.getElementById('mapPointCount');
+            countLabel.textContent = points.length === 0
+                ? `No control points${filtersActive ? ' match your filters' : ' yet'}`
+                : `${withCoords.length} of ${points.length} point(s) shown` +
+                  (withCoords.length < points.length ? ' — the rest have no latitude/longitude on record' : '');
+
+            withCoords.forEach(p => {
+                pointsMapCluster.addLayer(ControlPointMarker.createMarker(p, {
+                    projectHref: './control_points.php',
+                    editable: true
+                }));
+            });
+
+            if (withCoords.length > 0) {
+                pointsMap.fitBounds(pointsMapCluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
+            }
+        }
+
+        function renderPointsTable(points, filtersActive) {
+            const container = document.getElementById('pointsContainer');
+
             if (points.length === 0) {
                 container.innerHTML = `
                     <div class="cp-empty-state">
                         <i class="fas fa-crosshairs"></i>
-                        <h3>No control points${projectFilter || taskFilter || typeFilter || statusFilter || search ? ' match your filters' : ' yet'}</h3>
+                        <h3>No control points${filtersActive ? ' match your filters' : ' yet'}</h3>
                         <p>Log control set or verified in the field so it's on record for the next crew</p>
                     </div>`;
                 return;

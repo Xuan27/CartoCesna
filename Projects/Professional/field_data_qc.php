@@ -9,6 +9,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Field Data QC - Survey Project Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="../../Models/js/path-templates.js"></script>
     <link rel="stylesheet" href="../../Models/css/survey_projects_notes.css">
     <style>
         .qc-empty-state {
@@ -1905,9 +1906,11 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             const projectId = document.getElementById('sessionProject').value;
             const pathInput = document.getElementById('sessionRawPath');
 
-            // Suggest the conventional downloads path unless the user typed their own
+            // Suggest the conventional downloads path (editable in Settings on
+            // survey_projects.php) unless the user typed their own
             if (projectId && (pathInput.value === '' || pathInput.classList.contains('auto-filled'))) {
-                pathInput.value = `N:\\${projectId}\\05 Service Groups\\Survey\\Downloads`;
+                const templates = await PathTemplates.get();
+                pathInput.value = PathTemplates.fill(templates.rawDataPathGuess, projectId);
                 pathInput.classList.add('auto-filled');
             }
 
@@ -2182,9 +2185,18 @@ $currentUsername = $_SESSION['username'] ?? 'User';
             return div.innerHTML;
         }
 
-        // Safely embed a string value inside an inline onclick attribute
+        // Safely embed a string value inside an inline onclick attribute.
+        // escapeHtml() escapes for *text content* (browsers don't escape bare
+        // quotes there), but this sits inside a double-quoted HTML attribute,
+        // where an unescaped " in the value terminates the attribute early and
+        // truncates/corrupts the handler — the button silently does nothing on
+        // click. Escape quotes (and < > for defense-in-depth) explicitly.
         function jsAttr(value) {
-            return escapeHtml(JSON.stringify(value || ''));
+            return JSON.stringify(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
         }
 
         function trimScaleFactor(value) {

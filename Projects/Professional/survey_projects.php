@@ -74,7 +74,7 @@ $currentUsername = $_SESSION['username'] ?? 'User';
                     <i class="fas fa-clock"></i>
                     Timesheet
                 </a>
-                <a href="#" class="nav-item" data-tooltip="Settings">
+                <a href="#" class="nav-item" onclick="openSettingsPanel(); return false;" data-tooltip="Settings">
                     <i class="fas fa-cog"></i>
                     Settings
                 </a>
@@ -592,6 +592,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
     </script>
 
+    <script src="../../Models/js/path-templates.js"></script>
+
+    <script src="../../Models/js/survey_projects/settings-panel.js"></script>
+
     <script src="../../Models/js/survey_projects/project-data.js"></script>
 
     <script src="../../Models/js/survey_projects/task-render.js"></script>
@@ -625,6 +629,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <label style="font-size:0.8rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:0.3rem;">Note</label>
                 <textarea id="stopTimerNotes" rows="3" style="width:100%;padding:0.6rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.875rem;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="e.g. Completed boundary research, reviewed deeds..."></textarea>
+                <label id="stopTimerCompleteRow" style="display:none;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--gray-700, #374151);margin-top:0.85rem;cursor:pointer;">
+                    <input type="checkbox" id="stopTimerMarkComplete">
+                    Mark task as complete (sets completion date to today)
+                </label>
             </div>
             <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid #f1f5f9;">
                 <button class="btn btn-secondary" onclick="cancelStopTimer()">Cancel</button>
@@ -684,6 +692,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="text-align: center; padding: 2rem; color: var(--gray-400);">
                     <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
                     <p>Loading checklist...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Side Panel -->
+    <div class="checklist-panel" id="settingsPanel">
+        <div class="checklist-panel-content">
+            <div class="checklist-modal-header">
+                <div class="checklist-modal-header-top">
+                    <h3><i class="fas fa-cog"></i> Settings</h3>
+                    <button class="checklist-modal-close" onclick="closeSettingsPanel()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="checklist-modal-body" id="settingsModalBody" style="padding: 1.25rem;">
+                <h4 style="font-size: 0.85rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem;">
+                    Project Folder Path Templates
+                </h4>
+                <p style="font-size: 0.8rem; color: var(--gray-500); margin-bottom: 1rem;">
+                    Used to auto-fill folder links when a new project is created, and to guess
+                    where raw field data lands for a new QC session. Use
+                    <code>[project_id]</code> as a placeholder — it's replaced with the actual
+                    project ID. Leave a field blank and save to reset it to the default.
+                </p>
+                <div id="settingsTemplateFields">
+                    <div style="text-align: center; padding: 2rem; color: var(--gray-400);">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
+                        <p>Loading templates...</p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
+                    <button class="btn btn-secondary" onclick="closeSettingsPanel()">Cancel</button>
+                    <button class="btn btn-primary" onclick="savePathTemplates()">
+                        <i class="fas fa-save"></i> Save
+                    </button>
                 </div>
             </div>
         </div>

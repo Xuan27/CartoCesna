@@ -86,14 +86,27 @@ try {
         ]);
         
     }  elseif ($action === 'update_task_status') {
-        // ✅ NEW HANDLER - Quick status update
-        $stmt = $conn->prepare("UPDATE tasks SET task_status = :task_status, modified_date = CURRENT_TIMESTAMP WHERE task_id = :task_id");
-        
-        $stmt->execute([
-            'task_id' => $_POST['taskId'] ?? '',
-            'task_status' => $_POST['taskStatus'] ?? 'Not Started'
-        ]);
-        
+        // Quick status update. completionDate is optional — passed by callers
+        // like the Stop Timer "mark complete" checkbox; other status changes
+        // (e.g. the task card's status dropdown) omit it and leave the
+        // existing completion_date untouched.
+        $completionDate = !empty($_POST['completionDate']) ? $_POST['completionDate'] : null;
+
+        if ($completionDate !== null) {
+            $stmt = $conn->prepare("UPDATE tasks SET task_status = :task_status, completion_date = :completion_date, modified_date = CURRENT_TIMESTAMP WHERE task_id = :task_id");
+            $stmt->execute([
+                'task_id' => $_POST['taskId'] ?? '',
+                'task_status' => $_POST['taskStatus'] ?? 'Not Started',
+                'completion_date' => $completionDate
+            ]);
+        } else {
+            $stmt = $conn->prepare("UPDATE tasks SET task_status = :task_status, modified_date = CURRENT_TIMESTAMP WHERE task_id = :task_id");
+            $stmt->execute([
+                'task_id' => $_POST['taskId'] ?? '',
+                'task_status' => $_POST['taskStatus'] ?? 'Not Started'
+            ]);
+        }
+
         echo json_encode([
             'success' => true,
             'message' => 'Task status updated successfully'
